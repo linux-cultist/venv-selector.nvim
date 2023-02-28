@@ -6,7 +6,13 @@
 	A simple neovim plugin to let you choose what virtual environment to activate in neovim.
 </p>
 
+<p align="center">
+    <img src="venv-selector.png" />
+</p>
+
 # ⚡️ Features
+
+
 
 Browse existing python virtual environments on your computer and select one to activate with pyright inside neovim.
 

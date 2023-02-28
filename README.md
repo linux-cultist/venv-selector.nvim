@@ -23,73 +23,56 @@ Browse existing python virtual environments on your computer and select one to a
 
 ## 📋 Installation
 
-<div align="center">
-<table>
-<thead>
-<tr>
-<th>Package manager</th>
-<th>Snippet</th>
-</tr>
-</thead>
-<tbody>
-<tr>
-<td>
+### Using [folke/lazy.nvim](https://github.com/folke/lazy.nvim)
 
-[wbthomason/packer.nvim](https://github.com/wbthomason/packer.nvim)
-
-</td>
-<td>
+A minimal config looks like this and would typically go into your folder where you have plugins:
 
 ```lua
-use {"linux-cultist/venv-selector.nvim"}
-```
-
-</td>
-</tr>
-<tr>
-<td>
-
-[junegunn/vim-plug](https://github.com/junegunn/vim-plug)
-
-</td>
-<td>
-
-```lua
-Plug 'linux-cultist/venv-selector.nvim'
-```
-
-</td>
-</tr>
-<tr>
-<td>
-
-[folke/lazy.nvim](https://github.com/folke/lazy.nvim)
-
-</td>
-<td>
-
-```lua
+return {
 	"linux-cultist/venv-selector.nvim",
 	dependencies = { "neovim/nvim-lspconfig", "nvim-telescope/telescope.nvim" },
-	event = "VeryLazy",
-	config = function()
-		require("venv-selector").setup({ name = "venv", parents = 2 })
-	end,
-	keys = {
-		{
-			"<leader>vs",
-			"<cmd>VenvSelect<cr>",
-			desc = "Find Python Venvs",
-		},
-	},
-
+	config = true,
+}
 ```
 
-</td>
-</tr>
-</tbody>
-</table>
-</div>
+If you want to change the default options, you can add an opts table like this:
+
+
+```lua
+return {
+	"linux-cultist/venv-selector.nvim",
+	dependencies = { "neovim/nvim-lspconfig", "nvim-telescope/telescope.nvim" },
+	config = true,
+	opts = {
+		-- How many parent directories (relative to the current opened file) the plugin will
+		-- go to, before traversing down into all children directories to look for venvs.
+		parents = 2,
+
+		-- The name of the venvs to look for
+		name = "venv"
+	}
+}
+```
+
+Or you can manually run the setup function with options like this:
+
+
+```lua
+return {
+	"linux-cultist/venv-selector.nvim",
+	dependencies = { "neovim/nvim-lspconfig", "nvim-telescope/telescope.nvim" },
+	config = function()
+		require("venv-selector").setup({
+			-- How many parent directories (relative to the current opened file) the plugin will
+			-- go to, before traversing down into all children directories to look for venvs.
+			parents = 2,
+
+			-- The name of the venvs to look for
+			name = "venv"
+		})
+	end
+}
+```
 
 
 ## ☄ Getting started

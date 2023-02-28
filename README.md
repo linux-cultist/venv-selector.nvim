@@ -35,6 +35,19 @@ return {
 }
 ```
 
+Feel free to add a nice keymapping here as well:
+
+```lua
+return {
+	"linux-cultist/venv-selector.nvim",
+	dependencies = { "neovim/nvim-lspconfig", "nvim-telescope/telescope.nvim" },
+	config = true,
+	keys = {{
+		"<leader>vs", "<cmd>:VenvSelect<cr>"
+	}}
+}
+```
+
 If you want to change the default options, you can add an opts table like this:
 
 
@@ -43,6 +56,9 @@ return {
 	"linux-cultist/venv-selector.nvim",
 	dependencies = { "neovim/nvim-lspconfig", "nvim-telescope/telescope.nvim" },
 	config = true,
+	keys = {{
+		"<leader>vs", "<cmd>:VenvSelect<cr>"
+	}},
 	opts = {
 		-- How many parent directories (relative to the current opened file) the plugin will
 		-- go to, before traversing down into all children directories to look for venvs.
@@ -61,6 +77,9 @@ Or you can manually run the setup function with options like this:
 return {
 	"linux-cultist/venv-selector.nvim",
 	dependencies = { "neovim/nvim-lspconfig", "nvim-telescope/telescope.nvim" },
+	keys = {{
+		"<leader>vs", "<cmd>:VenvSelect<cr>"
+	}},
 	config = function()
 		require("venv-selector").setup({
 			-- How many parent directories (relative to the current opened file) the plugin will
@@ -73,6 +92,10 @@ return {
 	end
 }
 ```
+
+
+
+
 
 
 ## ☄ Getting started

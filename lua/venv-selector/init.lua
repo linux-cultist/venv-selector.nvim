@@ -6,7 +6,7 @@ local VS = {}
 
 VS._config = {}
 VS._results = {}
-VS._start_dir = {}
+VS._default_config = { name = "venv", parents = 2 }
 
 VS.set_pythonpath = function(python_path)
 	lspconfig.pyright.setup({
@@ -53,7 +53,7 @@ VS.display_results = function()
 			prompt_position = "top",
 		},
 		sorting_strategy = "descending",
-		prompt_title = "Virtual environments found under " .. VS._start_dir,
+		prompt_title = "Environments called '" .. VS._config.name .. "' under " .. VS._start_dir,
 		results_title = "Venvs",
 		finder = telescope.finders.new_table(VS._results),
 		sorter = telescope.conf.file_sorter({}),
@@ -72,16 +72,18 @@ VS.slow_find = function()
 	VS.display_results()
 end
 
-VS.async_find = function(path)
+VS.async_find = function()
 	VS._results = {}
-	VS._start_dir = VS.find_starting_dir(path, VS._config.parents)
+	local config = VS._config
+	-- utils.print_table(config)
+	VS._start_dir = VS.find_starting_dir(config.path, config.parents)
 	local stdout = vim.loop.new_pipe(false) -- create file descriptor for stdout
 	local stderr = vim.loop.new_pipe(false) -- create file descriptor for stderr
 
 	handle = vim.loop.spawn(
 		"fd",
 		{
-			args = { "--color", "never", "-HItd", "-g", "venv", VS._start_dir },
+			args = { "--color", "never", "-HItd", "-g", VS._config.name, VS._start_dir },
 			stdio = { nil, stdout, stderr },
 		},
 		vim.schedule_wrap(function() -- on exit
@@ -111,18 +113,26 @@ end
 
 VS.setup_user_command = function()
 	vim.api.nvim_create_user_command("VenvSelect", function()
-		local path = vim.fn.expand("%:p:h")
-		require("venv-selector").async_find(path)
+		-- If there is a path in VS._config, use that one - it comes from user plugin settings.
+		-- If not, use current open buffer directory.
+
+		if VS._config.path == nil then
+			VS._config.path = vim.fn.expand("%:p:h")
+		end
+
+		VS.async_find()
 	end, { desc = "Use VenvSelector to activate a venv" })
 end
--- path = vim.fn.expand("%:p:h")
+
 VS.setup = function(config)
-	local defaults = { name = "venv", parents = 2 }
-	VS._config = utils.merge_tables(defaults, config)
+	if config == nil then
+		config = {}
+	end
+
+	VS._config = vim.tbl_deep_extend("force", VS._default_config, config)
+	-- utils.print_table(VS._config)
 	VS.setup_user_command()
 end
 
 return VS
-
 -- VS.setup()
--- VS.async_find()

@@ -1,5 +1,9 @@
 local utils = {}
 
+utils.print_table = function(t)
+	print(vim.inspect(t))
+end
+
 utils.merge_tables = function(t1, t2)
 	if t2 == nil then
 		return t1

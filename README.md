@@ -21,7 +21,10 @@ Browse existing python virtual environments on your computer and select one to a
 - Requires [fd](https://github.com/sharkdp/fd) and
   [Telescope](https://github.com/nvim-telescope/telescope.nvim) for fast searches, and visual pickers.
 
-## 📋 Installation
+## 📋 Installation and Configuration
+
+**IMPORTANT**: The plugin works by using **pyright** lsp server, so pyright needs to be installed and pre-configured with nvim-lspconfig
+before using this plugin. You can see example setup instructions here: https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#pyright
 
 ### Using [folke/lazy.nvim](https://github.com/folke/lazy.nvim)
 
@@ -32,7 +35,7 @@ return {
 	"linux-cultist/venv-selector.nvim",
 	dependencies = { "neovim/nvim-lspconfig", "nvim-telescope/telescope.nvim" },
 	config = true,
-	event = "VeryLazy", -- Optional: needed only if you want to type ":VenvSelect" without a keymapping
+	event = "VeryLazy", -- Optional: needed only if you want to type `:VenvSelect` without a keymapping
 }
 ```
 
@@ -43,7 +46,7 @@ return {
 	"linux-cultist/venv-selector.nvim",
 	dependencies = { "neovim/nvim-lspconfig", "nvim-telescope/telescope.nvim" },
 	config = true,
-	event = "VeryLazy", -- Optional: needed only if you want to type ":VenvSelect" without a keymapping
+	event = "VeryLazy", -- Optional: needed only if you want to type `:VenvSelect` without a keymapping
 	keys = {{
 		"<leader>vs", "<cmd>:VenvSelect<cr>"
 	}}
@@ -62,14 +65,20 @@ return {
 		"<leader>vs", "<cmd>:VenvSelect<cr>"
 	}},
 	opts = {
-		-- How many parent directories (relative to the current opened file) the plugin will
-		-- go to, before traversing down into all children directories to look for venvs.
+		-- path (optional) - Absolute path on the file system where the plugin will look for venvs.
+		-- If you have venv folders in one specific path, you can set it here to look only in that path.
+		-- If you have many venv folders spread out across the file system, dont set this at all, and the
+		-- plugin will search for your venvs relative to what file is open in the current buffer.
+		path = "/home/username/your_venvs"
+
+		-- parents (optional) - How many parent directories the plugin will go up, before traversing down
+		-- into all children directories to look for venvs. Set this to 0 if you use an absolute path above.
 		parents = 2,
 
-		-- The name of the venvs to look for
+		-- name (optional) - The name of the venv directories to look for. Can for example be set to ".venv".
 		name = "venv"
 	}
-	event = "VeryLazy", -- Optional: needed only if you want to type ":VenvSelect" without a keymapping
+	event = "VeryLazy", -- Optional: needed only if you want to type `:VenvSelect` without a keymapping
 }
 ```
 
@@ -85,15 +94,21 @@ return {
 	}},
 	config = function()
 		require("venv-selector").setup({
-			-- How many parent directories (relative to the current opened file) the plugin will
-			-- go to, before traversing down into all children directories to look for venvs.
+			-- path (optional) - Absolute path on the file system where the plugin will look for venvs.
+			-- If you have venv folders in one specific path, you can set it here to look only in that path.
+			-- If you have many venv folders spread out across the file system, dont set this at all, and the
+			-- plugin will search for your venvs relative to what file is open in the current buffer.
+			path = "/home/username/your_venvs"
+
+			-- parents (optional) - How many parent directories the plugin will go up, before traversing down
+			-- into all children directories to look for venvs. Set this to 0 if you use an absolute path above.
 			parents = 2,
 
-			-- The name of the venvs to look for
+			-- name (optional) - The name of the venv directories to look for. Can for example be set to ".venv".
 			name = "venv"
 		})
 	end
-	event = "VeryLazy", -- Optional: needed only if you want to type ":VenvSelect" without a keymapping
+	event = "VeryLazy", -- Optional: needed only if you want to type `:VenvSelect` without a keymapping
 }
 ```
 
@@ -104,7 +119,7 @@ return {
 
 ## ☄ Getting started
 
-Once the plugin has been installed, the `:VenvActivate` command is available.
+Once the plugin has been installed, the `:VenvSelect` command is available.
 
 This plugin will look for python virtual environments located close to your code.
 
@@ -121,20 +136,4 @@ Note: You need [fd](https://github.com/sharkdp/fd) installed on your system. Thi
 the virtual environments as fast as possible.
 
 Telescope is also needed to let you pick a virtual environment to use.
-
-## ⚙ Configuration
-
-```lua
-require("venv-selector").setup({
-    -- How many steps to go up in the directory tree when looking for virtual environments.
-    parents = 2,
-    -- The name of the venv to look for
-    name = "venv",
-})
-```
-
-
-
-
-
 

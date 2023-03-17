@@ -7,5 +7,3 @@ telescope.actions_state = require("telescope.actions.state")
 telescope.actions = require("telescope.actions")
 
 return telescope
-
-

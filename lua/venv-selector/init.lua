@@ -6,7 +6,7 @@ local VS = {}
 
 VS._config = {}
 VS._results = {}
-VS._default_config = { name = "venv", parents = 2 }
+VS._default_config = { name = "venv", parents = 2, children = 100 }
 
 VS.set_pythonpath = function(python_path)
 	lspconfig.pyright.setup({
@@ -53,7 +53,7 @@ VS.display_results = function()
 			prompt_position = "top",
 		},
 		sorting_strategy = "descending",
-		prompt_title = "Environments called '" .. VS._config.name .. "' under " .. VS._start_dir,
+		prompt_title = "Environments matching '" .. VS._config.name .. "' under " .. VS._start_dir,
 		results_title = "Venvs",
 		finder = telescope.finders.new_table(VS._results),
 		sorter = telescope.conf.file_sorter({}),
@@ -80,12 +80,14 @@ VS.async_find = function()
 	local stdout = vim.loop.new_pipe(false) -- create file descriptor for stdout
 	local stderr = vim.loop.new_pipe(false) -- create file descriptor for stderr
 
+	local fdconfig = {
+		args = { "--color", "never", "-HItd", "--max-depth", config.children + 1, "-g", VS._config.name, VS._start_dir },
+		stdio = { nil, stdout, stderr },
+	}
+
 	handle = vim.loop.spawn(
 		"fd",
-		{
-			args = { "--color", "never", "-HItd", "-g", VS._config.name, VS._start_dir },
-			stdio = { nil, stdout, stderr },
-		},
+		fdconfig,
 		vim.schedule_wrap(function() -- on exit
 			stdout:read_stop()
 			stderr:read_stop()
@@ -125,6 +127,10 @@ VS.setup_user_command = function()
 end
 
 VS.setup = function(config)
+	-- While developing
+	-- config = { name = "*", parents = 0, children = 0, path = "/home/cado/.cache/pypoetry/virtualenvs" }
+
+	-- Remove after
 	if config == nil then
 		config = {}
 	end

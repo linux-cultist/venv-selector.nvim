@@ -53,7 +53,6 @@ return {
 
 If you want to change the default options, you can add an opts table like this:
 
-
 ```lua
 return {
 	"linux-cultist/venv-selector.nvim",
@@ -82,7 +81,6 @@ return {
 
 Or you can manually run the setup function with options like this:
 
-
 ```lua
 return {
 	"linux-cultist/venv-selector.nvim",
@@ -109,11 +107,6 @@ return {
 	event = "VeryLazy", -- Optional: needed only if you want to type `:VenvSelect` without a keymapping
 }
 ```
-
-
-
-
-
 
 ## ☄ Getting started
 
@@ -155,9 +148,8 @@ Executable: /usr/bin/python3.10
 You can see that the path shows that the virtual environments are located under `/home/cado/.cache/pypoetry/virtualenvs` in this case.
 
 - Copy the path that you get to the virtualenvs folder, and set the path as a parameter to the setup function.
-:
 - Also set the `name` parameter to `"*"` so the plugin will match any directory name, since Poetry names the virtual
-environments with unique generated names.
+  environments with unique generated names.
 - Also set `parents` and `children` to 0 since you want the plugin to only look in the `path` directory and match on whats
   directly under that one.
 
@@ -195,4 +187,3 @@ Note: You need [fd](https://github.com/sharkdp/fd) installed on your system. Thi
 the virtual environments as fast as possible.
 
 Telescope is also needed to let you pick a virtual environment to use.
-

@@ -70,7 +70,8 @@ return {
 
 		-- parents (optional) - How many parent directories the plugin will go up, before traversing down
 		-- into all children directories to look for venvs. Set this to 0 if you use an absolute path above.
-		parents = 2,
+		-- The default value is 10.
+		parents = 5,
 
 		-- name (optional) - The name of the venv directories to look for. Can for example be set to ".venv".
 		name = "venv"
@@ -98,7 +99,7 @@ return {
 
 			-- parents (optional) - How many parent directories the plugin will go up, before traversing down
 			-- into all children directories to look for venvs. Set this to 0 if you use an absolute path above.
-			parents = 2,
+			parents = 5,
 
 			-- name (optional) - The name of the venv directories to look for. Can for example be set to ".venv".
 			name = "venv"
@@ -118,65 +119,23 @@ It will start looking in the same directory as your currently opened file. Usual
 directory. By default it will go up 2 levels in the directory tree (relative to your currently open file), and then go back down into all the directories under that
 directory. Finally it will give you a list of found virtual environments so you can pick one to activate.
 
-### If you use Poetry
+### If you use Poetry or Pipenv
 
-If you use Poetry, you typically have all the virtual environments located in the same path as subfolders.
+If you use Poetry or Pipenv, you typically have all the virtual environments located in the same path as subfolders.
 
-VenvSelector can be configured to look in that subfolder only and list the top level directories containing the virtual
-environments.
+VenvSelector looks in the default paths for both Poetry and Pipenv virtual environments.
 
-First run `poetry env info` in your project folder where you are using poetry to manage the virtual environments. You
-should get some output simular to this:
+- Poetry: `$HOME/.cache/pypoetry/virtualenvs`
+- Pipenv: `$HOME/.local/share/virtualenvs`
 
-```bash
-Virtualenv
-Python:         3.10.10
-Implementation: CPython
-Path:           /home/cado/.cache/pypoetry/virtualenvs/poetry-demo-EUUW_nAM-py3.10
-Executable:     /home/cado/.cache/pypoetry/virtualenvs/poetry-demo-EUUW_nAM-py3.10/bin/python
-Valid:          True
-
-System
-Platform:   linux
-OS:         posix
-Python:     3.10.10
-Path:       /usr
-Executable: /usr/bin/python3.10
-
-```
-
-You can see that the path shows that the virtual environments are located under `/home/cado/.cache/pypoetry/virtualenvs` in this case.
-
-- Copy the path that you get to the virtualenvs folder, and set the path as a parameter to the setup function.
-- Also set the `name` parameter to `"*"` so the plugin will match any directory name, since Poetry names the virtual
-  environments with unique generated names.
-- Also set `parents` and `children` to 0 since you want the plugin to only look in the `path` directory and match on whats
-  directly under that one.
-
-Example configuration for Poetry:
+You can override the default paths if you need to, but most users should not have to do this:
 
 ```
 require("venv-selector").setup({
-	-- path (optional) - Absolute path on the file system where the plugin will look for venvs.
-	-- If you have venv folders in one specific path, you can set it here to look only in that path.
-	-- If you have many venv folders spread out across the file system, dont set this at all, and the
-	-- plugin will search for your venvs relative to what file is open in the current buffer.
-	path = "/home/cado/.cache/pypoetry/virtualenvs"
-
-	-- parents (optional) - How many parent directories the plugin will go up, before traversing down
-	-- into all children directories to look for venvs. Set this to 0 if you use an absolute path above.
-	parents = 0,
-
-	-- children (optional) - How many children directories the plugin will go down into and list matches.
-	children = 0
-
-	-- name (optional) - The name of the venv directories to look for. Can for example be set to ".venv".
-	name = "*"
+	poetry_path = "your_path_here",
+	pipenv_path = "your_path_here"
 })
 ```
-
-With this configuration, you should get a list of directories located directly under the path, so you can pick and
-activate one of the virtual environments there.
 
 ## Dependencies
 

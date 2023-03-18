@@ -6,7 +6,13 @@ local VS = {}
 
 VS._config = {}
 VS._results = {}
-VS._default_config = { name = "venv", parents = 2, children = 100 }
+
+VS._default_config = {
+	name = "venv",
+	parents = 5, -- Go max this many directories up from the current opened buffer
+	poetry_path = "$HOME/.cache/pypoetry/virtualenvs",
+	pipenv_path = "$HOME/.local/share/virtualenvs",
+}
 
 VS.set_pythonpath = function(python_path)
 	lspconfig.pyright.setup({
@@ -53,8 +59,7 @@ VS.display_results = function()
 			prompt_position = "top",
 		},
 		sorting_strategy = "descending",
-		prompt_title = "Environments matching '" .. VS._config.name .. "' under " .. VS._start_dir,
-		results_title = "Venvs",
+		prompt_title = "Python virtual environments",
 		finder = telescope.finders.new_table(VS._results),
 		sorter = telescope.conf.file_sorter({}),
 		attach_mappings = function(bufnr, map)
@@ -66,22 +71,28 @@ VS.display_results = function()
 	telescope.pickers.new({}, opts):find()
 end
 
-VS.slow_find = function()
-	VS._results =
-		vim.fs.find(VS._config.name, { type = "directory", limit = VS._config.parents, path = VS._config.path })
-	VS.display_results()
+VS.search_manager_paths = function(paths)
+	local paths = { VS._config.poetry_path, VS._config.pipenv_path }
+	for k, v in pairs(paths) do
+		local openPop = assert(io.popen("fd . " .. v .. " --max-depth 1 --color never", "r"))
+		local output = openPop:read()
+		openPop:close()
+		table.insert(VS._results, output)
+	end
 end
 
-VS.async_find = function()
+VS.async_find = function(path_to_search)
 	VS._results = {}
 	local config = VS._config
 	-- utils.print_table(config)
-	VS._start_dir = VS.find_starting_dir(config.path, config.parents)
+	VS.search_manager_paths()
+	local start_dir = VS.find_starting_dir(path_to_search, config.parents)
+	-- print("Start dir set to: " .. start_dir)
 	local stdout = vim.loop.new_pipe(false) -- create file descriptor for stdout
 	local stderr = vim.loop.new_pipe(false) -- create file descriptor for stderr
 
 	local fdconfig = {
-		args = { "--color", "never", "-HItd", "--max-depth", config.children + 1, "-g", VS._config.name, VS._start_dir },
+		args = { "--color", "never", "-HItd", "-g", VS._config.name, start_dir },
 		stdio = { nil, stdout, stderr },
 	}
 
@@ -106,6 +117,8 @@ VS.find_starting_dir = function(dir, limit)
 		if vim.fn.isdirectory(subdir) then
 			if limit > 0 then
 				return VS.find_starting_dir(subdir, limit - 1)
+			else
+				break
 			end
 		end
 	end
@@ -117,20 +130,20 @@ VS.setup_user_command = function()
 	vim.api.nvim_create_user_command("VenvSelect", function()
 		-- If there is a path in VS._config, use that one - it comes from user plugin settings.
 		-- If not, use current open buffer directory.
+		local path_to_search
 
 		if VS._config.path == nil then
-			VS._config.path = vim.fn.expand("%:p:h")
+			path_to_search = vim.fn.expand("%:p:h")
+		else
+			path_to_search = VS._config.path
 		end
 
-		VS.async_find()
+		-- print("Using path: " .. path_to_search)
+		VS.async_find(path_to_search)
 	end, { desc = "Use VenvSelector to activate a venv" })
 end
 
 VS.setup = function(config)
-	-- While developing
-	-- config = { name = "*", parents = 0, children = 0, path = "/home/cado/.cache/pypoetry/virtualenvs" }
-
-	-- Remove after
 	if config == nil then
 		config = {}
 	end

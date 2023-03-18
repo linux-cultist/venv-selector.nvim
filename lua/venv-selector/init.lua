@@ -9,7 +9,7 @@ VS._results = {}
 
 VS._default_config = {
 	name = "venv",
-	parents = 5, -- Go max this many directories up from the current opened buffer
+	parents = 2, -- Go max this many directories up from the current opened buffer
 	poetry_path = "$HOME/.cache/pypoetry/virtualenvs",
 	pipenv_path = "$HOME/.local/share/virtualenvs",
 }

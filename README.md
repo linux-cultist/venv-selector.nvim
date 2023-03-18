@@ -70,8 +70,7 @@ return {
 
 		-- parents (optional) - How many parent directories the plugin will go up, before traversing down
 		-- into all children directories to look for venvs. Set this to 0 if you use an absolute path above.
-		-- The default value is 10.
-		parents = 5,
+		parents = 2,
 
 		-- name (optional) - The name of the venv directories to look for. Can for example be set to ".venv".
 		name = "venv"
@@ -99,7 +98,7 @@ return {
 
 			-- parents (optional) - How many parent directories the plugin will go up, before traversing down
 			-- into all children directories to look for venvs. Set this to 0 if you use an absolute path above.
-			parents = 5,
+			parents = 2,
 
 			-- name (optional) - The name of the venv directories to look for. Can for example be set to ".venv".
 			name = "venv"

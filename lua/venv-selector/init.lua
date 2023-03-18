@@ -74,10 +74,13 @@ end
 VS.search_manager_paths = function(paths)
 	local paths = { VS._config.poetry_path, VS._config.pipenv_path }
 	for k, v in pairs(paths) do
-		local openPop = assert(io.popen("fd . " .. v .. " --max-depth 1 --color never", "r"))
-		local output = openPop:read()
-		openPop:close()
-		table.insert(VS._results, output)
+		v = vim.fn.expand(v)
+		if vim.fn.isdirectory(v) ~= 0 then
+			local openPop = assert(io.popen("fd . " .. v .. " --max-depth 1 --color never", "r"))
+			local output = openPop:read()
+			openPop:close()
+			table.insert(VS._results, output)
+		end
 	end
 end
 

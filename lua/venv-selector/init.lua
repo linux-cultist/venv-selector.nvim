@@ -6,12 +6,13 @@ local VS = {}
 
 VS._config = {}
 VS._results = {}
+VS._os = nil
 
 VS._default_config = {
 	name = "venv",
 	parents = 2, -- Go max this many directories up from the current opened buffer
-	poetry_path = "$HOME/.cache/pypoetry/virtualenvs",
-	pipenv_path = "$HOME/.local/share/virtualenvs",
+	poetry_path = nil, -- Added by setup function
+	pipenv_path = nil, -- Added by setup function
 }
 
 VS.set_pythonpath = function(python_path)
@@ -24,10 +25,14 @@ end
 
 VS.activate_venv = function(prompt_bufnr)
 	local dir = telescope.actions_state.get_selected_entry().value
-
+	local venv_python
 	if dir ~= nil then
 		telescope.actions.close(prompt_bufnr)
-		local venv_python = dir .. "bin/python"
+		if VS._os == "Linux" or VS._os == "Darwin" then
+			venv_python = dir .. "bin/python"
+		else
+			venv_python = dir .. "bin\\python"
+		end
 		print("Pyright now using '" .. venv_python .. "'.")
 		VS.set_pythonpath(venv_python)
 	end
@@ -35,7 +40,7 @@ end
 
 VS.on_results = function(err, data)
 	if err then
-		print(err)
+		print("Error:" .. err)
 	end
 
 	if data then
@@ -76,10 +81,13 @@ VS.search_manager_paths = function(paths)
 	for k, v in pairs(paths) do
 		v = vim.fn.expand(v)
 		if vim.fn.isdirectory(v) ~= 0 then
-			local openPop = assert(io.popen("fd . " .. v .. " --max-depth 1 --color never", "r"))
-			local output = openPop:read()
+			local openPop = assert(io.popen("fd . -HItd --max-depth 1 --color never " .. v, "r"))
+			local output = openPop:lines()
+			for line in output do
+				table.insert(VS._results, line)
+			end
+
 			openPop:close()
-			table.insert(VS._results, output)
 		end
 	end
 end
@@ -149,6 +157,19 @@ end
 VS.setup = function(config)
 	if config == nil then
 		config = {}
+	end
+
+	VS._os = vim.loop.os_uname().sysname
+
+	if VS._os == "Linux" then
+		VS._default_config.poetry_path = "~/.cache/pypoetry/virtualenvs"
+		VS._default_config.pipenv_path = "~/.local/share/virtualenvs"
+	elseif VS._os == "Darwin" then
+		VS._default_config.poetry_path = "~/Library/Preferences/pypoetry/virtualenvs"
+		VS._default_config.pipenv_path = "~/.local/share/virtualenvs"
+	else -- Windows
+		VS._default_config.poetry_path = "%APPDATA%\\pypoetry\\virtualenvs"
+		VS._default_config.pipenv_path = "~\\virtualenvs"
 	end
 
 	VS._config = vim.tbl_deep_extend("force", VS._default_config, config)

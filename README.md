@@ -86,7 +86,7 @@ return {
 	"linux-cultist/venv-selector.nvim",
 	dependencies = { "neovim/nvim-lspconfig", "nvim-telescope/telescope.nvim" },
 	keys = {{
-		"<leader>vs", "<cmd>:VenvSelect<cr>"
+		"<leader>vs", "<cmd>:VennvSelect<cr>"
 	}},
 	config = function()
 		require("venv-selector").setup({
@@ -122,12 +122,25 @@ directory. Finally it will give you a list of found virtual environments so you 
 
 If you use Poetry or Pipenv, you typically have all the virtual environments located in the same path as subfolders.
 
-VenvSelector looks in the default paths for both Poetry and Pipenv virtual environments.
+VenvSelector automatically looks in the default paths for both Poetry and Pipenv virtual environments:
+
+*Mac:*
+
+- Poetry: `$HOME/Library/Caches/pypoetry/virtualenvs`
+- Pipenv: `$HOME/.local/share/virtualenvs`
+
+*Linux:*
 
 - Poetry: `$HOME/.cache/pypoetry/virtualenvs`
 - Pipenv: `$HOME/.local/share/virtualenvs`
 
-You can override the default paths if you need to, but most users should not have to do this:
+*Windows:*
+
+- Poetry: `%APPDATA%\\pypoetry\\virtualenvs`
+- Pipenv: `$HOME\\virtualenvs`
+
+
+You can override the default paths if the virtual environments are not being found by `VenvSelector`:
 
 ```
 require("venv-selector").setup({
@@ -135,6 +148,58 @@ require("venv-selector").setup({
 	pipenv_path = "your_path_here"
 })
 ```
+
+#### Find out where your virtual environments are located
+
+##### Poetry
+
+First run `poetry env info` in your project folder where you are using poetry to manage the virtual environments. You
+should get some output simular to this:
+
+```bash
+Virtualenv
+Python:         3.10.10
+Implementation: CPython
+Path:           /home/cado/.cache/pypoetry/virtualenvs/poetry-demo-EUUW_nAM-py3.10
+Executable:     /home/cado/.cache/pypoetry/virtualenvs/poetry-demo-EUUW_nAM-py3.10/bin/python
+Valid:          True
+
+System
+Platform:   linux
+OS:         posix
+Python:     3.10.10
+Path:       /usr
+Executable: /usr/bin/python3.10
+
+```
+
+You can see that the path shows that the virtual environments are located under `/home/cado/.cache/pypoetry/virtualenvs` in this case.
+
+Copy the virtualenv path and set it as a parameter to the `VenvSelector` setup function:
+
+```
+require("venv-selector").setup({
+	poetry_path = "/home/cado/.cache/pypoetry/virtualenvs",
+})
+```
+
+##### Pipenv
+
+First run `pipenv --venv` in your project folder where you are using pipenv to manage the virtual environments. You
+should get some output simular to this:
+
+```bash
+/home/cado/.local/share/virtualenvs/pipenv_test-w6BD3kWZ
+```
+
+You can see that the path shows that the virtual environments are located under `/home/cado/.local/share/virtualenvs` in this case.
+
+Copy the virtualenv path and set it as a parameter to the `VenvSelector` setup function:
+
+```
+require("venv-selector").setup({
+	pipenv_path = "/home/cado/.local/share/virtualenvs",
+})
 
 ## Dependencies
 

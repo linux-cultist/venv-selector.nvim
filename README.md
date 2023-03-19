@@ -124,21 +124,20 @@ If you use Poetry or Pipenv, you typically have all the virtual environments loc
 
 VenvSelector automatically looks in the default paths for both Poetry and Pipenv virtual environments:
 
-*Mac:*
+_Mac:_
 
 - Poetry: `$HOME/Library/Caches/pypoetry/virtualenvs`
 - Pipenv: `$HOME/.local/share/virtualenvs`
 
-*Linux:*
+_Linux:_
 
 - Poetry: `$HOME/.cache/pypoetry/virtualenvs`
 - Pipenv: `$HOME/.local/share/virtualenvs`
 
-*Windows:*
+_Windows:_
 
 - Poetry: `%APPDATA%\\pypoetry\\virtualenvs`
 - Pipenv: `$HOME\\virtualenvs`
-
 
 You can override the default paths if the virtual environments are not being found by `VenvSelector`:
 
@@ -200,6 +199,7 @@ Copy the virtualenv path and set it as a parameter to the `VenvSelector` setup f
 require("venv-selector").setup({
 	pipenv_path = "/home/cado/.local/share/virtualenvs",
 })
+```
 
 ## Dependencies
 

@@ -68,6 +68,10 @@ return {
 		-- plugin will search for your venvs relative to what file is open in the current buffer.
 		path = "/home/username/your_venvs"
 
+		-- search (optional) - Search for virtual environments outside of Poetry and Pipenv. You can set this
+		-- to false if you only use Poetry or Pipenv to disable the search for other venvs, making the plugin faster.
+		search = true
+
 		-- parents (optional) - How many parent directories the plugin will go up, before traversing down
 		-- into all children directories to look for venvs. Set this to 0 if you use an absolute path above.
 		parents = 2,
@@ -95,6 +99,10 @@ return {
 			-- If you have many venv folders spread out across the file system, dont set this at all, and the
 			-- plugin will search for your venvs relative to what file is open in the current buffer.
 			path = "/home/username/your_venvs"
+
+			-- search (optional) - Search for virtual environments outside of Poetry and Pipenv. You can set this
+			-- to false if you only use Poetry or Pipenv to disable the search for other venvs, making the plugin faster.
+			search = true
 
 			-- parents (optional) - How many parent directories the plugin will go up, before traversing down
 			-- into all children directories to look for venvs. Set this to 0 if you use an absolute path above.

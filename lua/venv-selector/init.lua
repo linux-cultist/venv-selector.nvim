@@ -7,8 +7,10 @@ local VS = {}
 VS._config = {}
 VS._results = {}
 VS._os = nil
+VS._current_bin_path = nil
 
 VS._default_config = {
+	search = true,
 	name = "venv",
 	parents = 2, -- Go max this many directories up from the current opened buffer
 	poetry_path = nil, -- Added by setup function
@@ -35,6 +37,23 @@ VS.activate_venv = function(prompt_bufnr)
 		end
 		print("Pyright now using '" .. venv_python .. "'.")
 		VS.set_pythonpath(venv_python)
+
+		local current_system_path = vim.fn.getenv("PATH")
+		local new_bin_path = dir .. "bin"
+		local prev_bin_path = VS._current_bin_path
+
+		-- Remove previous bin path from path
+		if prev_bin_path ~= nil then
+			current_system_path = string.gsub(current_system_path, utils.escape_pattern(prev_bin_path .. ":"), "")
+		end
+
+		-- Add new bin path to path
+		local new_system_path = new_bin_path .. ":" .. current_system_path
+		vim.fn.setenv("PATH", new_system_path)
+		VS._current_bin_path = new_bin_path
+
+		-- Set VIRTUAL_ENV
+		vim.fn.setenv("VIRTUAL_ENV", venv_python)
 	end
 end
 
@@ -97,6 +116,10 @@ VS.async_find = function(path_to_search)
 	local config = VS._config
 	-- utils.print_table(config)
 	VS.search_manager_paths()
+	if VS._config.search == false then
+		VS.display_results()
+		return
+	end
 	local start_dir = VS.find_starting_dir(path_to_search, config.parents)
 	-- print("Start dir set to: " .. start_dir)
 	local stdout = vim.loop.new_pipe(false) -- create file descriptor for stdout

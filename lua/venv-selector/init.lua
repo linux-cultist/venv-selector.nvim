@@ -165,7 +165,7 @@ VS.setup = function(config)
 		VS._default_config.poetry_path = "~/.cache/pypoetry/virtualenvs"
 		VS._default_config.pipenv_path = "~/.local/share/virtualenvs"
 	elseif VS._os == "Darwin" then
-		VS._default_config.poetry_path = "~/Library/Preferences/pypoetry/virtualenvs"
+		VS._default_config.poetry_path = "~/Library/Caches/pypoetry/virtualenvs"
 		VS._default_config.pipenv_path = "~/.local/share/virtualenvs"
 	else -- Windows
 		VS._default_config.poetry_path = "%APPDATA%\\pypoetry\\virtualenvs"

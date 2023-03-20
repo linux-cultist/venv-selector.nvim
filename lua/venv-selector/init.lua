@@ -12,7 +12,7 @@ VS._current_bin_path = nil
 VS._default_config = {
 	search = true,
 	name = "venv",
-	parents = 2, -- Go max this many directories up from the current opened buffer
+	parents = 2,    -- Go max this many directories up from the current opened buffer
 	poetry_path = nil, -- Added by setup function
 	pipenv_path = nil, -- Added by setup function
 }
@@ -36,10 +36,10 @@ VS.activate_venv = function(prompt_bufnr)
 		telescope.actions.close(prompt_bufnr)
 		if VS._os == "Linux" or VS._os == "Darwin" then
 			new_bin_path = dir .. "/bin"
-			venv_python = dir .. new_bin_path .. "/python"
+			venv_python = new_bin_path .. "/python"
 		else
 			new_bin_path = dir .. "\\bin"
-			venv_python = dir .. new_bin_path .. "\\python"
+			venv_python = new_bin_path .. "\\python"
 		end
 
 		print("Pyright now using '" .. venv_python .. "'.")

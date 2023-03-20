@@ -26,20 +26,26 @@ VS.set_pythonpath = function(python_path)
 end
 
 VS.activate_venv = function(prompt_bufnr)
+	-- dir has path to venv without slash at the end
 	local dir = telescope.actions_state.get_selected_entry().value
+
 	local venv_python
+	local new_bin_path
+
 	if dir ~= nil then
 		telescope.actions.close(prompt_bufnr)
 		if VS._os == "Linux" or VS._os == "Darwin" then
-			venv_python = dir .. "bin/python"
+			new_bin_path = dir .. "/bin"
+			venv_python = dir .. new_bin_path .. "/python"
 		else
-			venv_python = dir .. "bin\\python"
+			new_bin_path = dir .. "\\bin"
+			venv_python = dir .. new_bin_path .. "\\python"
 		end
+
 		print("Pyright now using '" .. venv_python .. "'.")
 		VS.set_pythonpath(venv_python)
 
 		local current_system_path = vim.fn.getenv("PATH")
-		local new_bin_path = dir .. "bin"
 		local prev_bin_path = VS._current_bin_path
 
 		-- Remove previous bin path from path
@@ -53,7 +59,7 @@ VS.activate_venv = function(prompt_bufnr)
 		VS._current_bin_path = new_bin_path
 
 		-- Set VIRTUAL_ENV
-		vim.fn.setenv("VIRTUAL_ENV", venv_python)
+		vim.fn.setenv("VIRTUAL_ENV", dir)
 	end
 end
 
@@ -68,7 +74,7 @@ VS.on_results = function(err, data)
 			if rows == "" then
 				goto continue
 			end
-			table.insert(VS._results, rows)
+			table.insert(VS._results, utils.remove_last_slash(rows))
 			::continue::
 		end
 	end
@@ -103,7 +109,7 @@ VS.search_manager_paths = function(paths)
 			local openPop = assert(io.popen("fd . -HItd --max-depth 1 --color never " .. v, "r"))
 			local output = openPop:lines()
 			for line in output do
-				table.insert(VS._results, line)
+				table.insert(VS._results, utils.remove_last_slash(line))
 			end
 
 			openPop:close()

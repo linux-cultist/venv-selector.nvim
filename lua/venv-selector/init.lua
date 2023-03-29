@@ -12,7 +12,7 @@ VS._current_bin_path = nil
 VS._default_config = {
   search = true,
   name = "venv",
-  parents = 2,      -- Go max this many directories up from the current opened buffer
+  parents = 2,       -- Go max this many directories up from the current opened buffer
   poetry_path = nil, -- Added by setup function
   pipenv_path = nil, -- Added by setup function
 }
@@ -25,41 +25,45 @@ VS.set_pythonpath = function(python_path)
   })
 end
 
+VS.set_venv_and_paths = function(dir)
+  local venv_python
+  local new_bin_path
+  if VS._os == "Linux" or VS._os == "Darwin" then
+    new_bin_path = dir .. "/bin"
+    venv_python = new_bin_path .. "/python"
+  else
+    new_bin_path = dir .. "\\Scripts"
+    venv_python = new_bin_path .. "\\python.exe"
+  end
+
+  print("Pyright now using '" .. venv_python .. "'.")
+  VS.set_pythonpath(venv_python)
+
+  local current_system_path = vim.fn.getenv("PATH")
+  local prev_bin_path = VS._current_bin_path
+
+  -- Remove previous bin path from path
+  if prev_bin_path ~= nil then
+    current_system_path = string.gsub(current_system_path, utils.escape_pattern(prev_bin_path .. ":"), "")
+  end
+
+  -- Add new bin path to path
+  local new_system_path = new_bin_path .. ":" .. current_system_path
+  vim.fn.setenv("PATH", new_system_path)
+  VS._current_bin_path = new_bin_path
+
+  -- Set VIRTUAL_ENV
+  vim.fn.setenv("VIRTUAL_ENV", dir)
+end
+
 VS.activate_venv = function(prompt_bufnr)
   -- dir has path to venv without slash at the end
   local dir = telescope.actions_state.get_selected_entry().value
 
-  local venv_python
-  local new_bin_path
 
   if dir ~= nil then
     telescope.actions.close(prompt_bufnr)
-    if VS._os == "Linux" or VS._os == "Darwin" then
-      new_bin_path = dir .. "/bin"
-      venv_python = new_bin_path .. "/python"
-    else
-      new_bin_path = dir .. "\\Scripts"
-      venv_python = new_bin_path .. "\\python.exe"
-    end
-
-    print("Pyright now using '" .. venv_python .. "'.")
-    VS.set_pythonpath(venv_python)
-
-    local current_system_path = vim.fn.getenv("PATH")
-    local prev_bin_path = VS._current_bin_path
-
-    -- Remove previous bin path from path
-    if prev_bin_path ~= nil then
-      current_system_path = string.gsub(current_system_path, utils.escape_pattern(prev_bin_path .. ":"), "")
-    end
-
-    -- Add new bin path to path
-    local new_system_path = new_bin_path .. ":" .. current_system_path
-    vim.fn.setenv("PATH", new_system_path)
-    VS._current_bin_path = new_bin_path
-
-    -- Set VIRTUAL_ENV
-    vim.fn.setenv("VIRTUAL_ENV", dir)
+    VS.set_venv_and_paths(dir)
   end
 end
 

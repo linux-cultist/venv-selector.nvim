@@ -129,7 +129,7 @@ VS.search_local_path = function(path)
 		separator = "/"
 	end
 	local full_local_path = path .. separator .. VS._config.local_name .. separator
-	if vim.fn.isdirectory(full_local_path) then
+	if vim.fn.isdirectory(full_local_path) ~= 0 then
 		table.insert(VS._results, utils.remove_last_slash(full_local_path))
 	end
 end

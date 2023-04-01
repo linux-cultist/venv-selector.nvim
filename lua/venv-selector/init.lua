@@ -15,6 +15,8 @@ VS._default_config = {
 	parents = 2, -- Go max this many directories up from the current opened buffer
 	poetry_path = nil, -- Added by setup function
 	pipenv_path = nil, -- Added by setup function
+	search_local = true,
+	local_name = ".venv",
 }
 
 VS.set_pythonpath = function(python_path)
@@ -120,11 +122,26 @@ VS.search_manager_paths = function(paths)
 	end
 end
 
+VS.search_local_path = function(path)
+	local separator = "\\"
+	local sysname = vim.loop.os_uname().sysname
+	if sysname == "Linux" or sysname == "Darwin" then
+		separator = "/"
+	end
+	local full_local_path = path .. separator .. VS._config.local_name .. separator
+	if vim.fn.isdirectory(full_local_path) then
+		table.insert(VS._results, utils.remove_last_slash(full_local_path))
+	end
+end
+
 VS.async_find = function(path_to_search)
 	VS._results = {}
 	local config = VS._config
 	-- utils.print_table(config)
 	VS.search_manager_paths()
+	if VS._config.search_local == true then
+		VS.search_local_path(path_to_search)
+	end
 	if VS._config.search == false then
 		VS.display_results()
 		return

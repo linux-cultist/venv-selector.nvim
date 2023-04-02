@@ -77,7 +77,8 @@ return {
 		parents = 2,
 
 		-- name (optional) - The name of the venv directories to look for. Can for example be set to ".venv".
-		name = "venv"
+		name = "venv" -- NOTE: You can also use a lua table here for multiple names: {"venv", ".venv"}`
+
 	}
 	event = "VeryLazy", -- Optional: needed only if you want to type `:VenvSelect` without a keymapping
 }
@@ -109,7 +110,7 @@ return {
 			parents = 2,
 
 			-- name (optional) - The name of the venv directories to look for. Can for example be set to ".venv".
-			name = "venv"
+			name = "venv" -- NOTE: You can also use a lua table here for multiple names: {"venv", ".venv"}`
 		})
 	end
 	event = "VeryLazy", -- Optional: needed only if you want to type `:VenvSelect` without a keymapping

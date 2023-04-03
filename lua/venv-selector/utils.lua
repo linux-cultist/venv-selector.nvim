@@ -24,6 +24,7 @@ utils.find_parent_dir = function(dir, limit)
 
 	return dir
 end
+
 -- Creating a regex search path string with all venv names separated by
 -- the '|' character. We also make sure that the venv name is an exact match
 -- using '^' and '$' so we dont match on paths with the venv name in the middle.
@@ -59,12 +60,15 @@ utils.create_fd_search_path_string = function(paths)
 	return search_path_string
 end
 
+-- Remove last slash if it exists, otherwise return the string unmodified
 utils.remove_last_slash = function(s)
-	local separator = system.get_path_separator()
+	local last_character = string.sub(s, -1, -1)
 
-	if string.sub(s, -1, -1) == separator then
+	if last_character == "/" or last_character == "\\" then
 		return string.sub(s, 1, -2)
 	end
+
+	return s
 end
 
 return utils

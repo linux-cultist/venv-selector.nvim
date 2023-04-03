@@ -17,6 +17,7 @@ utils.remove_last_slash = function(s)
 	if string.sub(s, -1, -1) == separator then
 		return string.sub(s, 1, -2)
 	end
+  return s
 end
 
 return utils

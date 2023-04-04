@@ -3,6 +3,7 @@ local utils = require("venv-selector.utils")
 local lspconfig = require("lspconfig")
 
 local M = {}
+M.telescope_results = {}
 
 M.current_bin_path = nil -- Keeps track of old system path so we can remove it when adding a new one
 
@@ -36,20 +37,16 @@ M.set_venv_and_paths = function(dir)
 	vim.fn.setenv("VIRTUAL_ENV", dir)
 end
 
--- Start a search for venvs in all directories under the start_dir
-M.find_venvs = function(start_dir)
-	M.search_subdirectories_for_venvs(start_dir)
-end
-
+-- Start a search for venvs in all directories under the nstart_dir
 -- Async function to search for venvs - it will call VS.show_results() when its done by itself.
-M.search_subdirectories_for_venvs = function(start_dir)
+M.find_venvs_from_parent = function(parent_dir, callback)
 	local stdout = vim.loop.new_pipe(false)
 	local stderr = vim.loop.new_pipe(false)
 
 	local telescope = require("venv-selector.telescope")
 	local venv_names = utils.create_fd_venv_names_regexp(config.settings.name)
 	local fdconfig = {
-		args = { "--color", "never", "-HItd", venv_names, start_dir },
+		args = { "--absolute-path", "--color", "never", "-HItd", venv_names, parent_dir },
 		stdio = { nil, stdout, stderr },
 	}
 
@@ -62,11 +59,11 @@ M.search_subdirectories_for_venvs = function(start_dir)
 			stdout:close()
 			stderr:close()
 			handle:close()
-			telescope.show_results()
+			callback()
 		end)
 	)
 
-	vim.loop.read_start(stdout, telescope.on_results)
+	vim.loop.read_start(stdout, telescope.on_read)
 end
 
 -- Hook into lspconfig so we can set the python to use.
@@ -90,20 +87,27 @@ M.activate_venv = function(prompt_bufnr)
 	end
 end
 
+-- Look for workspace venvs
+M.find_workspace_venvs = function()
+	local workspace_folders = vim.lsp.buf.list_workspace_folders()
+	local search_path_string = utils.create_fd_search_path_string(workspace_folders)
+	local search_path_regexp = utils.create_fd_venv_names_regexp(config.settings.name)
+	local cmd = "fd -HItd --absolute-path --color never '" .. search_path_regexp .. "' " .. search_path_string
+	local telescope = require("venv-selector.telescope")
+	local openPop = assert(io.popen(cmd, "r"))
+	telescope.add_lines(openPop:lines())
+	openPop:close()
+end
+
 -- Look for Poetry and Pipenv managed venv directories and search them.
 M.find_venv_manager_venvs = function()
-	local results = {}
 	local paths = { config.settings.poetry_path, config.settings.pipenv_path }
 	local search_path_string = utils.create_fd_search_path_string(paths)
-
-	local openPop = assert(io.popen("fd . -HItd --max-depth 1 --color never " .. search_path_string, "r"))
-	local output = openPop:lines()
-	for line in output do
-		table.insert(results, utils.remove_last_slash(line))
-	end
-
+	local cmd = "fd . -HItd --absolute-path --max-depth 1 --color never " .. search_path_string
+	local openPop = assert(io.popen(cmd, "r"))
+	local telescope = require("venv-selector.telescope")
+	telescope.add_lines(openPop:lines())
 	openPop:close()
-	return results
 end
 
 return M

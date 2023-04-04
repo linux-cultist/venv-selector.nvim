@@ -10,6 +10,18 @@ utils.escape_pattern = function(text)
 	return text:gsub("([^%w])", "%%%1")
 end
 
+utils.remove_duplicates_from_table = function(test)
+	local hash = {}
+	local res = {}
+	for _, v in ipairs(test) do
+		if not hash[v] then
+			res[#res + 1] = v
+			hash[v] = true
+		end
+	end
+	return res
+end
+
 -- Go up in the directory tree "limit" amount of times, and then returns the path.
 utils.find_parent_dir = function(dir, limit)
 	for subdir in vim.fs.parents(dir) do
@@ -36,7 +48,7 @@ utils.create_fd_venv_names_regexp = function(config_venv_name)
 		for _, venv_name in pairs(config_venv_name) do
 			venv_names = venv_names .. "^" .. venv_name .. "$" .. "|" -- Creates (^venv_name1$ | ^venv_name2$ ) etc
 		end
-		venv_names = venv_names:sub(1, -2) -- Always remove last '|' since we only want it between words
+		venv_names = venv_names:sub(1, -2)                   -- Always remove last '|' since we only want it between words
 		venv_names = venv_names .. ")"
 	else
 		if type(config_venv_name) == "string" then

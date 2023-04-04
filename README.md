@@ -62,21 +62,36 @@ return {
 		"<leader>vs", "<cmd>:VenvSelect<cr>"
 	}},
 	opts = {
-		-- path (optional) - Absolute path on the file system where the plugin will look for venvs.
+		-- search_venv_managers (default: true). Will search for Poetry and Pipenv virtual environments in their
+		-- default location. If you dont use the default location, you can 
+		search_venv_managers = true,
+
+		-- search_workspace (default: true). Your lsp has the concept of "workspaces" (project folders), and
+		-- with this setting, the plugin will look in those folders for venvs. If you only use venvs located in
+		-- project folders, you can set search = false and search_workspace = true.
+		search_workspace = true,
+
+		-- path (optional, default not set). Absolute path on the file system where the plugin will look for venvs.
 		-- If you have venv folders in one specific path, you can set it here to look only in that path.
 		-- If you have many venv folders spread out across the file system, dont set this at all, and the
 		-- plugin will search for your venvs relative to what file is open in the current buffer.
 		path = "/home/username/your_venvs"
 
-		-- search (optional) - Search for virtual environments outside of Poetry and Pipenv. You can set this
-		-- to false if you only use Poetry or Pipenv to disable the search for other venvs, making the plugin faster.
+		-- search (default: true) - Search your computer for virtual environments outside of Poetry and Pipenv.
+		-- Used in combination with parents setting to decide how it searches.
+		-- You can set this to false to speed up the plugin if your virtual envs are in your workspace, or in Poetry
+		-- or Pipenv locations. No need to search if you know where they will be.
 		search = true
 
-		-- parents (optional) - How many parent directories the plugin will go up, before traversing down
-		-- into all children directories to look for venvs. Set this to 0 if you use an absolute path above.
+		-- parents (default: 2) - Used when search = true only. How many parent directories the plugin will go up
+		-- (relative to where your open file is on the file system when you run VenvSelect). Once the parent directory
+		-- is found, the plugin will traverse down into all children directories to look for venvs. The higher
+		-- you set this number, the slower the plugin will usually be since there is more to search.
+		-- You may want to set this to to 0 if you specify a path in the path setting to avoid searching parent
+		-- directories.
 		parents = 2,
 
-		-- name (optional) - The name of the venv directories to look for. Can for example be set to ".venv".
+		-- name (default: venv) - The name of the venv directories to look for. 
 		name = "venv" -- NOTE: You can also use a lua table here for multiple names: {"venv", ".venv"}`
 
 	}
@@ -95,22 +110,37 @@ return {
 	}},
 	config = function()
 		require("venv-selector").setup({
-			-- path (optional) - Absolute path on the file system where the plugin will look for venvs.
-			-- If you have venv folders in one specific path, you can set it here to look only in that path.
-			-- If you have many venv folders spread out across the file system, dont set this at all, and the
-			-- plugin will search for your venvs relative to what file is open in the current buffer.
-			path = "/home/username/your_venvs"
+		-- search_venv_managers (default: true). Will search for Poetry and Pipenv virtual environments in their
+		-- default location. If you dont use the default location, you can 
+		search_venv_managers = true,
 
-			-- search (optional) - Search for virtual environments outside of Poetry and Pipenv. You can set this
-			-- to false if you only use Poetry or Pipenv to disable the search for other venvs, making the plugin faster.
-			search = true
+		-- search_workspace (default: true). Your lsp has the concept of "workspaces" (project folders), and
+		-- with this setting, the plugin will look in those folders for venvs. If you only use venvs located in
+		-- project folders, you can set search = false and search_workspace = true.
+		search_workspace = true,
 
-			-- parents (optional) - How many parent directories the plugin will go up, before traversing down
-			-- into all children directories to look for venvs. Set this to 0 if you use an absolute path above.
-			parents = 2,
+		-- path (optional, default not set). Absolute path on the file system where the plugin will look for venvs.
+		-- If you have venv folders in one specific path, you can set it here to look only in that path.
+		-- If you have many venv folders spread out across the file system, dont set this at all, and the
+		-- plugin will search for your venvs relative to what file is open in the current buffer.
+		path = "/home/username/your_venvs"
 
-			-- name (optional) - The name of the venv directories to look for. Can for example be set to ".venv".
-			name = "venv" -- NOTE: You can also use a lua table here for multiple names: {"venv", ".venv"}`
+		-- search (default: true) - Search your computer for virtual environments outside of Poetry and Pipenv.
+		-- Used in combination with parents setting to decide how it searches.
+		-- You can set this to false to speed up the plugin if your virtual envs are in your workspace, or in Poetry
+		-- or Pipenv locations. No need to search if you know where they will be.
+		search = true
+
+		-- parents (default: 2) - Used when search = true only. How many parent directories the plugin will go up
+		-- (relative to where your open file is on the file system when you run VenvSelect). Once the parent directory
+		-- is found, the plugin will traverse down into all children directories to look for venvs. The higher
+		-- you set this number, the slower the plugin will usually be since there is more to search.
+		-- You may want to set this to to 0 if you specify a path in the path setting to avoid searching parent
+		-- directories.
+		parents = 2,
+
+		-- name (default: venv) - The name of the venv directories to look for. 
+		name = "venv" -- NOTE: You can also use a lua table here for multiple names: {"venv", ".venv"}`
 		})
 	end
 	event = "VeryLazy", -- Optional: needed only if you want to type `:VenvSelect` without a keymapping

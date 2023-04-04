@@ -2,10 +2,11 @@ local system = require("venv-selector.system")
 local utils = require("venv-selector.utils")
 local lspconfig = require("lspconfig")
 
-local M = {}
-M.telescope_results = {}
-
-M.current_bin_path = nil -- Keeps track of old system path so we can remove it when adding a new one
+local M = {
+	current_path = nil, -- Contains path to current python if activated, nil otherwise
+	current_venv = nil, -- Contains path to current venv folder if activated, nil otherwise
+	current_bin_path = nil, -- Keeps track of old system path so we can remove it when adding a new one
+}
 
 -- Manages the paths to python since they are different on Linux, Mac and Windows
 -- systems. The user selects the virtual environment to use in the Telescope picker,
@@ -35,6 +36,9 @@ M.set_venv_and_paths = function(dir)
 
 	-- Set VIRTUAL_ENV
 	vim.fn.setenv("VIRTUAL_ENV", dir)
+
+	M.current_path = venv_python
+	M.current_venv = dir
 end
 
 -- Start a search for venvs in all directories under the nstart_dir

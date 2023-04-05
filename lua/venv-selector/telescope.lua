@@ -7,20 +7,58 @@ local M = {
 	pickers = require("telescope.pickers"),
 	actions_state = require("telescope.actions.state"),
 	actions = require("telescope.actions"),
+	entry_display = require("telescope.pickers.entry_display"),
 }
 
 M.add_lines = function(lines)
 	for line in lines do
 		if line ~= "" then
+			dbg("Adding row to telescope results: " .. line)
 			table.insert(M.results, utils.remove_last_slash(line))
 		end
 	end
 end
 
+M.remove_results = function()
+	local telescope = require("venv-selector.telescope")
+	telescope.results = {}
+	dbg("Removed telescope results.")
+end
+
 -- Shows the results from the search in a Telescope picker.
 M.show_results = function()
+	local displayer = M.entry_display.create({
+		separator = " ",
+		items = {
+			{ width = 10 },
+			{ width = 10 },
+			{ width = 10 },
+		},
+	})
+	local make_display = function(entry)
+		return displayer({
+			{ entry.name },
+			{ entry.color },
+			{ entry.gender },
+		})
+	end
+
 	local venv = require("venv-selector.venv")
 	local opts = {
+		prompt_title = "Python virtual environments",
+		finder = M.finders.new_table({
+			-- results = utils.remove_duplicates_from_table(M.results),
+			results = {
+				{ name = "", color = "#ff0000", gender = "male" },
+				{ name = "", color = "#0000ff", gender = "female" },
+			},
+			entry_maker = function(entry)
+				entry.value = entry.name
+				entry.ordinal = entry.name
+				entry.display = make_display
+				return entry
+			end,
+		}),
 		layout_strategy = "vertical",
 		layout_config = {
 			height = 20,
@@ -28,8 +66,6 @@ M.show_results = function()
 			prompt_position = "top",
 		},
 		sorting_strategy = "descending",
-		prompt_title = "Python virtual environments",
-		finder = M.finders.new_table(utils.remove_duplicates_from_table(M.results)),
 		sorter = M.conf.file_sorter({}),
 		attach_mappings = function(bufnr, map)
 			map("i", "<CR>", venv.activate_venv)

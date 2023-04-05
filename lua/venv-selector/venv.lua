@@ -6,7 +6,7 @@ local telescope = require("venv-selector.telescope")
 
 local M = {
 	current_python_path = nil, -- Contains path to current python if activated, nil otherwise
-	current_venv = nil, -- Contains path to current venv folder if activated, nil otherwise
+	current_venv = nil,     -- Contains path to current venv folder if activated, nil otherwise
 	current_bin_path = nil, -- Keeps track of old system path so we can remove it when adding a new one
 	fd_handle = nil,
 	path_to_search = nil,
@@ -23,12 +23,15 @@ M.reload = function(options)
 
 	if M.fd_handle == nil or M.fd_handle:is_closing() == true then
 		-- Start with getting venv manager venvs if they exist (Poetry, Pipenv)
-		telescope.results = {}
+		telescope.remove_results()
 
 		-- Only search for other venvs if search option is true
 		if config.settings.search == true then
-			M.path_to_search = config.get_search_path()
-			dbg(M.path_to_search)
+			if opts.force_refresh == true then
+				dbg("Using previous path:" .. M.path_to_search)
+			else
+				M.path_to_search = config.get_search_path()
+			end
 			local parent_dir = utils.find_parent_dir(M.path_to_search, config.settings.parents)
 			M.find_parent_venvs(parent_dir) -- The results will show up when search is done - dont call telescope.show_results() here.
 		else
@@ -87,6 +90,7 @@ end
 -- Start a search for venvs in all directories under the nstart_dir
 -- Async function to search for venvs - it will call VS.show_results() when its done by itself.
 M.find_parent_venvs = function(parent_dir)
+	dbg("Finding parent venvs in: " .. parent_dir)
 	local stdout = vim.loop.new_pipe(false)
 	local stderr = vim.loop.new_pipe(false)
 	local venv_names = utils.create_fd_venv_names_regexp(config.settings.name)

@@ -30,15 +30,15 @@ M.show_results = function()
 	local displayer = M.entry_display.create({
 		separator = " ",
 		items = {
-			{ width = 10 },
-			{ width = 10 },
-			{ width = 10 },
+			{ width = 0.1 },
+			{ width = 0.6 },
+			{ width = 0.3 },
 		},
 	})
 	local make_display = function(entry)
 		return displayer({
+			{ entry.icon },
 			{ entry.name },
-			{ entry.color },
 			{ entry.gender },
 		})
 	end
@@ -49,8 +49,8 @@ M.show_results = function()
 		finder = M.finders.new_table({
 			-- results = utils.remove_duplicates_from_table(M.results),
 			results = {
-				{ name = "", color = "#ff0000", gender = "male" },
-				{ name = "", color = "#0000ff", gender = "female" },
+				{ icon = "", name = "#ff0000", gender = "male" },
+				{ icon = "", name = "#0000ff", gender = "female" },
 			},
 			entry_maker = function(entry)
 				entry.value = entry.name
@@ -61,8 +61,8 @@ M.show_results = function()
 		}),
 		layout_strategy = "vertical",
 		layout_config = {
-			height = 20,
-			width = 100,
+			height = 0.32,
+			width = 0.48,
 			prompt_position = "top",
 		},
 		sorting_strategy = "descending",

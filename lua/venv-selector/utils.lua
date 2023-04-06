@@ -34,9 +34,9 @@ M.remove_duplicates_from_table = function(test)
 	local hash = {}
 	local res = {}
 	for _, v in ipairs(test) do
-		if not hash[v] then
+		if not hash[v.path] then
 			res[#res + 1] = v
-			hash[v] = true
+			hash[v.path] = true
 		end
 	end
 	return res

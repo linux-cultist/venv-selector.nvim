@@ -3,8 +3,6 @@ local config = require("venv-selector.config")
 local user_commands = require("venv-selector.user_commands")
 local dbg = require("venv-selector.utils").dbg
 
--- FIXME: On refresh in telescope the path becomes the workspace directory for some reason (when telescope is open).
-
 M = {
 	-- Called by user when using the plugin.
 	setup = function(settings)

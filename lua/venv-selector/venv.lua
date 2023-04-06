@@ -10,30 +10,55 @@ local M = {
 	current_bin_path = nil, -- Keeps track of old system path so we can remove it when adding a new one
 	fd_handle = nil,
 	path_to_search = nil,
+	buffer_dir = nil,
 }
 
-M.reload = function(options)
-	local opts = options or {}
+M.reload = function(action)
+	local act = action or {}
 
-	if config.settings.auto_refresh == false and next(telescope.results) ~= nil and opts.force_refresh ~= true then
+	local dont_refresh_telescope = config.settings.auto_refresh == false and act.force_refresh ~= true
+	local ready_for_new_search = M.fd_handle == nil or M.fd_handle:is_closing() == true
+	local no_telescope_results = next(telescope.results) == nil
+
+	-- This is needed because Telescope doesnt send the right buffer path when doing a refresh, so we use
+	-- the path from the original loading of content to refresh.
+	if act.force_refresh ~= true then
+		M.buffer_dir = config.get_buffer_dir()
+	end
+	-- if config.settings.auto_refresh == false and next(telescope.results) ~= nil and opts.force_refresh ~= true then
+	if dont_refresh_telescope then
 		-- Use cached results
-		telescope.show_results()
-		return
+		if no_telescope_results then
+			dbg("Refresh telescope since there are no previous results.")
+		else
+			telescope.show_results()
+			return
+		end
 	end
 
-	if M.fd_handle == nil or M.fd_handle:is_closing() == true then
-		-- Start with getting venv manager venvs if they exist (Poetry, Pipenv)
+	if ready_for_new_search then
 		telescope.remove_results()
 
-		-- Only search for other venvs if search option is true
-		if config.settings.search == true then
-			if opts.force_refresh == true then
-				dbg("Using previous path:" .. M.path_to_search)
+		-- Only search for parent venvs if search option is true
+		if config.settings.search == true or no_telescope_results then
+			if act.force_refresh == true then
+				if M.path_to_search == nil then
+					dbg("No previous search path when asked to refresh results.")
+					M.path_to_search = utils.find_parent_dir(M.buffer_dir, config.settings.parents)
+					M.find_parent_venvs(M.path_to_search)
+				else
+					dbg("User refreshed results - buffer_dir is: " .. M.buffer_dir)
+					-- Telescope doesnt send the right path when doing a refresh so need to account for that
+					-- local search_path = config.get_search_path()
+					M.path_to_search = utils.find_parent_dir(M.buffer_dir, config.settings.parents)
+					-- M.find_parent_venvs(M.path_to_search)
+					-- M.path_to_search = utils.find_parent_dir(M.path_to_search, config.settings.parents)
+					M.find_parent_venvs(M.path_to_search)
+				end
 			else
-				M.path_to_search = config.get_search_path()
+				M.path_to_search = utils.find_parent_dir(M.buffer_dir, config.settings.parents)
+				M.find_parent_venvs(M.path_to_search)
 			end
-			local parent_dir = utils.find_parent_dir(M.path_to_search, config.settings.parents)
-			M.find_parent_venvs(parent_dir) -- The results will show up when search is done - dont call telescope.show_results() here.
 		else
 			M.find_other_venvs()
 		end
@@ -65,7 +90,7 @@ M.set_venv_and_paths = function(dir)
 	local venv_python = new_bin_path .. sys.path_sep .. sys.python_name
 
 	M.set_pythonpath(venv_python)
-	print("Pyright now using '" .. venv_python .. "'.")
+	print("VenvSelect: Activated '" .. venv_python .. "'.")
 
 	local current_system_path = vim.fn.getenv("PATH")
 	local prev_bin_path = M.current_bin_path
@@ -134,14 +159,27 @@ M.activate_venv = function(prompt_bufnr)
 	end
 end
 
+function M.list_pyright_workspace_folders()
+	local workspace_folders = {}
+	for _, client in pairs(vim.lsp.buf_get_clients()) do
+		if client.name == "pyright" then
+			for _, folder in pairs(client.workspace_folders or {}) do
+				dbg("Found workspace folder: " .. folder.name)
+				table.insert(workspace_folders, folder.name)
+			end
+		end
+	end
+	return workspace_folders
+end
+
 -- Look for workspace venvs
 M.find_workspace_venvs = function()
-	local workspace_folders = vim.lsp.buf.list_workspace_folders()
+	local workspace_folders = M.list_pyright_workspace_folders()
 	local search_path_string = utils.create_fd_search_path_string(workspace_folders)
 	local search_path_regexp = utils.create_fd_venv_names_regexp(config.settings.name)
 	local cmd = "fd -HItd --absolute-path --color never '" .. search_path_regexp .. "' " .. search_path_string
 	local openPop = assert(io.popen(cmd, "r"))
-	telescope.add_lines(openPop:lines())
+	telescope.add_lines(openPop:lines(), "Workspace")
 	openPop:close()
 end
 
@@ -151,7 +189,7 @@ M.find_venv_manager_venvs = function()
 	local search_path_string = utils.create_fd_search_path_string(paths)
 	local cmd = "fd . -HItd --absolute-path --max-depth 1 --color never " .. search_path_string
 	local openPop = assert(io.popen(cmd, "r"))
-	telescope.add_lines(openPop:lines())
+	telescope.add_lines(openPop:lines(), "Venv Manager")
 	openPop:close()
 end
 

@@ -10,11 +10,11 @@ local M = {
 	entry_display = require("telescope.pickers.entry_display"),
 }
 
-M.add_lines = function(lines)
-	for line in lines do
-		if line ~= "" then
-			dbg("Adding row to telescope results: " .. line)
-			table.insert(M.results, utils.remove_last_slash(line))
+M.add_lines = function(lines, source)
+	for row in lines do
+		if row ~= "" then
+			dbg("Found venv in " .. source .. " search: " .. row)
+			table.insert(M.results, { icon = "󰅬", path = utils.remove_last_slash(row), source = source })
 		end
 	end
 end
@@ -30,41 +30,47 @@ M.show_results = function()
 	local displayer = M.entry_display.create({
 		separator = " ",
 		items = {
-			{ width = 0.1 },
-			{ width = 0.6 },
-			{ width = 0.3 },
+			{ width = 2 },
+			{ width = 0.7 },
+			{ width = 0.2 },
+			remaining = true,
 		},
 	})
 	local make_display = function(entry)
 		return displayer({
 			{ entry.icon },
-			{ entry.name },
-			{ entry.gender },
+			{ entry.path },
+			{ entry.source },
 		})
 	end
-
+	local title = "Virtual environments"
+	if config.settings.auto_refresh == false then
+		title = title .. " (ctrl-r to refresh)"
+	end
 	local venv = require("venv-selector.venv")
 	local opts = {
-		prompt_title = "Python virtual environments",
+		prompt_title = title,
+		-- results_title = title,
 		finder = M.finders.new_table({
-			-- results = utils.remove_duplicates_from_table(M.results),
-			results = {
-				{ icon = "", name = "#ff0000", gender = "male" },
-				{ icon = "", name = "#0000ff", gender = "female" },
-			},
+			results = utils.remove_duplicates_from_table(M.results),
+			-- results = {
+			-- 	{ icon = "", name = "#ff0000", gender = "male" },
+			-- 	{ icon = "", name = "#0000ff", gender = "female" },
+			-- },
 			entry_maker = function(entry)
-				entry.value = entry.name
-				entry.ordinal = entry.name
+				entry.value = entry.path
+				entry.ordinal = entry.path
 				entry.display = make_display
 				return entry
 			end,
 		}),
 		layout_strategy = "vertical",
 		layout_config = {
-			height = 0.32,
-			width = 0.48,
+			height = 0.48,
+			width = 0.64,
 			prompt_position = "top",
 		},
+		cwd = require("telescope.utils").buffer_dir(),
 		sorting_strategy = "descending",
 		sorter = M.conf.file_sorter({}),
 		attach_mappings = function(bufnr, map)
@@ -89,7 +95,11 @@ M.on_read = function(err, data)
 		local rows = vim.split(data, "\n")
 		for _, row in pairs(rows) do
 			if row ~= "" then
-				table.insert(M.results, utils.remove_last_slash(row))
+				dbg("Found venv in parent search: " .. row)
+				table.insert(
+					M.results,
+					{ icon = "󰅬", path = utils.remove_last_slash(row), source = "Parent Search" }
+				)
 			end
 		end
 	end

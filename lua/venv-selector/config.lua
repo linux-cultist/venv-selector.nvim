@@ -17,12 +17,14 @@ config.default_settings = {
 }
 
 -- Gets the search path supplied by the user in the setup function, or use current open buffer directory.
-config.get_search_path = function()
+config.get_buffer_dir = function()
 	local dbg = require("venv-selector.utils").dbg
 	local path
 	if config.settings.path == nil then
-		path = vim.fn.expand("%:p:h")
-		dbg("Using path from expand: " .. path)
+		path = require("telescope.utils").buffer_dir()
+		dbg("Telescope path: " .. path)
+		-- path = vim.fn.expand("%:p:h")
+		-- dbg("Using path from vim.fn.expand: " .. path)
 	else
 		path = config.settings.path
 		dbg("Using path from settings path: " .. path)

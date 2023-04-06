@@ -14,7 +14,7 @@ M.add_lines = function(lines, source)
 	for row in lines do
 		if row ~= "" then
 			dbg("Found venv in " .. source .. " search: " .. row)
-			table.insert(M.results, { icon = "󰅬", path = utils.remove_last_slash(row), source = source })
+			table.insert(M.results, { icon = "", path = utils.remove_last_slash(row), source = source })
 		end
 	end
 end
@@ -25,13 +25,32 @@ M.remove_results = function()
 	dbg("Removed telescope results.")
 end
 
+M.mark_active_venv = function(results)
+	local venv = require("venv-selector.venv")
+	if venv.current_venv == nil then
+		do
+			return results
+		end
+	end
+
+	for _, v in pairs(results) do
+		if v.value == venv.current_venv then
+			v.status = "Active"
+		else
+			v.status = ""
+		end
+	end
+
+	return results
+end
 -- Shows the results from the search in a Telescope picker.
 M.show_results = function()
 	local displayer = M.entry_display.create({
 		separator = " ",
 		items = {
 			{ width = 2 },
-			{ width = 0.7 },
+			{ width = 0.6 },
+			{ width = 2 },
 			{ width = 0.2 },
 			remaining = true,
 		},
@@ -41,6 +60,7 @@ M.show_results = function()
 			{ entry.icon },
 			{ entry.path },
 			{ entry.source },
+			{ entry.status or "" },
 		})
 	end
 	local title = "Virtual environments"
@@ -52,11 +72,7 @@ M.show_results = function()
 		prompt_title = title,
 		-- results_title = title,
 		finder = M.finders.new_table({
-			results = utils.remove_duplicates_from_table(M.results),
-			-- results = {
-			-- 	{ icon = "", name = "#ff0000", gender = "male" },
-			-- 	{ icon = "", name = "#0000ff", gender = "female" },
-			-- },
+			results = M.mark_active_venv(utils.remove_duplicates_from_table(M.results)),
 			entry_maker = function(entry)
 				entry.value = entry.path
 				entry.ordinal = entry.path
@@ -64,17 +80,20 @@ M.show_results = function()
 				return entry
 			end,
 		}),
-		layout_strategy = "vertical",
+		layout_strategy = "horizontal",
 		layout_config = {
-			height = 0.48,
-			width = 0.64,
+			height = 0.4,
+			width = 0.5,
 			prompt_position = "top",
 		},
 		cwd = require("telescope.utils").buffer_dir(),
 		sorting_strategy = "descending",
 		sorter = M.conf.file_sorter({}),
 		attach_mappings = function(bufnr, map)
-			map("i", "<CR>", venv.activate_venv)
+			map("i", "<CR>", function()
+				venv.activate_venv(bufnr)
+				M.mark_active_venv(M.results)
+			end)
 			map("i", "<C-r>", function()
 				venv.reload({ force_refresh = true })
 			end)

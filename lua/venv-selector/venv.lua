@@ -6,7 +6,7 @@ local telescope = require("venv-selector.telescope")
 
 local M = {
 	current_python_path = nil, -- Contains path to current python if activated, nil otherwise
-	current_venv = nil,     -- Contains path to current venv folder if activated, nil otherwise
+	current_venv = nil, -- Contains path to current venv folder if activated, nil otherwise
 	current_bin_path = nil, -- Keeps track of old system path so we can remove it when adding a new one
 	fd_handle = nil,
 	path_to_search = nil,
@@ -84,13 +84,13 @@ end
 -- but inside the virtual environment, the actual python and its parent directory name
 -- differs between Linux, Mac and Windows. This function sets up the correct full path
 -- to python, adds it to the system path and sets the VIRTUAL_ENV variable.
-M.set_venv_and_paths = function(dir)
+M.set_venv_and_system_paths = function(venv_path)
 	local sys = system.get_info()
-	local new_bin_path = dir .. sys.path_sep .. sys.python_parent_path
+	local new_bin_path = venv_path .. sys.path_sep .. sys.python_parent_path
 	local venv_python = new_bin_path .. sys.path_sep .. sys.python_name
 
-	M.set_pythonpath(venv_python)
-	print("VenvSelect: Activated '" .. venv_python .. "'.")
+	M.set_pythonpath(venv_python, venv_path)
+	-- print("VenvSelect: Activated '" .. venv_python .. "'.")
 
 	local current_system_path = vim.fn.getenv("PATH")
 	local prev_bin_path = M.current_bin_path
@@ -106,10 +106,10 @@ M.set_venv_and_paths = function(dir)
 	M.current_bin_path = new_bin_path
 
 	-- Set VIRTUAL_ENV
-	vim.fn.setenv("VIRTUAL_ENV", dir)
+	vim.fn.setenv("VIRTUAL_ENV", venv_path)
 
 	M.current_python_path = venv_python
-	M.current_venv = dir
+	M.current_venv = venv_path
 end
 
 -- Start a search for venvs in all directories under the nstart_dir
@@ -140,7 +140,7 @@ M.find_parent_venvs = function(parent_dir)
 end
 
 -- Hook into lspconfig so we can set the python to use.
-M.set_pythonpath = function(python_path)
+M.set_pythonpath = function(python_path, venv_path)
 	lspconfig.pyright.setup({
 		before_init = function(_, c)
 			c.settings.python.pythonPath = python_path
@@ -151,11 +151,11 @@ end
 -- Gets called when user hits enter in the Telescope results dialog
 M.activate_venv = function(prompt_bufnr)
 	-- dir has path to venv without slash at the end
-	local dir = telescope.actions_state.get_selected_entry().value
+	local venv_path = telescope.actions_state.get_selected_entry().value
 
-	if dir ~= nil then
-		telescope.actions.close(prompt_bufnr)
-		M.set_venv_and_paths(dir)
+	if venv_path ~= nil then
+		-- telescope.actions.close(prompt_bufnr)
+		M.set_venv_and_system_paths(venv_path)
 	end
 end
 
@@ -179,7 +179,7 @@ M.find_workspace_venvs = function()
 	local search_path_regexp = utils.create_fd_venv_names_regexp(config.settings.name)
 	local cmd = "fd -HItd --absolute-path --color never '" .. search_path_regexp .. "' " .. search_path_string
 	local openPop = assert(io.popen(cmd, "r"))
-	telescope.add_lines(openPop:lines(), "Workspace")
+	telescope.add_lines(openPop:lines(), "󰬞")
 	openPop:close()
 end
 
@@ -189,7 +189,7 @@ M.find_venv_manager_venvs = function()
 	local search_path_string = utils.create_fd_search_path_string(paths)
 	local cmd = "fd . -HItd --absolute-path --max-depth 1 --color never " .. search_path_string
 	local openPop = assert(io.popen(cmd, "r"))
-	telescope.add_lines(openPop:lines(), "Venv Manager")
+	telescope.add_lines(openPop:lines(), "󰬞")
 	openPop:close()
 end
 

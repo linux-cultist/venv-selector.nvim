@@ -62,6 +62,7 @@ return {
 		"<leader>vs", "<cmd>:VenvSelect<cr>"
 	}},
 	opts = {
+
 		-- auto_refresh (default: false). Will automatically start a new search every time VenvSelect is opened.
 		-- When its set to false, you can refresh the search manually by pressing ctrl-r. For most users this
 		-- is probably the best default setting since it takes time to search and you usually work within the same
@@ -100,6 +101,7 @@ return {
 
 		-- name (default: venv) - The name of the venv directories to look for. 
 		name = "venv" -- NOTE: You can also use a lua table here for multiple names: {"venv", ".venv"}`
+
 
 	}
 	event = "VeryLazy", -- Optional: needed only if you want to type `:VenvSelect` without a keymapping
@@ -117,6 +119,7 @@ return {
 	}},
 	config = function()
 		require("venv-selector").setup({
+
 		-- auto_refresh (default: false). Will automatically start a new search every time VenvSelect is opened.
 		-- When its set to false, you can refresh the search manually by pressing ctrl-r. For most users this
 		-- is probably the best default setting since it takes time to search and you usually work within the same
@@ -155,6 +158,7 @@ return {
 
 		-- name (default: venv) - The name of the venv directories to look for. 
 		name = "venv" -- NOTE: You can also use a lua table here for multiple names: {"venv", ".venv"}`
+
 		})
 	end
 	event = "VeryLazy", -- Optional: needed only if you want to type `:VenvSelect` without a keymapping

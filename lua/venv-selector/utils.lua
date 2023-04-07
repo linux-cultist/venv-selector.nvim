@@ -89,7 +89,9 @@ M.remove_last_slash = function(s)
 		return string.sub(s, 1, -2)
 	end
 
+
 	return s
+
 end
 
 return M

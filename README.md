@@ -62,6 +62,12 @@ return {
 		"<leader>vs", "<cmd>:VenvSelect<cr>"
 	}},
 	opts = {
+		-- auto_refresh (default: false). Will automatically start a new search every time VenvSelect is opened.
+		-- When its set to false, you can refresh the search manually by pressing ctrl-r. For most users this
+		-- is probably the best default setting since it takes time to search and you usually work within the same
+		-- directory structure all the time.
+		auto_refresh = false,
+
 		-- search_venv_managers (default: true). Will search for Poetry and Pipenv virtual environments in their
 		-- default location. If you dont use the default location, you can 
 		search_venv_managers = true,
@@ -72,16 +78,17 @@ return {
 		search_workspace = true,
 
 		-- path (optional, default not set). Absolute path on the file system where the plugin will look for venvs.
-		-- If you have venv folders in one specific path, you can set it here to look only in that path.
-		-- If you have many venv folders spread out across the file system, dont set this at all, and the
-		-- plugin will search for your venvs relative to what file is open in the current buffer.
-		path = "/home/username/your_venvs"
+		-- Only set this if your venvs are far away from the code you are working on for some reason. Otherwise its
+		-- probably better to let the VenvSelect search for venvs in parent folders (relative to your code). VenvSelect
+		-- searchs for your venvs in parent folders relative to what file is open in the current buffer, so you get
+		-- different results when searching depending on what file you are looking at. 
+		-- path = "/home/username/your_venvs",
 
 		-- search (default: true) - Search your computer for virtual environments outside of Poetry and Pipenv.
 		-- Used in combination with parents setting to decide how it searches.
 		-- You can set this to false to speed up the plugin if your virtual envs are in your workspace, or in Poetry
 		-- or Pipenv locations. No need to search if you know where they will be.
-		search = true
+		search = true,
 
 		-- parents (default: 2) - Used when search = true only. How many parent directories the plugin will go up
 		-- (relative to where your open file is on the file system when you run VenvSelect). Once the parent directory
@@ -110,6 +117,12 @@ return {
 	}},
 	config = function()
 		require("venv-selector").setup({
+		-- auto_refresh (default: false). Will automatically start a new search every time VenvSelect is opened.
+		-- When its set to false, you can refresh the search manually by pressing ctrl-r. For most users this
+		-- is probably the best default setting since it takes time to search and you usually work within the same
+		-- directory structure all the time.
+		auto_refresh = false,
+
 		-- search_venv_managers (default: true). Will search for Poetry and Pipenv virtual environments in their
 		-- default location. If you dont use the default location, you can 
 		search_venv_managers = true,
@@ -120,16 +133,17 @@ return {
 		search_workspace = true,
 
 		-- path (optional, default not set). Absolute path on the file system where the plugin will look for venvs.
-		-- If you have venv folders in one specific path, you can set it here to look only in that path.
-		-- If you have many venv folders spread out across the file system, dont set this at all, and the
-		-- plugin will search for your venvs relative to what file is open in the current buffer.
-		path = "/home/username/your_venvs"
+		-- Only set this if your venvs are far away from the code you are working on for some reason. Otherwise its
+		-- probably better to let the VenvSelect search for venvs in parent folders (relative to your code). VenvSelect
+		-- searchs for your venvs in parent folders relative to what file is open in the current buffer, so you get
+		-- different results when searching depending on what file you are looking at. 
+		-- path = "/home/username/your_venvs",
 
 		-- search (default: true) - Search your computer for virtual environments outside of Poetry and Pipenv.
 		-- Used in combination with parents setting to decide how it searches.
 		-- You can set this to false to speed up the plugin if your virtual envs are in your workspace, or in Poetry
 		-- or Pipenv locations. No need to search if you know where they will be.
-		search = true
+		search = true,
 
 		-- parents (default: 2) - Used when search = true only. How many parent directories the plugin will go up
 		-- (relative to where your open file is on the file system when you run VenvSelect). Once the parent directory

@@ -48,11 +48,7 @@ M.reload = function(action)
 					M.find_parent_venvs(M.path_to_search)
 				else
 					dbg("User refreshed results - buffer_dir is: " .. M.buffer_dir)
-					-- Telescope doesnt send the right path when doing a refresh so need to account for that
-					-- local search_path = config.get_search_path()
 					M.path_to_search = utils.find_parent_dir(M.buffer_dir, config.settings.parents)
-					-- M.find_parent_venvs(M.path_to_search)
-					-- M.path_to_search = utils.find_parent_dir(M.path_to_search, config.settings.parents)
 					M.find_parent_venvs(M.path_to_search)
 				end
 			else
@@ -69,12 +65,12 @@ end
 
 -- This gets called as soon as the parent venv search is done.
 M.find_other_venvs = function()
-	if config.settings.search_venv_managers == true then
-		M.find_venv_manager_venvs()
-	end
-
 	if config.settings.search_workspace == true then
 		M.find_workspace_venvs()
+	end
+
+	if config.settings.search_venv_managers == true then
+		M.find_venv_manager_venvs()
 	end
 
 	telescope.show_results()
@@ -84,13 +80,14 @@ end
 -- but inside the virtual environment, the actual python and its parent directory name
 -- differs between Linux, Mac and Windows. This function sets up the correct full path
 -- to python, adds it to the system path and sets the VIRTUAL_ENV variable.
-M.set_venv_and_system_paths = function(venv_path)
+M.set_venv_and_system_paths = function(venv_row)
 	local sys = system.get_info()
+	local venv_path = venv_row.value
 	local new_bin_path = venv_path .. sys.path_sep .. sys.python_parent_path
 	local venv_python = new_bin_path .. sys.path_sep .. sys.python_name
 
-	M.set_pythonpath(venv_python, venv_path)
-	-- print("VenvSelect: Activated '" .. venv_python .. "'.")
+	M.set_pythonpath(venv_python)
+	print("VenvSelect: Activated '" .. venv_python .. "'.")
 
 	local current_system_path = vim.fn.getenv("PATH")
 	local prev_bin_path = M.current_bin_path
@@ -110,6 +107,21 @@ M.set_venv_and_system_paths = function(venv_path)
 
 	M.current_python_path = venv_python
 	M.current_venv = venv_path
+end
+
+-- This function removes duplicate results when loading results into telescope
+M.prepare_results = function(results)
+	local hash = {}
+	local res = {}
+
+	for _, v in ipairs(results) do
+		if not hash[v.path] then
+			res[#res + 1] = v
+			hash[v.path] = true
+		end
+	end
+
+	return res
 end
 
 -- Start a search for venvs in all directories under the nstart_dir
@@ -140,7 +152,7 @@ M.find_parent_venvs = function(parent_dir)
 end
 
 -- Hook into lspconfig so we can set the python to use.
-M.set_pythonpath = function(python_path, venv_path)
+M.set_pythonpath = function(python_path)
 	lspconfig.pyright.setup({
 		before_init = function(_, c)
 			c.settings.python.pythonPath = python_path
@@ -149,14 +161,10 @@ M.set_pythonpath = function(python_path, venv_path)
 end
 
 -- Gets called when user hits enter in the Telescope results dialog
-M.activate_venv = function(prompt_bufnr)
+M.activate_venv = function()
 	-- dir has path to venv without slash at the end
-	local venv_path = telescope.actions_state.get_selected_entry().value
-
-	if venv_path ~= nil then
-		-- telescope.actions.close(prompt_bufnr)
-		M.set_venv_and_system_paths(venv_path)
-	end
+	local selected_venv = telescope.actions_state.get_selected_entry()
+	M.set_venv_and_system_paths(selected_venv)
 end
 
 function M.list_pyright_workspace_folders()
@@ -179,7 +187,7 @@ M.find_workspace_venvs = function()
 	local search_path_regexp = utils.create_fd_venv_names_regexp(config.settings.name)
 	local cmd = "fd -HItd --absolute-path --color never '" .. search_path_regexp .. "' " .. search_path_string
 	local openPop = assert(io.popen(cmd, "r"))
-	telescope.add_lines(openPop:lines(), "󰬞")
+	telescope.add_lines(openPop:lines(), "Workspace")
 	openPop:close()
 end
 
@@ -189,7 +197,7 @@ M.find_venv_manager_venvs = function()
 	local search_path_string = utils.create_fd_search_path_string(paths)
 	local cmd = "fd . -HItd --absolute-path --max-depth 1 --color never " .. search_path_string
 	local openPop = assert(io.popen(cmd, "r"))
-	telescope.add_lines(openPop:lines(), "󰬞")
+	telescope.add_lines(openPop:lines(), "VenvManager")
 	openPop:close()
 end
 

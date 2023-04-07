@@ -13,7 +13,7 @@ config.default_settings = {
 	poetry_path = system.get_venv_manager_default_path("Poetry"),
 	pipenv_path = system.get_venv_manager_default_path("Pipenv"),
 	enable_debug_output = false,
-	auto_refresh = true,
+	auto_refresh = false, -- Uses cached results from last search
 }
 
 -- Gets the search path supplied by the user in the setup function, or use current open buffer directory.

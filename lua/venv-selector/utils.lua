@@ -30,17 +30,6 @@ M.escape_pattern = function(text)
 	return text:gsub("([^%w])", "%%%1")
 end
 
-M.remove_duplicates_from_table = function(test)
-	local hash = {}
-	local res = {}
-	for _, v in ipairs(test) do
-		if not hash[v.path] then
-			res[#res + 1] = v
-			hash[v.path] = true
-		end
-	end
-	return res
-end
 
 -- Go up in the directory tree "limit" amount of times, and then returns the path.
 M.find_parent_dir = function(dir, limit)

@@ -15,7 +15,7 @@ M = {
 	end,
 	-- Gets the system path to current active python in the venv (or nil if its not activated)
 	get_active_path = function()
-		return venv.current_path
+		return venv.current_python_path
 	end,
 	-- Gets the system path to the current active venv (or nil if its not activated)
 	get_active_venv = function()

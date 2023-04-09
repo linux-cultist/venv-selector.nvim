@@ -169,6 +169,18 @@ return {
 }
 ```
 
+### Helpful functions
+
+The selected virtual environment and path to the python executable is available from these two functions:
+
+```
+require("venv-selector").get_active_path() -- Gives path to the python executable inside the activated virtual environment
+require("venv-selector").get_active_venv() -- Gives path to the activated virtual environment folder
+```
+
+This can be used to print out the virtual environment in a status bar, or make the plugin work with other plugins that
+want this information.
+
 ## ☄ Getting started
 
 Once the plugin has been installed, the `:VenvSelect` command is available.

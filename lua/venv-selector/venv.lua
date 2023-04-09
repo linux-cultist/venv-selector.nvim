@@ -7,7 +7,7 @@ local config = require("venv-selector.config")
 
 local M = {
 	current_python_path = nil, -- Contains path to current python if activated, nil otherwise
-	current_venv = nil, -- Contains path to current venv folder if activated, nil otherwise
+	current_venv = nil,     -- Contains path to current venv folder if activated, nil otherwise
 	current_bin_path = nil, -- Keeps track of old system path so we can remove it when adding a new one
 	fd_handle = nil,
 	path_to_search = nil,
@@ -41,7 +41,7 @@ M.reload = function(action)
 		telescope.remove_results()
 
 		-- Only search for parent venvs if search option is true
-		if config.settings.search == true or no_telescope_results then
+		if config.settings.search == true then
 			if act.force_refresh == true then
 				if M.path_to_search == nil then
 					dbg("No previous search path when asked to refresh results.")

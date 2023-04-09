@@ -3,6 +3,7 @@ local utils = require("venv-selector.utils")
 local dbg = require("venv-selector.utils").dbg
 local lspconfig = require("lspconfig")
 local telescope = require("venv-selector.telescope")
+local config = require("venv-selector.config")
 
 local M = {
 	current_python_path = nil, -- Contains path to current python if activated, nil otherwise
@@ -137,7 +138,7 @@ M.find_parent_venvs = function(parent_dir)
 	}
 
 	M.fd_handle = vim.loop.spawn(
-		"fd",
+		config.settings.fd_binary_name,
 		fdconfig,
 		vim.schedule_wrap(function() -- on exit
 			stdout:read_stop()
@@ -185,7 +186,11 @@ M.find_workspace_venvs = function()
 	local workspace_folders = M.list_pyright_workspace_folders()
 	local search_path_string = utils.create_fd_search_path_string(workspace_folders)
 	local search_path_regexp = utils.create_fd_venv_names_regexp(config.settings.name)
-	local cmd = "fd -HItd --absolute-path --color never '" .. search_path_regexp .. "' " .. search_path_string
+	local cmd = config.settings.fd_binary_name
+		.. " -HItd --absolute-path --color never '"
+		.. search_path_regexp
+		.. "' "
+		.. search_path_string
 	local openPop = assert(io.popen(cmd, "r"))
 	telescope.add_lines(openPop:lines(), "Workspace")
 	openPop:close()
@@ -195,7 +200,9 @@ end
 M.find_venv_manager_venvs = function()
 	local paths = { config.settings.poetry_path, config.settings.pipenv_path }
 	local search_path_string = utils.create_fd_search_path_string(paths)
-	local cmd = "fd . -HItd --absolute-path --max-depth 1 --color never " .. search_path_string
+	local cmd = config.settings.fd_binary_name
+		.. " . -HItd --absolute-path --max-depth 1 --color never "
+		.. search_path_string
 	local openPop = assert(io.popen(cmd, "r"))
 	telescope.add_lines(openPop:lines(), "VenvManager")
 	openPop:close()

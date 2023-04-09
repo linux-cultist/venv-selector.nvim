@@ -14,6 +14,7 @@ config.default_settings = {
 	pipenv_path = system.get_venv_manager_default_path("Pipenv"),
 	enable_debug_output = false,
 	auto_refresh = false, -- Uses cached results from last search
+	fd_binary_name = "fd",
 }
 
 -- Gets the search path supplied by the user in the setup function, or use current open buffer directory.

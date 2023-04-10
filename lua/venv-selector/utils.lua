@@ -30,7 +30,6 @@ M.escape_pattern = function(text)
 	return text:gsub("([^%w])", "%%%1")
 end
 
-
 -- Go up in the directory tree "limit" amount of times, and then returns the path.
 M.find_parent_dir = function(dir, limit)
 	for subdir in vim.fs.parents(dir) do
@@ -89,9 +88,7 @@ M.remove_last_slash = function(s)
 		return string.sub(s, 1, -2)
 	end
 
-
 	return s
-
 end
 
 return M

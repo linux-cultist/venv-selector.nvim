@@ -185,30 +185,38 @@ end
 M.find_workspace_venvs = function()
 	local workspace_folders = M.list_pyright_workspace_folders()
 	local search_path_string = utils.create_fd_search_path_string(workspace_folders)
-	local search_path_regexp = utils.create_fd_venv_names_regexp(config.settings.name)
-	local cmd = config.settings.fd_binary_name
-		.. " -HItd --absolute-path --color never '"
-		.. search_path_regexp
-		.. "' "
-		.. search_path_string
+	if search_path_string:len() ~= 0 then
+		local search_path_regexp = utils.create_fd_venv_names_regexp(config.settings.name)
+		local cmd = config.settings.fd_binary_name
+			.. " -HItd --absolute-path --color never '"
+			.. search_path_regexp
+			.. "' "
+			.. search_path_string
 
-	dbg("Running search for workspace venvs with: " .. cmd)
-	local openPop = assert(io.popen(cmd, "r"))
-	telescope.add_lines(openPop:lines(), "Workspace")
-	openPop:close()
+		dbg("Running search for workspace venvs with: " .. cmd)
+		local openPop = assert(io.popen(cmd, "r"))
+		telescope.add_lines(openPop:lines(), "Workspace")
+		openPop:close()
+	else
+		dbg("Found no workspaces to search for venvs.")
+	end
 end
 
 -- Look for Poetry and Pipenv managed venv directories and search them.
 M.find_venv_manager_venvs = function()
 	local paths = { config.settings.poetry_path, config.settings.pipenv_path }
 	local search_path_string = utils.create_fd_search_path_string(paths)
-	local cmd = config.settings.fd_binary_name
-		.. " . -HItd --absolute-path --max-depth 1 --color never "
-		.. search_path_string
-	dbg("Running search for venv manager venvs with: " .. cmd)
-	local openPop = assert(io.popen(cmd, "r"))
-	telescope.add_lines(openPop:lines(), "VenvManager")
-	openPop:close()
+	if search_path_string:len() ~= 0 then
+		local cmd = config.settings.fd_binary_name
+			.. " . -HItd --absolute-path --max-depth 1 --color never "
+			.. search_path_string
+		dbg("Running search for venv manager venvs with: " .. cmd)
+		local openPop = assert(io.popen(cmd, "r"))
+		telescope.add_lines(openPop:lines(), "VenvManager")
+		openPop:close()
+	else
+		dbg("Found no venv manager directories to search for venvs.")
+	end
 end
 
 return M

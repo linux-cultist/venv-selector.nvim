@@ -88,7 +88,7 @@ M.set_venv_and_system_paths = function(venv_row)
 	local venv_python = new_bin_path .. sys.path_sep .. sys.python_name
 
 	M.set_pythonpath(venv_python)
-	print("VenvSelect: Activated '" .. venv_python .. "'.")
+	vim.notify("VenvSelect: Activated '" .. venv_python .. "'.", vim.log.levels.INFO, { title = "VenvManager" })
 
 	local current_system_path = vim.fn.getenv("PATH")
 	local prev_bin_path = M.current_bin_path

@@ -154,8 +154,19 @@ end
 
 -- Hook into lspconfig so we can set the python to use.
 M.set_pythonpath = function(python_path)
-	vim.cmd.PyrightSetPythonPath(python_path)
-	vim.cmd.LspRestart()
+	vim.api.nvim_create_autocmd(
+		{ "BufReadPost" }, {
+			pattern = { "*.py" },
+			callback = function()
+				for _, client in ipairs(vim.lsp.get_active_clients({ name = "pyright", bufnr = vim.api.nvim_get_current_buf() })) do
+					client.config.settings = vim.tbl_deep_extend("force", client.config.settings,
+						{ python = { pythonPath = python_path } })
+					client.notify("workspace/didChangeConfiguration", { settings = nil })
+					vim.notify("VenvSelect: Set pythonPath to '" .. python_path .. "' for pyright.", vim.log.levels.INFO,
+						{ title = "VenvSelect" })
+				end
+			end,
+		})
 end
 
 -- Gets called when user hits enter in the Telescope results dialog

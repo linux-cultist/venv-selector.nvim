@@ -33,4 +33,3 @@ M = {
 }
 
 return M
--- VS.setup()

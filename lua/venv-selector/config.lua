@@ -1,6 +1,6 @@
 local system = require("venv-selector.system")
 local user = vim.fn.getenv("USER")
-config = {
+local config = {
 	settings = {},
 }
 

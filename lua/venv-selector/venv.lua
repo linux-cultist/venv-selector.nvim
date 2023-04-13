@@ -11,6 +11,7 @@ local M = {
 	fd_handle = nil,
 	path_to_search = nil,
 	buffer_dir = nil,
+	cwd = vim.fn.getcwd()
 }
 
 M.reload = function(action)
@@ -86,7 +87,7 @@ M.set_venv_and_system_paths = function(venv_row)
 	local venv_python = new_bin_path .. sys.path_sep .. sys.python_name
 
 	M.set_pythonpath(venv_python)
-	vim.notify("VenvSelect: Activated '" .. venv_python .. "'.", vim.log.levels.INFO, { title = "VenvSelect" })
+	utils.notify("Activated '" .. venv_python)
 
 	local current_system_path = vim.fn.getenv("PATH")
 	local prev_bin_path = M.current_bin_path
@@ -156,12 +157,13 @@ M.set_pythonpath = function(python_path)
 		{ "BufReadPost" }, {
 			pattern = { "*.py" },
 			callback = function()
-				for _, client in ipairs(vim.lsp.get_active_clients({ name = "pyright", bufnr = vim.api.nvim_get_current_buf() })) do
+				for _, client in ipairs(vim.lsp.get_active_clients({
+					name = "pyright",
+					bufnr = vim.api.nvim_get_current_buf(),
+				})) do
 					client.config.settings = vim.tbl_deep_extend("force", client.config.settings,
 						{ python = { pythonPath = python_path } })
 					client.notify("workspace/didChangeConfiguration", { settings = nil })
-					vim.notify("VenvSelect: Set pythonPath to '" .. python_path .. "' for pyright.", vim.log.levels.INFO,
-						{ title = "VenvSelect" })
 				end
 			end,
 		})
@@ -231,21 +233,33 @@ M.retrieve_from_cache = function()
 		local cache_file = vim.fn.readfile(config.settings.cache_file)
 		if cache_file ~= nil and cache_file[1] ~= nil then
 			local venv_cache = vim.fn.json_decode(cache_file[1])
-			if venv_cache ~= nil and venv_cache.cwd == vim.fn.getcwd() then
-				M.set_venv_and_system_paths(venv_cache.venv)
+			if venv_cache ~= nil and venv_cache[M.cwd] ~= nil then
+				M.set_venv_and_system_paths(venv_cache[M.cwd])
+				return
 			end
 		end
 	end
+	utils.error("Error reading cache")
 end
 
 M.cache_venv = function(venv)
 	local venv_cache = {
-		cwd = vim.fn.getcwd(),
-		venv = { value = venv.value },
+		[M.cwd] = { value = venv.value },
 	}
-	local venv_cache_json = vim.fn.json_encode(venv_cache)
 	if vim.fn.filewritable(config.settings.cache_file) == 0 then
 		vim.fn.mkdir(vim.fn.expand(config.settings.cache_dir), "p")
+	end
+	local venv_cache_json = nil
+	if vim.fn.filereadable(config.settings.cache_file) == 1 then
+		-- if cache file exists and is not empty read it and merge it with the new cache
+		local cached_file = vim.fn.readfile(config.settings.cache_file)
+		if cached_file ~= nil and cached_file[1] ~= nil then
+			local cached_json = vim.fn.json_decode(cached_file[1])
+			local merged_cache = vim.tbl_deep_extend("force", cached_json, venv_cache)
+			venv_cache_json = vim.fn.json_encode(merged_cache)
+		end
+	else
+		venv_cache_json = vim.fn.json_encode(venv_cache)
 	end
 	vim.fn.writefile({ venv_cache_json }, config.settings.cache_file)
 end

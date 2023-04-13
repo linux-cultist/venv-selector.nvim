@@ -16,6 +16,7 @@ Browse existing python virtual environments on your computer and select one to a
 
 - Plug and play, no configuration required
 - Switch back and forth between virtual environments without restarting neovim
+- Cached virtual environment that ties to your workspace for easy activation subsequently
 - Requires [fd](https://github.com/sharkdp/fd) and
   [Telescope](https://github.com/nvim-telescope/telescope.nvim) for fast searches, and visual pickers.
 
@@ -46,6 +47,8 @@ return {
 	config = true,
 	event = "VeryLazy", -- Optional: needed only if you want to type `:VenvSelect` without a keymapping
 	keys = {{
+		"<leader>vs", "<cmd>:VenvSelect<cr>",
+		-- key mapping for directly retrieve from cache. You may set autocmd if you prefer the no hand approach
 		"<leader>vs", "<cmd>:VenvSelect<cr>"
 	}}
 }
@@ -59,7 +62,8 @@ return {
 	dependencies = { "neovim/nvim-lspconfig", "nvim-telescope/telescope.nvim" },
 	config = true,
 	keys = {{
-		"<leader>vs", "<cmd>:VenvSelect<cr>"
+		"<leader>vs", "<cmd>:VenvSelect<cr>",
+		"<leader>vc", "<cmd>:VenvSelect<cr>"
 	}},
 	opts = {
 
@@ -70,7 +74,7 @@ return {
 		auto_refresh = false,
 
 		-- search_venv_managers (default: true). Will search for Poetry and Pipenv virtual environments in their
-		-- default location. If you dont use the default location, you can 
+		-- default location. If you dont use the default location, you can
 		search_venv_managers = true,
 
 		-- search_workspace (default: true). Your lsp has the concept of "workspaces" (project folders), and
@@ -82,7 +86,7 @@ return {
 		-- Only set this if your venvs are far away from the code you are working on for some reason. Otherwise its
 		-- probably better to let the VenvSelect search for venvs in parent folders (relative to your code). VenvSelect
 		-- searchs for your venvs in parent folders relative to what file is open in the current buffer, so you get
-		-- different results when searching depending on what file you are looking at. 
+		-- different results when searching depending on what file you are looking at.
 		-- path = "/home/username/your_venvs",
 
 		-- search (default: true) - Search your computer for virtual environments outside of Poetry and Pipenv.
@@ -99,7 +103,7 @@ return {
 		-- directories.
 		parents = 2,
 
-		-- name (default: venv) - The name of the venv directories to look for. 
+		-- name (default: venv) - The name of the venv directories to look for.
 		name = "venv", -- NOTE: You can also use a lua table here for multiple names: {"venv", ".venv"}`
 
 		-- fd_binary_name (default: fd) - The name of the fd binary on your system.
@@ -129,7 +133,7 @@ return {
 		auto_refresh = false,
 
 		-- search_venv_managers (default: true). Will search for Poetry and Pipenv virtual environments in their
-		-- default location. If you dont use the default location, you can 
+		-- default location. If you dont use the default location, you can
 		search_venv_managers = true,
 
 		-- search_workspace (default: true). Your lsp has the concept of "workspaces" (project folders), and
@@ -141,7 +145,7 @@ return {
 		-- Only set this if your venvs are far away from the code you are working on for some reason. Otherwise its
 		-- probably better to let the VenvSelect search for venvs in parent folders (relative to your code). VenvSelect
 		-- searchs for your venvs in parent folders relative to what file is open in the current buffer, so you get
-		-- different results when searching depending on what file you are looking at. 
+		-- different results when searching depending on what file you are looking at.
 		-- path = "/home/username/your_venvs",
 
 		-- search (default: true) - Search your computer for virtual environments outside of Poetry and Pipenv.
@@ -158,7 +162,7 @@ return {
 		-- directories.
 		parents = 2,
 
-		-- name (default: venv) - The name of the venv directories to look for. 
+		-- name (default: venv) - The name of the venv directories to look for.
 		name = "venv", -- NOTE: You can also use a lua table here for multiple names: {"venv", ".venv"}`
 
 		-- fd_binary_name (default: fd) - The name of the fd binary on your system.

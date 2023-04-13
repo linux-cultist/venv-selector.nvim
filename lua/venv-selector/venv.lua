@@ -1,7 +1,6 @@
 local system = require("venv-selector.system")
 local utils = require("venv-selector.utils")
 local dbg = require("venv-selector.utils").dbg
-local lspconfig = require("lspconfig")
 local telescope = require("venv-selector.telescope")
 local config = require("venv-selector.config")
 
@@ -20,7 +19,6 @@ M.reload = function(action)
 	local dont_refresh_telescope = config.settings.auto_refresh == false and act.force_refresh ~= true
 	local ready_for_new_search = M.fd_handle == nil or M.fd_handle:is_closing() == true
 	local no_telescope_results = next(telescope.results) == nil
-
 	-- This is needed because Telescope doesnt send the right buffer path when doing a refresh, so we use
 	-- the path from the original loading of content to refresh.
 	if act.force_refresh ~= true then
@@ -88,7 +86,7 @@ M.set_venv_and_system_paths = function(venv_row)
 	local venv_python = new_bin_path .. sys.path_sep .. sys.python_name
 
 	M.set_pythonpath(venv_python)
-	print("VenvSelect: Activated '" .. venv_python .. "'.")
+	vim.notify("VenvSelect: Activated '" .. venv_python .. "'.", vim.log.levels.INFO, { title = "VenvSelect" })
 
 	local current_system_path = vim.fn.getenv("PATH")
 	local prev_bin_path = M.current_bin_path
@@ -174,6 +172,7 @@ M.activate_venv = function()
 	-- dir has path to venv without slash at the end
 	local selected_venv = telescope.actions_state.get_selected_entry()
 	M.set_venv_and_system_paths(selected_venv)
+	M.cache_venv(selected_venv)
 end
 
 function M.list_pyright_workspace_folders()
@@ -225,6 +224,30 @@ M.find_venv_manager_venvs = function()
 	else
 		dbg("Found no venv manager directories to search for venvs.")
 	end
+end
+
+M.retrieve_from_cache = function()
+	if vim.fn.filereadable(config.settings.cache_file) == 1 then
+		local cache_file = vim.fn.readfile(config.settings.cache_file)
+		if cache_file ~= nil and cache_file[1] ~= nil then
+			local venv_cache = vim.fn.json_decode(cache_file[1])
+			if venv_cache ~= nil and venv_cache.cwd == vim.fn.getcwd() then
+				M.set_venv_and_system_paths(venv_cache.venv)
+			end
+		end
+	end
+end
+
+M.cache_venv = function(venv)
+	local venv_cache = {
+		cwd = vim.fn.getcwd(),
+		venv = { value = venv.value },
+	}
+	local venv_cache_json = vim.fn.json_encode(venv_cache)
+	if vim.fn.filewritable(config.settings.cache_file) == 0 then
+		vim.fn.mkdir(vim.fn.expand(config.settings.cache_dir), "p")
+	end
+	vim.fn.writefile({ venv_cache_json }, config.settings.cache_file)
 end
 
 return M

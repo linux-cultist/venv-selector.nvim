@@ -1,4 +1,5 @@
 local system = require("venv-selector.system")
+local user = vim.fn.getenv("USER")
 config = {
 	settings = {},
 }
@@ -15,6 +16,8 @@ config.default_settings = {
 	enable_debug_output = false,
 	auto_refresh = false, -- Uses cached results from last search
 	fd_binary_name = "fd",
+	cache_file = "/home/" .. user .. "/.cache/venv-selector/venvs.json",
+	cache_dir = "/home/" .. user .. "/.cache/venv-selector",
 }
 
 -- Gets the search path supplied by the user in the setup function, or use current open buffer directory.

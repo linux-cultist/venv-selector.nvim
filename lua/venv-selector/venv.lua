@@ -89,6 +89,7 @@ M.set_venv_and_system_paths = function(venv_row)
 	M.set_pythonpath(venv_python)
 	utils.notify("Activated '" .. venv_python)
 
+
 	local current_system_path = vim.fn.getenv("PATH")
 	local prev_bin_path = M.current_bin_path
 

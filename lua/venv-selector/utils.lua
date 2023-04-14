@@ -91,6 +91,10 @@ M.remove_last_slash = function(s)
 	return s
 end
 
+--- source: http://lua-users.org/wiki/CopyTable
+--- Makes a deep copy of the `orig` table. Should be called only with `orig` param,
+--- `copies` is used internally to cache copied tables when recursing
+--- @type fun(orig: table, copies: table[]?): table
 M.deep_copy = function(orig, copies)
 	copies = copies or {}
 	local orig_type = type(orig)
@@ -110,6 +114,12 @@ M.deep_copy = function(orig, copies)
 		copy = orig
 	end
 	return copy
+end
+
+--- Checks whether `haystack` string starts with `needle` prefix
+--- @type fun(haystack: string, needle: string): boolean
+M.starts_with = function(haystack, needle)
+	return string.sub(haystack, 1, string.len(needle)) == needle
 end
 
 return M

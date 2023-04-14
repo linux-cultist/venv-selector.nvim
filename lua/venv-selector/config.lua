@@ -18,6 +18,7 @@ config.default_settings = {
 	fd_binary_name = "fd",
 	cache_file = "/home/" .. user .. "/.cache/venv-selector/venvs.json",
 	cache_dir = "/home/" .. user .. "/.cache/venv-selector",
+	dap_enabled = false,
 }
 
 -- Gets the search path supplied by the user in the setup function, or use current open buffer directory.

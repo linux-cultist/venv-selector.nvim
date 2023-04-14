@@ -59,7 +59,12 @@ If you want to change the default options, you can add an opts table like this:
 ```lua
 return {
 	"linux-cultist/venv-selector.nvim",
-	dependencies = { "neovim/nvim-lspconfig", "nvim-telescope/telescope.nvim" },
+	dependencies = {
+		"neovim/nvim-lspconfig",
+		"nvim-telescope/telescope.nvim",
+		-- for DAP support
+		"mfussenegger/nvim-dap-python"
+		},
 	config = true,
 	keys = {{
 		"<leader>vs", "<cmd>:VenvSelect<cr>",
@@ -94,6 +99,12 @@ return {
 		-- You can set this to false to speed up the plugin if your virtual envs are in your workspace, or in Poetry
 		-- or Pipenv locations. No need to search if you know where they will be.
 		search = true,
+
+		-- dap_enabled (default: false) Configure Debugger to use virtualvenv to run debugger.
+		-- require nvim-dap-python from https://github.com/mfussenegger/nvim-dap-python
+		-- require debugpy from https://github.com/microsoft/debugpy
+		-- require nvim-dap from https://github.com/mfussenegger/nvim-dap
+		dap_enabled = false
 
 		-- parents (default: 2) - Used when search = true only. How many parent directories the plugin will go up
 		-- (relative to where your open file is on the file system when you run VenvSelect). Once the parent directory
@@ -287,3 +298,5 @@ Note: You need [fd](https://github.com/sharkdp/fd) installed on your system. Thi
 the virtual environments as fast as possible.
 
 Telescope is also needed to let you pick a virtual environment to use.
+
+[nvim-python-dap](https://github.com/mfussenegger/nvim-dap-python) is required for DAP function. Enable DAP at config.

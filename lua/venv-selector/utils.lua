@@ -91,4 +91,25 @@ M.remove_last_slash = function(s)
 	return s
 end
 
+M.deep_copy = function(orig, copies)
+	copies = copies or {}
+	local orig_type = type(orig)
+	local copy
+	if orig_type == "table" then
+		if copies[orig] then
+			copy = copies[orig]
+		else
+			copy = {}
+			copies[orig] = copy
+			for orig_key, orig_value in next, orig, nil do
+				copy[M.deep_copy(orig_key, copies)] = M.deep_copy(orig_value, copies)
+			end
+			setmetatable(copy, M.deep_copy(getmetatable(orig), copies))
+		end
+	else -- number, string, boolean, etc
+		copy = orig
+	end
+	return copy
+end
+
 return M

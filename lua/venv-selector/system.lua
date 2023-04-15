@@ -56,24 +56,4 @@ M.get_info = function()
 	}
 end
 
---- Returns a table of files and directories in specified directory.
---- Doesn't recurse so only immediate children will be returned.
---- @type fun(dirname: string): string[]
-M.list_directory = function(dirname)
-	local results = {}
-
-	local list_cmd
-	if M.sysname == "Linux" or M.sysname == "Darwin" then
-		list_cmd = "ls -1"
-	else
-		list_cmd = "dir /B"
-	end
-
-	for filename in io.popen(list_cmd .. " " .. dirname):lines() do
-		table.insert(results, filename)
-	end
-
-	return results
-end
-
 return M

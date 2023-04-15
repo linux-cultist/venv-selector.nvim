@@ -40,12 +40,12 @@ M.pylsp_hook = function(venv_path, _)
 	execute_for_client("pylsp", function(pylsp)
 		local settings = vim.deepcopy(pylsp.config.settings)
 		local lib_path = venv_path .. sys.path_sep .. "lib" .. sys.path_sep
-		local directories = system.list_directory(lib_path)
+		local directories = vim.fs.dir(lib_path)
 		local site_packages = nil
 
-		for _, directory in ipairs(directories) do
-			if utils.starts_with(directory, "python") then
-				site_packages = lib_path .. sys.path_sep .. directory .. sys.path_sep .. "site-packages"
+		for filename, _ in directories do
+			if utils.starts_with(filename, "python") then
+				site_packages = lib_path .. sys.path_sep .. filename .. sys.path_sep .. "site-packages"
 			end
 		end
 

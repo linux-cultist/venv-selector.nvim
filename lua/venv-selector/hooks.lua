@@ -20,10 +20,8 @@ end
 --- @alias VenvChangedHook fun(venv_path: string, venv_python: string): nil
 --- @type VenvChangedHook
 M.pyright_hook = function(_, venv_python)
-	local utils = require("venv-selector.utils")
-
 	execute_for_client("pyright", function(pyright)
-		local settings = utils.deep_copy(pyright.config.settings)
+		local settings = vim.deepcopy(pyright.config.settings)
 		lspconfig.pyright.setup({
 			settings = settings,
 			before_init = function(_, c)
@@ -40,7 +38,7 @@ M.pylsp_hook = function(venv_path, _)
 	local sys = system.get_info()
 
 	execute_for_client("pylsp", function(pylsp)
-		local settings = utils.deep_copy(pylsp.config.settings)
+		local settings = vim.deepcopy(pylsp.config.settings)
 		local lib_path = venv_path .. sys.path_sep .. "lib" .. sys.path_sep
 		local directories = system.list_directory(lib_path)
 		local site_packages = nil

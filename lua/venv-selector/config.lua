@@ -1,4 +1,6 @@
 local system = require("venv-selector.system")
+local hooks = require("venv-selector.hooks")
+
 config = {
 	settings = {},
 }
@@ -15,6 +17,7 @@ config.default_settings = {
 	enable_debug_output = false,
 	auto_refresh = false, -- Uses cached results from last search
 	fd_binary_name = "fd",
+	changed_venv_hooks = { hooks.pyright_hook, hooks.pylsp_hook },
 }
 
 -- Gets the search path supplied by the user in the setup function, or use current open buffer directory.

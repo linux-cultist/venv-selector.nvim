@@ -21,7 +21,8 @@ Browse existing python virtual environments on your computer and select one to a
 
 ## 📋 Installation and Configuration
 
-**IMPORTANT**: The plugin works by using **pyright** lsp server, so pyright needs to be installed and pre-configured with nvim-lspconfig
+The plugin works with **pyright** and **pylsp** lsp servers. If you want to take advantage of this plugin's default behaviour, you need to have either of them installed
+and configured using [lspconfig](https://github.com/neovim/nvim-lspconfig). If you want to use custom integration, see [hooks section](#hooks)
 before using this plugin. You can see example setup instructions here: https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#pyright
 
 ### Using [folke/lazy.nvim](https://github.com/folke/lazy.nvim)
@@ -168,6 +169,45 @@ return {
 	event = "VeryLazy", -- Optional: needed only if you want to type `:VenvSelect` without a keymapping
 }
 ```
+
+### Hooks
+
+By default, the plugin tries to setup `pyright` and `pylsp` automatically using hooks. If you want to add a custom integration, you need to write
+a hook with following signature:
+
+```lua
+--- @param venv_path string A string containing the absolute path to selected virtualenv
+--- @param venv_python string A string containing the absolute path to python binary in selected venv
+function your_hook_name(venv_path, venv_python)
+	--- your custom integration here
+end
+```
+
+And provide it to a setup function:
+
+```lua
+require("venv-selector").setup({
+	--- other configuration
+	changed_venv_hooks = { your_hook_name }
+})
+```
+
+The plugin-provided hooks are exposed for convenience in case you want to use them alongside your custom one:
+
+```lua
+local venv_selector = require("venv-selector")
+
+venv_selector.setup({
+	--- other configuration
+	changed_venv_hooks = { your_hook_name, venv_selector.hooks.pyright }
+})
+```
+
+Currently provided hooks are:
+
+* `require("venv-selector").hooks.pyright`
+* `require("venv-selector").hooks.pylsp`
+
 
 ### Helpful functions
 

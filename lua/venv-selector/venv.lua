@@ -1,7 +1,6 @@
 local system = require("venv-selector.system")
 local utils = require("venv-selector.utils")
 local dbg = require("venv-selector.utils").dbg
-local lspconfig = require("lspconfig")
 local telescope = require("venv-selector.telescope")
 local config = require("venv-selector.config")
 
@@ -87,7 +86,10 @@ M.set_venv_and_system_paths = function(venv_row)
 	local new_bin_path = venv_path .. sys.path_sep .. sys.python_parent_path
 	local venv_python = new_bin_path .. sys.path_sep .. sys.python_name
 
-	M.set_pythonpath(venv_python)
+	for _, hook in ipairs(config.settings.changed_venv_hooks) do
+		hook(venv_path, venv_python)
+	end
+
 	vim.notify("VenvSelect: Activated '" .. venv_python .. "'.", vim.log.levels.INFO, { title = "VenvSelect" })
 
 	local current_system_path = vim.fn.getenv("PATH")
@@ -150,15 +152,6 @@ M.find_parent_venvs = function(parent_dir)
 		end)
 	)
 	vim.loop.read_start(stdout, telescope.on_read)
-end
-
--- Hook into lspconfig so we can set the python to use.
-M.set_pythonpath = function(python_path)
-	lspconfig.pyright.setup({
-		before_init = function(_, c)
-			c.settings.python.pythonPath = python_path
-		end,
-	})
 end
 
 -- Gets called when user hits enter in the Telescope results dialog

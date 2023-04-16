@@ -90,13 +90,12 @@ M.set_venv_and_system_paths = function(venv_row)
 	if config.settings.dap_enabled == true then
 		M.setup_dap_venv(venv_python)
 	end
+
 	utils.notify("Activated '" .. venv_python)
 
 	for _, hook in ipairs(config.settings.changed_venv_hooks) do
 		hook(venv_path, venv_python)
 	end
-
-	vim.notify("VenvSelect: Activated '" .. venv_python .. "'.", vim.log.levels.INFO, { title = "VenvSelect" })
 
 	local current_system_path = vim.fn.getenv("PATH")
 	local prev_bin_path = M.current_bin_path

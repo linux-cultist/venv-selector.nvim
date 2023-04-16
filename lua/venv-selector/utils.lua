@@ -99,4 +99,10 @@ M.remove_last_slash = function(s)
 	return s
 end
 
+--- Checks whether `haystack` string starts with `needle` prefix
+--- @type fun(haystack: string, needle: string): boolean
+M.starts_with = function(haystack, needle)
+	return string.sub(haystack, 1, string.len(needle)) == needle
+end
+
 return M

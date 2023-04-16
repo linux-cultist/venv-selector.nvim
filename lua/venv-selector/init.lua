@@ -2,6 +2,7 @@ local venv = require("venv-selector.venv")
 local config = require("venv-selector.config")
 local user_commands = require("venv-selector.user_commands")
 local dbg = require("venv-selector.utils").dbg
+local hooks = require("venv-selector.hooks")
 
 M = {
 	-- Called by user when using the plugin.
@@ -27,9 +28,16 @@ M = {
 	reload = function()
 		venv.reload()
 	end,
+
 	retrieve_from_cache = function()
 		return venv.retrieve_from_cache()
 	end,
+  
+	hooks = {
+		pyright = hooks.pyright_hook,
+		pylsp = hooks.pylsp_hook,
+	},
+
 }
 
 return M

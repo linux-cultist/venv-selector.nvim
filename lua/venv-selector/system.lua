@@ -51,6 +51,11 @@ M.get_cache_default_path = function()
 end
 
 M.get_info = function()
+	--- @class SystemInfo
+	--- @field sysname string System namme
+	--- @field path_sep string Path separator appropriate for user system
+	--- @field python_name string Name of Python binary
+	--- @field python_parent_path string Directory containing Python binary on user system
 	return {
 		sysname = vim.loop.os_uname().sysname,
 		path_sep = M.get_path_separator(),

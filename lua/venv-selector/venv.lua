@@ -6,12 +6,12 @@ local config = require("venv-selector.config")
 
 local M = {
 	current_python_path = nil, -- Contains path to current python if activated, nil otherwise
-	current_venv = nil,       -- Contains path to current venv folder if activated, nil otherwise
-	current_bin_path = nil,   -- Keeps track of old system path so we can remove it when adding a new one
+	current_venv = nil, -- Contains path to current venv folder if activated, nil otherwise
+	current_bin_path = nil, -- Keeps track of old system path so we can remove it when adding a new one
 	fd_handle = nil,
 	path_to_search = nil,
 	buffer_dir = nil,
-	cwd = vim.fn.getcwd()
+	cwd = vim.fn.getcwd(),
 }
 
 M.reload = function(action)
@@ -162,20 +162,21 @@ end
 
 -- Hook into lspconfig so we can set the python to use.
 M.set_pythonpath = function(python_path)
-	vim.api.nvim_create_autocmd(
-		{ "BufReadPost" }, {
-			pattern = { "*.py" },
-			callback = function()
-				for _, client in ipairs(vim.lsp.get_active_clients({
+	vim.api.nvim_create_autocmd({ "BufReadPost" }, {
+		pattern = { "*.py" },
+		callback = function()
+			for _, client in
+				ipairs(vim.lsp.get_active_clients({
 					name = "pyright",
 					bufnr = vim.api.nvim_get_current_buf(),
-				})) do
-					client.config.settings = vim.tbl_deep_extend("force", client.config.settings,
-						{ python = { pythonPath = python_path } })
-					client.notify("workspace/didChangeConfiguration", { settings = nil })
-				end
-			end,
-		})
+				}))
+			do
+				client.config.settings =
+					vim.tbl_deep_extend("force", client.config.settings, { python = { pythonPath = python_path } })
+				client.notify("workspace/didChangeConfiguration", { settings = nil })
+			end
+		end,
+	})
 end
 
 -- Gets called when user hits enter in the Telescope results dialog
@@ -206,10 +207,10 @@ M.find_workspace_venvs = function()
 	if search_path_string:len() ~= 0 then
 		local search_path_regexp = utils.create_fd_venv_names_regexp(config.settings.name)
 		local cmd = config.settings.fd_binary_name
-				.. " -HItd --absolute-path --color never '"
-				.. search_path_regexp
-				.. "' "
-				.. search_path_string
+			.. " -HItd --absolute-path --color never '"
+			.. search_path_regexp
+			.. "' "
+			.. search_path_string
 
 		dbg("Running search for workspace venvs with: " .. cmd)
 		local openPop = assert(io.popen(cmd, "r"))
@@ -226,8 +227,8 @@ M.find_venv_manager_venvs = function()
 	local search_path_string = utils.create_fd_search_path_string(paths)
 	if search_path_string:len() ~= 0 then
 		local cmd = config.settings.fd_binary_name
-				.. " . -HItd --absolute-path --max-depth 1 --color never "
-				.. search_path_string
+			.. " . -HItd --absolute-path --max-depth 1 --color never "
+			.. search_path_string
 		dbg("Running search for venv manager venvs with: " .. cmd)
 		local openPop = assert(io.popen(cmd, "r"))
 		telescope.add_lines(openPop:lines(), "VenvManager")
@@ -238,7 +239,7 @@ M.find_venv_manager_venvs = function()
 end
 
 M.setup_dap_venv = function(venv_python)
-	require('dap-python').resolve_python = function()
+	require("dap-python").resolve_python = function()
 		return venv_python
 	end
 end

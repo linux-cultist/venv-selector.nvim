@@ -16,8 +16,8 @@ config.default_settings = {
 	enable_debug_output = false,
 	auto_refresh = false, -- Uses cached results from last search
 	fd_binary_name = "fd",
-	cache_file = "/home/" .. user .. "/.cache/venv-selector/venvs.json",
-	cache_dir = "/home/" .. user .. "/.cache/venv-selector",
+	cache_file = system.get_cache_default_path() .. "venvs.json",
+	cache_dir = system.get_cache_default_path(),
 	dap_enabled = false,
 }
 

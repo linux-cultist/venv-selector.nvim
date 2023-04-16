@@ -68,7 +68,7 @@ return {
 	config = true,
 	keys = {{
 		"<leader>vs", "<cmd>:VenvSelect<cr>",
-		"<leader>vc", "<cmd>:VenvSelect<cr>"
+		"<leader>vc", "<cmd>:VenvSelectCached<cr>"
 	}},
 	opts = {
 

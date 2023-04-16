@@ -11,6 +11,7 @@ local M = {
 	fd_handle = nil,
 	path_to_search = nil,
 	buffer_dir = nil,
+	cwd = vim.fn.getcwd()
 }
 
 M.reload = function(action)
@@ -19,7 +20,6 @@ M.reload = function(action)
 	local dont_refresh_telescope = config.settings.auto_refresh == false and act.force_refresh ~= true
 	local ready_for_new_search = M.fd_handle == nil or M.fd_handle:is_closing() == true
 	local no_telescope_results = next(telescope.results) == nil
-
 	-- This is needed because Telescope doesnt send the right buffer path when doing a refresh, so we use
 	-- the path from the original loading of content to refresh.
 	if act.force_refresh ~= true then
@@ -85,6 +85,12 @@ M.set_venv_and_system_paths = function(venv_row)
 	local venv_path = venv_row.value
 	local new_bin_path = venv_path .. sys.path_sep .. sys.python_parent_path
 	local venv_python = new_bin_path .. sys.path_sep .. sys.python_name
+
+	M.set_pythonpath(venv_python)
+	if config.settings.dap_enabled == true then
+		M.setup_dap_venv(venv_python)
+	end
+	utils.notify("Activated '" .. venv_python)
 
 	for _, hook in ipairs(config.settings.changed_venv_hooks) do
 		hook(venv_path, venv_python)
@@ -154,11 +160,30 @@ M.find_parent_venvs = function(parent_dir)
 	vim.loop.read_start(stdout, telescope.on_read)
 end
 
+-- Hook into lspconfig so we can set the python to use.
+M.set_pythonpath = function(python_path)
+	vim.api.nvim_create_autocmd(
+		{ "BufReadPost" }, {
+			pattern = { "*.py" },
+			callback = function()
+				for _, client in ipairs(vim.lsp.get_active_clients({
+					name = "pyright",
+					bufnr = vim.api.nvim_get_current_buf(),
+				})) do
+					client.config.settings = vim.tbl_deep_extend("force", client.config.settings,
+						{ python = { pythonPath = python_path } })
+					client.notify("workspace/didChangeConfiguration", { settings = nil })
+				end
+			end,
+		})
+end
+
 -- Gets called when user hits enter in the Telescope results dialog
 M.activate_venv = function()
 	-- dir has path to venv without slash at the end
 	local selected_venv = telescope.actions_state.get_selected_entry()
 	M.set_venv_and_system_paths(selected_venv)
+	M.cache_venv(selected_venv)
 end
 
 function M.list_pyright_workspace_folders()
@@ -210,6 +235,48 @@ M.find_venv_manager_venvs = function()
 	else
 		dbg("Found no venv manager directories to search for venvs.")
 	end
+end
+
+M.setup_dap_venv = function(venv_python)
+	require('dap-python').resolve_python = function()
+		return venv_python
+	end
+end
+
+M.retrieve_from_cache = function()
+	if vim.fn.filereadable(config.settings.cache_file) == 1 then
+		local cache_file = vim.fn.readfile(config.settings.cache_file)
+		if cache_file ~= nil and cache_file[1] ~= nil then
+			local venv_cache = vim.fn.json_decode(cache_file[1])
+			if venv_cache ~= nil and venv_cache[M.cwd] ~= nil then
+				M.set_venv_and_system_paths(venv_cache[M.cwd])
+				return
+			end
+		end
+	end
+	utils.error("Error reading cache")
+end
+
+M.cache_venv = function(venv)
+	local venv_cache = {
+		[M.cwd] = { value = venv.value },
+	}
+	if vim.fn.filewritable(config.settings.cache_file) == 0 then
+		vim.fn.mkdir(vim.fn.expand(config.settings.cache_dir), "p")
+	end
+	local venv_cache_json = nil
+	if vim.fn.filereadable(config.settings.cache_file) == 1 then
+		-- if cache file exists and is not empty read it and merge it with the new cache
+		local cached_file = vim.fn.readfile(config.settings.cache_file)
+		if cached_file ~= nil and cached_file[1] ~= nil then
+			local cached_json = vim.fn.json_decode(cached_file[1])
+			local merged_cache = vim.tbl_deep_extend("force", cached_json, venv_cache)
+			venv_cache_json = vim.fn.json_encode(merged_cache)
+		end
+	else
+		venv_cache_json = vim.fn.json_encode(venv_cache)
+	end
+	vim.fn.writefile({ venv_cache_json }, config.settings.cache_file)
 end
 
 return M

@@ -16,6 +16,7 @@ Browse existing python virtual environments on your computer and select one to a
 
 - Plug and play, no configuration required
 - Switch back and forth between virtual environments without restarting neovim
+- Cached virtual environment that ties to your workspace for easy activation subsequently
 - Requires [fd](https://github.com/sharkdp/fd) and
   [Telescope](https://github.com/nvim-telescope/telescope.nvim) for fast searches, and visual pickers.
 
@@ -47,6 +48,8 @@ return {
 	config = true,
 	event = "VeryLazy", -- Optional: needed only if you want to type `:VenvSelect` without a keymapping
 	keys = {{
+		"<leader>vs", "<cmd>:VenvSelect<cr>",
+		-- key mapping for directly retrieve from cache. You may set autocmd if you prefer the no hand approach
 		"<leader>vs", "<cmd>:VenvSelect<cr>"
 	}}
 }
@@ -57,10 +60,16 @@ If you want to change the default options, you can add an opts table like this:
 ```lua
 return {
 	"linux-cultist/venv-selector.nvim",
-	dependencies = { "neovim/nvim-lspconfig", "nvim-telescope/telescope.nvim" },
+	dependencies = {
+		"neovim/nvim-lspconfig",
+		"nvim-telescope/telescope.nvim",
+		-- for DAP support
+		"mfussenegger/nvim-dap-python"
+		},
 	config = true,
 	keys = {{
-		"<leader>vs", "<cmd>:VenvSelect<cr>"
+		"<leader>vs", "<cmd>:VenvSelect<cr>",
+		"<leader>vc", "<cmd>:VenvSelectCached<cr>"
 	}},
 	opts = {
 
@@ -71,7 +80,7 @@ return {
 		auto_refresh = false,
 
 		-- search_venv_managers (default: true). Will search for Poetry and Pipenv virtual environments in their
-		-- default location. If you dont use the default location, you can 
+		-- default location. If you dont use the default location, you can
 		search_venv_managers = true,
 
 		-- search_workspace (default: true). Your lsp has the concept of "workspaces" (project folders), and
@@ -83,7 +92,7 @@ return {
 		-- Only set this if your venvs are far away from the code you are working on for some reason. Otherwise its
 		-- probably better to let the VenvSelect search for venvs in parent folders (relative to your code). VenvSelect
 		-- searchs for your venvs in parent folders relative to what file is open in the current buffer, so you get
-		-- different results when searching depending on what file you are looking at. 
+		-- different results when searching depending on what file you are looking at.
 		-- path = "/home/username/your_venvs",
 
 		-- search (default: true) - Search your computer for virtual environments outside of Poetry and Pipenv.
@@ -91,6 +100,12 @@ return {
 		-- You can set this to false to speed up the plugin if your virtual envs are in your workspace, or in Poetry
 		-- or Pipenv locations. No need to search if you know where they will be.
 		search = true,
+
+		-- dap_enabled (default: false) Configure Debugger to use virtualvenv to run debugger.
+		-- require nvim-dap-python from https://github.com/mfussenegger/nvim-dap-python
+		-- require debugpy from https://github.com/microsoft/debugpy
+		-- require nvim-dap from https://github.com/mfussenegger/nvim-dap
+		dap_enabled = false
 
 		-- parents (default: 2) - Used when search = true only. How many parent directories the plugin will go up
 		-- (relative to where your open file is on the file system when you run VenvSelect). Once the parent directory
@@ -100,7 +115,7 @@ return {
 		-- directories.
 		parents = 2,
 
-		-- name (default: venv) - The name of the venv directories to look for. 
+		-- name (default: venv) - The name of the venv directories to look for.
 		name = "venv", -- NOTE: You can also use a lua table here for multiple names: {"venv", ".venv"}`
 
 		-- fd_binary_name (default: fd) - The name of the fd binary on your system.
@@ -130,7 +145,7 @@ return {
 		auto_refresh = false,
 
 		-- search_venv_managers (default: true). Will search for Poetry and Pipenv virtual environments in their
-		-- default location. If you dont use the default location, you can 
+		-- default location. If you dont use the default location, you can
 		search_venv_managers = true,
 
 		-- search_workspace (default: true). Your lsp has the concept of "workspaces" (project folders), and
@@ -142,7 +157,7 @@ return {
 		-- Only set this if your venvs are far away from the code you are working on for some reason. Otherwise its
 		-- probably better to let the VenvSelect search for venvs in parent folders (relative to your code). VenvSelect
 		-- searchs for your venvs in parent folders relative to what file is open in the current buffer, so you get
-		-- different results when searching depending on what file you are looking at. 
+		-- different results when searching depending on what file you are looking at.
 		-- path = "/home/username/your_venvs",
 
 		-- search (default: true) - Search your computer for virtual environments outside of Poetry and Pipenv.
@@ -159,7 +174,7 @@ return {
 		-- directories.
 		parents = 2,
 
-		-- name (default: venv) - The name of the venv directories to look for. 
+		-- name (default: venv) - The name of the venv directories to look for.
 		name = "venv", -- NOTE: You can also use a lua table here for multiple names: {"venv", ".venv"}`
 
 		-- fd_binary_name (default: fd) - The name of the fd binary on your system.
@@ -323,3 +338,5 @@ Note: You need [fd](https://github.com/sharkdp/fd) installed on your system. Thi
 the virtual environments as fast as possible.
 
 Telescope is also needed to let you pick a virtual environment to use.
+
+[nvim-python-dap](https://github.com/mfussenegger/nvim-dap-python) is required for DAP function. Enable DAP at config.

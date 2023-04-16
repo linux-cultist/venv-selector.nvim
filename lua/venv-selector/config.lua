@@ -17,6 +17,9 @@ config.default_settings = {
 	enable_debug_output = false,
 	auto_refresh = false, -- Uses cached results from last search
 	fd_binary_name = "fd",
+	cache_file = system.get_cache_default_path() .. "venvs.json",
+	cache_dir = system.get_cache_default_path(),
+	dap_enabled = false,
 	changed_venv_hooks = { hooks.pyright_hook, hooks.pylsp_hook },
 }
 

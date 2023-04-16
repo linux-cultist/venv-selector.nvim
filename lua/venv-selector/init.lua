@@ -13,6 +13,8 @@ M = {
 
 		-- Create the VenvSelect command.
 		user_commands.setup_user_commands("VenvSelect", M.reload, "Use VenvSelect to activate a venv")
+		user_commands.setup_user_commands("VenvSelectCached", M.retrieve_from_cache,
+			"Use VenvSelect to retrieve a venv from cache")
 	end,
 	-- Gets the system path to current active python in the venv (or nil if its not activated)
 	get_active_path = function()
@@ -26,11 +28,16 @@ M = {
 	reload = function()
 		venv.reload()
 	end,
+
+	retrieve_from_cache = function()
+		return venv.retrieve_from_cache()
+	end,
+  
 	hooks = {
 		pyright = hooks.pyright_hook,
 		pylsp = hooks.pylsp_hook,
 	},
+
 }
 
 return M
--- VS.setup()

@@ -2,6 +2,14 @@ local M = {}
 
 local config = require("venv-selector.config")
 
+M.notify = function(msg)
+	vim.notify(msg, vim.log.levels.INFO, { title = "VenvSelect" })
+end
+
+M.error = function(msg)
+	vim.notify(msg, vim.log.levels.ERROR, { title = "VenvSelect" })
+end
+
 M.dbg = function(msg)
 	local prefix = "VenvSelect: "
 	if config.settings.enable_debug_output == false or msg == nil then
@@ -56,7 +64,7 @@ M.create_fd_venv_names_regexp = function(config_venv_name)
 		for _, venv_name in pairs(config_venv_name) do
 			venv_names = venv_names .. "^" .. venv_name .. "$" .. "|" -- Creates (^venv_name1$ | ^venv_name2$ ) etc
 		end
-		venv_names = venv_names:sub(1, -2) -- Always remove last '|' since we only want it between words
+		venv_names = venv_names:sub(1, -2)                       -- Always remove last '|' since we only want it between words
 		venv_names = venv_names .. ")"
 	else
 		if type(config_venv_name) == "string" then

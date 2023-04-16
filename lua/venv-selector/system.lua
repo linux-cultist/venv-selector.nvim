@@ -42,6 +42,14 @@ M.get_path_separator = function()
 	end
 end
 
+M.get_cache_default_path = function()
+	if M.sysname == "Windows_NT" then
+		return "%APPDATA%\\venv-selector\\"
+	end
+	local user = vim.fn.getenv("USER")
+	return "/home/" .. user .. "/.cache/venv-selector/"
+end
+
 M.get_info = function()
 	--- @class SystemInfo
 	--- @field sysname string System namme

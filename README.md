@@ -20,7 +20,7 @@ Browse existing python virtual environments on your computer and select one to a
 - Support pyright and pylsp with ability to config hooks for other LSP
 - Requires [fd](https://github.com/sharkdp/fd) and
   [Telescope](https://github.com/nvim-telescope/telescope.nvim) for fast searches, and visual pickers.
-- Requires [nvim-dap-python](https://github.com/mfussenegger/nvim-dap-python), [debugpy](https://github.com/microsoft/debugpy) and [nvim-dap](https://github.com/mfussenegger/nvim-dap) for Debugger support
+- Requires [nvim-dap-python](https://github.com/mfussenegger/nvim-dap-python), [debugpy](https://github.com/microsoft/debugpy) and [nvim-dap](https://github.com/mfussenegger/nvim-dap) for debugger support
 
 ## 📋 Installation and Configuration
 
@@ -71,6 +71,7 @@ return {
 	config = true,
 	keys = {{
 		"<leader>vs", "<cmd>:VenvSelect<cr>",
+		-- optional if you use a autocmd (see #🤖-Automate)
 		"<leader>vc", "<cmd>:VenvSelectCached<cr>"
 	}},
 	opts = {
@@ -135,7 +136,9 @@ return {
 	"linux-cultist/venv-selector.nvim",
 	dependencies = { "neovim/nvim-lspconfig", "nvim-telescope/telescope.nvim" },
 	keys = {{
-		"<leader>vs", "<cmd>:VenvSelect<cr>"
+		"<leader>vs", "<cmd>:VenvSelect<cr>",
+		-- optional if you use a autocmd (see #🤖-Automate)
+		"<leader>vc", "<cmd>:VenvSelectCached<cr>"
 	}},
 	config = function()
 		require("venv-selector").setup({
@@ -229,9 +232,8 @@ venv_selector.setup({
 
 Currently provided hooks are:
 
-* `require("venv-selector").hooks.pyright`
-* `require("venv-selector").hooks.pylsp`
-
+- `require("venv-selector").hooks.pyright`
+- `require("venv-selector").hooks.pylsp`
 
 ### Helpful functions
 

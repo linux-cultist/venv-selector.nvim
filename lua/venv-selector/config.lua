@@ -1,6 +1,7 @@
 local system = require("venv-selector.system")
-local user = vim.fn.getenv("USER")
-local config = {
+local hooks = require("venv-selector.hooks")
+
+config = {
 	settings = {},
 }
 
@@ -19,6 +20,7 @@ config.default_settings = {
 	cache_file = system.get_cache_default_path() .. "venvs.json",
 	cache_dir = system.get_cache_default_path(),
 	dap_enabled = false,
+	changed_venv_hooks = { hooks.pyright_hook, hooks.pylsp_hook },
 }
 
 -- Gets the search path supplied by the user in the setup function, or use current open buffer directory.

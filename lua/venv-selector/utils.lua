@@ -64,7 +64,7 @@ M.create_fd_venv_names_regexp = function(config_venv_name)
 		for _, venv_name in pairs(config_venv_name) do
 			venv_names = venv_names .. "^" .. venv_name .. "$" .. "|" -- Creates (^venv_name1$ | ^venv_name2$ ) etc
 		end
-		venv_names = venv_names:sub(1, -2)                       -- Always remove last '|' since we only want it between words
+		venv_names = venv_names:sub(1, -2) -- Always remove last '|' since we only want it between words
 		venv_names = venv_names .. ")"
 	else
 		if type(config_venv_name) == "string" then
@@ -97,6 +97,12 @@ M.remove_last_slash = function(s)
 	end
 
 	return s
+end
+
+--- Checks whether `haystack` string starts with `needle` prefix
+--- @type fun(haystack: string, needle: string): boolean
+M.starts_with = function(haystack, needle)
+	return string.sub(haystack, 1, string.len(needle)) == needle
 end
 
 return M

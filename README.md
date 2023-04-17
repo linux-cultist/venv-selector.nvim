@@ -17,12 +17,14 @@ Browse existing python virtual environments on your computer and select one to a
 - Plug and play, no configuration required
 - Switch back and forth between virtual environments without restarting neovim
 - Cached virtual environment that ties to your workspace for easy activation subsequently
+- Support pyright and pylsp with ability to config hooks for other LSP
 - Requires [fd](https://github.com/sharkdp/fd) and
   [Telescope](https://github.com/nvim-telescope/telescope.nvim) for fast searches, and visual pickers.
+- Requires [nvim-dap-python](https://github.com/mfussenegger/nvim-dap-python), [debugpy](https://github.com/microsoft/debugpy) and [nvim-dap](https://github.com/mfussenegger/nvim-dap) for Debugger support
 
 ## 📋 Installation and Configuration
 
-**IMPORTANT**: The plugin works by using **pyright** lsp server, so pyright needs to be installed and pre-configured with nvim-lspconfig
+**IMPORTANT**: The plugin works by using **pyright** or **pylsp** lsp server, so pyright or pylsp needs to be installed and pre-configured with nvim-lspconfig
 before using this plugin. You can see example setup instructions here: https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#pyright
 
 ### Using [folke/lazy.nvim](https://github.com/folke/lazy.nvim)
@@ -49,7 +51,7 @@ return {
 	keys = {{
 		"<leader>vs", "<cmd>:VenvSelect<cr>",
 		-- key mapping for directly retrieve from cache. You may set autocmd if you prefer the no hand approach
-		"<leader>vs", "<cmd>:VenvSelect<cr>"
+		"<leader>vs", "<cmd>:VenvSelectCached<cr>"
 	}}
 }
 ```
@@ -165,6 +167,12 @@ return {
 		-- or Pipenv locations. No need to search if you know where they will be.
 		search = true,
 
+		-- dap_enabled (default: false) Configure Debugger to use virtualvenv to run debugger.
+		-- require nvim-dap-python from https://github.com/mfussenegger/nvim-dap-python
+		-- require debugpy from https://github.com/microsoft/debugpy
+		-- require nvim-dap from https://github.com/mfussenegger/nvim-dap
+		dap_enabled = false
+
 		-- parents (default: 2) - Used when search = true only. How many parent directories the plugin will go up
 		-- (relative to where your open file is on the file system when you run VenvSelect). Once the parent directory
 		-- is found, the plugin will traverse down into all children directories to look for venvs. The higher
@@ -176,7 +184,8 @@ return {
 		-- name (default: venv) - The name of the venv directories to look for.
 		name = "venv", -- NOTE: You can also use a lua table here for multiple names: {"venv", ".venv"}`
 
-		-- fd_binary_name (default: fd) - The name of the fd binary on your system.
+		-- fd_binary_name (default: fd) - The name of the fd binary on your system. For dabian based distro like Ubuntu
+		-- fd_binary_name for you might be `fdfind`
 		fd_binary_name = "fd"
 		})
 	end
@@ -191,6 +200,7 @@ The selected virtual environment and path to the python executable is available 
 ```
 require("venv-selector").get_active_path() -- Gives path to the python executable inside the activated virtual environment
 require("venv-selector").get_active_venv() -- Gives path to the activated virtual environment folder
+require("venv-selector").retrieve_from_cache() -- To activate the last virtual environment set in the current working directory
 ```
 
 This can be used to print out the virtual environment in a status bar, or make the plugin work with other plugins that
@@ -205,6 +215,27 @@ This plugin will look for python virtual environments located close to your code
 It will start looking in the same directory as your currently opened file. Usually the venv is located in a parent
 directory. By default it will go up 2 levels in the directory tree (relative to your currently open file), and then go back down into all the directories under that
 directory. Finally it will give you a list of found virtual environments so you can pick one to activate.
+
+## 🤖 Automate
+
+After choosing your virtual environment, the path to the virtual environment will be cached under the current working directory. To activate the same virtual environment
+the next time, simply use `:VenvSelectCached` to reactivate your virtual environment.
+
+This can also be automated to run whenever you enter into a python project, for example.
+
+```lua
+vim.api.nvim_create_autocmd("VimEnter", {
+desc = "Auto select virtualenv Nvim open",
+pattern = "*",
+callback = function()
+  local venv = vim.fn.findfile("pyproject.toml", vim.fn.getcwd() .. ";")
+  if venv ~= "" then
+    require("venv-selector").retrieve_from_cache()
+  end
+end,
+once = true,
+})
+```
 
 ### If you use Poetry or Pipenv
 
@@ -294,9 +325,38 @@ require("venv-selector").setup({
 This plugin has been built to be as fast as possible. It will search your computer for virtual environments while you
 continue working, and it wont freeze the neovim gui while looking for them. Usually it will give you a result in a few seconds.
 
+Even better, with caching enabled, this plugin instantly activate previously configured virtual environment without having to spend time on searching again.
+
 Note: You need [fd](https://github.com/sharkdp/fd) installed on your system. This plugin uses it to search for
 the virtual environments as fast as possible.
 
 Telescope is also needed to let you pick a virtual environment to use.
 
 [nvim-python-dap](https://github.com/mfussenegger/nvim-dap-python) is required for DAP function. Enable DAP at config.
+
+## 💡Tips and Tricks
+
+### VS Code like statusline functionality with [heirline](https://github.com/rebelot/heirline.nvim)
+
+To add a clickable component to your heirline statusline.
+
+```lua
+local actived_venv = function()
+	local venv_name = require("venv-selector").get_active_venv()
+	if venv_name ~= nil then
+		return string.gsub(venv_name, ".*/pypoetry/virtualenvs/", "(poetry) ")
+	else
+		return "venv"
+	end
+end
+
+local venv = {
+	{
+		provider = function() return  "  " .. actived_venv() end,
+	},
+	on_click = {
+		callback = function() vim.cmd.VenvSelect() end,
+		name = "heirline_statusline_venv_selector",
+	},
+}
+```

@@ -1,29 +1,46 @@
 local M = {}
 
 local config = require("venv-selector.config")
+local msg_prefix = "VenvSelect: "
 
 M.notify = function(msg)
-	vim.notify(msg, vim.log.levels.INFO, { title = "VenvSelect" })
+	vim.notify(msg_prefix .. msg, vim.log.levels.INFO, { title = "VenvSelect" })
 end
 
 M.error = function(msg)
-	vim.notify(msg, vim.log.levels.ERROR, { title = "VenvSelect" })
+	vim.notify(msg_prefix .. msg, vim.log.levels.ERROR, { title = "VenvSelect" })
+end
+
+M.fd_or_fdfind_exists = function()
+	local fd_exists = os.execute("fd --version")
+	local fdfind_exists = os.execute("fdfind --version")
+
+	if fd_exists == 0 then
+		return true
+	elseif fdfind_exists == 0 then
+		local utils = require("venv-selector.utils")
+		-- Help user by automatically using fdfind if it exists
+		config.settings.fd_binary_name = "fdfind"
+		utils.dbg("Setting fd_binary_name to 'fdfind' since it was found on system instead of fd.")
+		return true
+	else
+		return false
+	end
 end
 
 M.dbg = function(msg)
-	local prefix = "VenvSelect: "
 	if config.settings.enable_debug_output == false or msg == nil then
 		return
 	end
 
 	if type(msg) == "string" then
-		print(prefix .. msg)
+		print(msg_prefix .. msg)
 	else
 		if type(msg) == "table" then
-			print(prefix)
+			print(msg_prefix)
 			M.print_table(msg)
 		elseif type(msg) == "boolean" then
-			print(prefix .. tostring(msg))
+			print(msg_prefix .. tostring(msg))
 		else
 			print("Unhandled message type to dbg: message type is " .. type(msg))
 		end

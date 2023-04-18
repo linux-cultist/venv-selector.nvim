@@ -3,6 +3,7 @@ local config = require("venv-selector.config")
 local user_commands = require("venv-selector.user_commands")
 local dbg = require("venv-selector.utils").dbg
 local hooks = require("venv-selector.hooks")
+local utils = require("venv-selector.utils")
 
 M = {
 	-- Called by user when using the plugin.
@@ -18,6 +19,11 @@ M = {
 			M.retrieve_from_cache,
 			"Use VenvSelect to retrieve a venv from cache"
 		)
+
+		-- Check if the user has the requirements to run VenvSelect
+		if utils.fd_or_fdfind_exists() == false then
+			utils.error("Missing requirement: VenvSelect needs 'fd' to be installed: https://github.com/sharkdp/fd.")
+		end
 	end,
 	-- Gets the system path to current active python in the venv (or nil if its not activated)
 	get_active_path = function()

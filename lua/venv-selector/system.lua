@@ -47,6 +47,9 @@ M.get_cache_default_path = function()
 		return "%APPDATA%\\venv-selector\\"
 	end
 	local user = vim.fn.getenv("USER")
+	if M.sysname == "Darwin" then
+		return "/Users/" .. user .. "/.cache/venv-selector/"
+	end
 	return "/home/" .. user .. "/.cache/venv-selector/"
 end
 

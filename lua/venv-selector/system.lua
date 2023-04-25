@@ -13,6 +13,8 @@ local M = {
 		},
     Pyenv = {
       Linux = "~/.pyenv/versions",
+      Darwin = "~/.pyenv/versions",
+      Windows = "%USERPROFILE%\\.pyenv\\versions",
     }
 	},
 }

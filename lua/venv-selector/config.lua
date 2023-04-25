@@ -14,6 +14,7 @@ config.default_settings = {
 	parents = 2, -- When search is true, go this many directories up from the current opened buffer
 	poetry_path = system.get_venv_manager_default_path("Poetry"),
 	pipenv_path = system.get_venv_manager_default_path("Pipenv"),
+  pyenv_path = system.get_venv_manager_default_path("Pyenv"),
 	enable_debug_output = false,
 	auto_refresh = false, -- Uses cached results from last search
 	fd_binary_name = "fd",

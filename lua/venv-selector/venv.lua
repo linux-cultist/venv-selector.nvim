@@ -235,7 +235,7 @@ M.find_venv_manager_venvs = function()
         local search_path_string = utils.create_fd_search_path_string(paths)
         if search_path_string:len() ~= 0 then
                 local cmd = config.settings.fd_binary_name
-                        .. " . -HItd --absolute-path --max-depth 1 --color never "
+                        .. " . -HItd -tl --absolute-path --max-depth 1 --color never "
                         .. search_path_string
                 dbg("Running search for venv manager venvs with: " .. cmd)
                 local openPop = assert(io.popen(cmd, "r"))

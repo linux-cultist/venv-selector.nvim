@@ -238,7 +238,7 @@ Currently provided hooks are:
 
 The selected virtual environment and path to the python executable is available from these two functions:
 
-```
+```lua
 require("venv-selector").get_active_path() -- Gives path to the python executable inside the activated virtual environment
 require("venv-selector").get_active_venv() -- Gives path to the activated virtual environment folder
 require("venv-selector").retrieve_from_cache() -- To activate the last virtual environment set in the current working directory
@@ -278,33 +278,37 @@ once = true,
 })
 ```
 
-### If you use Poetry or Pipenv
+### If you use Poetry, Pipenv or Pyenv-virtualenv
 
-If you use Poetry or Pipenv, you typically have all the virtual environments located in the same path as subfolders.
+If you use Poetry, Pipenv or Pyenv-virtualenv, you typically have all the virtual environments located in the same path as subfolders.
 
-VenvSelector automatically looks in the default paths for both Poetry and Pipenv virtual environments:
+VenvSelector automatically looks in the default paths for both Poetry, Pipenv and Pyenv-virtualenv virtual environments:
 
 _Mac:_
 
 - Poetry: `$HOME/Library/Caches/pypoetry/virtualenvs`
 - Pipenv: `$HOME/.local/share/virtualenvs`
+- Pyenv: `HOME/.pyenv.versions`
 
 _Linux:_
 
 - Poetry: `$HOME/.cache/pypoetry/virtualenvs`
 - Pipenv: `$HOME/.local/share/virtualenvs`
+- Pyenv: `HOME/.pyenv.versions`
 
 _Windows:_
 
 - Poetry: `%APPDATA%\\pypoetry\\virtualenvs`
 - Pipenv: `$HOME\\virtualenvs`
+- Pyenv: `%USERPROFILE%\\.pyenv\\versions`
 
 You can override the default paths if the virtual environments are not being found by `VenvSelector`:
 
-```
+```lua
 require("venv-selector").setup({
 	poetry_path = "your_path_here",
-	pipenv_path = "your_path_here"
+	pipenv_path = "your_path_here",
+    pyenv_path = "your_path_here",
 })
 ```
 
@@ -336,7 +340,7 @@ You can see that the path shows that the virtual environments are located under 
 
 Copy the virtualenv path and set it as a parameter to the `VenvSelector` setup function:
 
-```
+```lua
 require("venv-selector").setup({
 	poetry_path = "/home/cado/.cache/pypoetry/virtualenvs",
 })
@@ -355,9 +359,25 @@ You can see that the path shows that the virtual environments are located under 
 
 Copy the virtualenv path and set it as a parameter to the `VenvSelector` setup function:
 
-```
+```lua
 require("venv-selector").setup({
 	pipenv_path = "/home/cado/.local/share/virtualenvs",
+})
+```
+
+#### Pyenv-virtualenv
+
+First run `pyenv root` to get the rootfolder for pyenv versions and shims are kept. You should get some output similar to this:
+
+`/home/cado/.pyenv`
+
+The virtualenvs are stored under the `versions` folder inside that directory. In this case it would be `/home/cado/.pyenv/versions`.
+
+Copy the virtualenv path and set it as a parameter to the `VenvSelector` setup function:
+
+```lua
+require("venv-selector").setup({
+    pyenv_path = "/home/cado/.pyenv/versions",
 })
 ```
 

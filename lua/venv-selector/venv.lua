@@ -227,11 +227,6 @@ M.find_venv_manager_venvs = function()
     config.settings.pipenv_path,
     config.settings.pyenv_path,
   }
-  for index, value in pairs(paths) do
-    if value == "" then
-      table.remove(paths, index)
-    end
-  end
 	local search_path_string = utils.create_fd_search_path_string(paths)
 	if search_path_string:len() ~= 0 then
 		local cmd = config.settings.fd_binary_name

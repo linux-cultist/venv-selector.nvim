@@ -222,11 +222,11 @@ end
 
 -- Look for Poetry and Pipenv managed venv directories and search them.
 M.find_venv_manager_venvs = function()
-  local paths = {
-    config.settings.poetry_path,
-    config.settings.pipenv_path,
-    config.settings.pyenv_path,
-  }
+	local paths = {
+		config.settings.poetry_path,
+		config.settings.pipenv_path,
+		config.settings.pyenv_path,
+	}
 	local search_path_string = utils.create_fd_search_path_string(paths)
 	if search_path_string:len() ~= 0 then
 		local cmd = config.settings.fd_binary_name

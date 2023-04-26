@@ -11,11 +11,11 @@ local M = {
 			Darwin = "~/.local/share/virtualenvs",
 			Windows_NT = "~\\virtualenvs",
 		},
-    Pyenv = {
-      Linux = "~/.pyenv/versions",
-      Darwin = "~/.pyenv/versions",
-      Windows = "%USERPROFILE%\\.pyenv\\versions",
-    }
+		Pyenv = {
+			Linux = "~/.pyenv/versions",
+			Darwin = "~/.pyenv/versions",
+			Windows = "%USERPROFILE%\\.pyenv\\versions",
+		},
 	},
 }
 

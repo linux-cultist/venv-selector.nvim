@@ -6,12 +6,11 @@ local config = require("venv-selector.config")
 
 local M = {
 	current_python_path = nil, -- Contains path to current python if activated, nil otherwise
-	current_venv = nil, -- Contains path to current venv folder if activated, nil otherwise
+	current_venv = nil,     -- Contains path to current venv folder if activated, nil otherwise
 	current_bin_path = nil, -- Keeps track of old system path so we can remove it when adding a new one
 	fd_handle = nil,
 	path_to_search = nil,
 	buffer_dir = nil,
-	cwd = vim.fn.getcwd(),
 }
 
 M.reload = function(action)
@@ -165,10 +164,10 @@ M.set_pythonpath = function(python_path)
 		pattern = { "*.py" },
 		callback = function()
 			for _, client in
-				ipairs(vim.lsp.get_active_clients({
-					name = "pyright",
-					bufnr = vim.api.nvim_get_current_buf(),
-				}))
+			ipairs(vim.lsp.get_active_clients({
+				name = "pyright",
+				bufnr = vim.api.nvim_get_current_buf(),
+			}))
 			do
 				client.config.settings =
 					vim.tbl_deep_extend("force", client.config.settings, { python = { pythonPath = python_path } })
@@ -252,8 +251,8 @@ M.retrieve_from_cache = function()
 		local cache_file = vim.fn.readfile(config.settings.cache_file)
 		if cache_file ~= nil and cache_file[1] ~= nil then
 			local venv_cache = vim.fn.json_decode(cache_file[1])
-			if venv_cache ~= nil and venv_cache[M.cwd] ~= nil then
-				M.set_venv_and_system_paths(venv_cache[M.cwd])
+			if venv_cache ~= nil and venv_cache[vim.fn.getcwd()] ~= nil then
+				M.set_venv_and_system_paths(venv_cache[vim.fn.getcwd()])
 				return
 			end
 		end
@@ -263,7 +262,7 @@ end
 
 M.cache_venv = function(venv)
 	local venv_cache = {
-		[M.cwd] = { value = venv.value },
+		[vim.fn.getcwd()] = { value = venv.value },
 	}
 	if vim.fn.filewritable(config.settings.cache_file) == 0 then
 		vim.fn.mkdir(vim.fn.expand(config.settings.cache_dir), "p")

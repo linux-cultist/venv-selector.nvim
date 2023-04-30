@@ -242,6 +242,7 @@ The selected virtual environment and path to the python executable is available 
 require("venv-selector").get_active_path() -- Gives path to the python executable inside the activated virtual environment
 require("venv-selector").get_active_venv() -- Gives path to the activated virtual environment folder
 require("venv-selector").retrieve_from_cache() -- To activate the last virtual environment set in the current working directory
+require("venv-selector").deactivate_venv() -- Deactivates the virtual environment and unsets VIRTUAL_ENV environment variable.
 ```
 
 This can be used to print out the virtual environment in a status bar, or make the plugin work with other plugins that

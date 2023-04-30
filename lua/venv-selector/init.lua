@@ -31,6 +31,9 @@ M = {
 	reload = function()
 		venv.reload()
 	end,
+	deactivate_venv = function()
+		venv.deactivate_venv()
+	end,
 	retrieve_from_cache = function()
 		return venv.retrieve_from_cache()
 	end,

@@ -116,6 +116,26 @@ M.set_venv_and_system_paths = function(venv_row)
 	M.current_venv = venv_path
 end
 
+M.deactivate_venv = function()
+	-- Remove previous bin path from path
+	local current_system_path = vim.fn.getenv("PATH")
+	local prev_bin_path = M.current_bin_path
+
+	if prev_bin_path ~= nil then
+		current_system_path = string.gsub(current_system_path, utils.escape_pattern(prev_bin_path .. ":"), "")
+		vim.fn.setenv("PATH", current_system_path)
+	end
+
+	-- Remove VIRTUAL_ENV environment variable.
+	vim.fn.setenv("VIRTUAL_ENV", nil)
+
+	-- TODO: Set pyright to use system python if it exists.
+	-- Not sure how to do this in a cross platform compatible way.
+	
+	M.current_python_path = nil
+	M.current_venv = nil
+end
+
 -- This function removes duplicate results when loading results into telescope
 M.prepare_results = function(results)
 	local hash = {}

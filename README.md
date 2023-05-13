@@ -122,7 +122,11 @@ return {
 		name = "venv", -- NOTE: You can also use a lua table here for multiple names: {"venv", ".venv"}`
 
 		-- fd_binary_name (default: fd) - The name of the fd binary on your system.
-		fd_binary_name = "fd"
+		fd_binary_name = "fd",
+
+
+		-- notify_user_on_activate (default: true) - Prints a message that the venv has been activated
+		notify_user_on_activate = true,
 
 	}
 	event = "VeryLazy", -- Optional: needed only if you want to type `:VenvSelect` without a keymapping
@@ -189,7 +193,12 @@ return {
 		name = "venv", -- NOTE: You can also use a lua table here for multiple names: {"venv", ".venv"}`
 
 		-- fd_binary_name (default: fd) - The name of the fd binary on your system. Some Debian based Linux Distributions like Ubuntu use ´fdfind´.
-		fd_binary_name = "fd"
+		fd_binary_name = "fd",
+
+
+		-- notify_user_on_activate (default: true) - Prints a message that the venv has been activated
+		notify_user_on_activate = true,
+
 		})
 	end
 	event = "VeryLazy", -- Optional: needed only if you want to type `:VenvSelect` without a keymapping

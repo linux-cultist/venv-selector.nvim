@@ -21,6 +21,7 @@ config.default_settings = {
 	cache_file = system.get_cache_default_path() .. "venvs.json",
 	cache_dir = system.get_cache_default_path(),
 	dap_enabled = false,
+	notify_user_on_activate = true,
 	changed_venv_hooks = { hooks.pyright_hook, hooks.pylsp_hook },
 }
 

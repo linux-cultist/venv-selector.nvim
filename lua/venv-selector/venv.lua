@@ -279,7 +279,6 @@ M.retrieve_from_cache = function()
 			end
 		end
 	end
-	utils.error("Error reading cache")
 end
 
 M.cache_venv = function(venv)

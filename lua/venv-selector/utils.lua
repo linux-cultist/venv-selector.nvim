@@ -24,7 +24,7 @@ M.fd_or_fdfind_exists = function()
 			)
 			return 1
 		else
-			utils.dbg("User requested '" .. custom_fd .. "' but it doesnt exist on system.")
+			utils.error("You have set fd_binary_name to '" .. custom_fd .. "' but it doesnt exist on your system.")
 		end
 	end
 

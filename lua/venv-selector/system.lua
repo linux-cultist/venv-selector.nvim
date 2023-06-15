@@ -49,7 +49,7 @@ end
 
 M.get_cache_default_path = function()
 	if M.sysname == "Windows_NT" then
-		return "%APPDATA%\\venv-selector\\"
+		return vim.fn.getenv("APPDATA") .. "\\venv-selector\\"
 	end
 	local user = vim.fn.getenv("USER")
 	if M.sysname == "Darwin" then

@@ -12,12 +12,12 @@ M.error = function(msg)
 end
 
 M.fd_or_fdfind_exists = function()
-	local fd_exists = os.execute("fd --version")
-	local fdfind_exists = os.execute("fdfind --version")
+	local fd_exists = vim.fn.executable("fd")
+	local fdfind_exists = vim.fn.executable("fdfind")
 
-	if fd_exists == 0 then
+	if fd_exists == 1 then
 		return true
-	elseif fdfind_exists == 0 then
+	elseif fdfind_exists == 1 then
 		local utils = require("venv-selector.utils")
 		-- Help user by automatically using fdfind if it exists
 		config.settings.fd_binary_name = "fdfind"

@@ -12,13 +12,28 @@ M.error = function(msg)
 end
 
 M.fd_or_fdfind_exists = function()
+	local utils = require("venv-selector.utils")
+	local custom_fd = config.settings.fd_binary_name
+
+	if custom_fd ~= nil then
+		if vim.fn.executable(custom_fd) == 1 then
+			utils.dbg(
+				"Setting fd binary to '"
+					.. custom_fd
+					.. "' since it was found on system and requested by user instead of fd."
+			)
+			return 1
+		else
+			utils.dbg("User requested '" .. custom_fd .. "' but it doesnt exist on system.")
+		end
+	end
+
 	local fd_exists = vim.fn.executable("fd")
 	local fdfind_exists = vim.fn.executable("fdfind")
 
 	if fd_exists == 1 then
 		return true
 	elseif fdfind_exists == 1 then
-		local utils = require("venv-selector.utils")
 		-- Help user by automatically using fdfind if it exists
 		config.settings.fd_binary_name = "fdfind"
 		utils.dbg("Setting fd_binary_name to 'fdfind' since it was found on system instead of fd.")

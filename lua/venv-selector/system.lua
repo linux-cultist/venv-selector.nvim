@@ -17,9 +17,9 @@ local M = {
 			Windows = "%USERPROFILE%\\.pyenv\\versions",
 		},
 		Anaconda = {
-			Linux = "~/anaconda3/envs",
-			Darwin = "~/anaconda3/envs",
-			Windows = "%USERPROFILE%\\anaconda3\\envs",
+			Linux = "$CONDA_PREFIX/envs",
+			Darwin = "$CONDA_PREFIX/envs",
+			Windows = "%CONDA_PREFIX%\\envs",
 		},
 	},
 }

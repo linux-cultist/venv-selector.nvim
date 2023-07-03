@@ -16,6 +16,11 @@ local M = {
 			Darwin = "~/.pyenv/versions",
 			Windows = "%USERPROFILE%\\.pyenv\\versions",
 		},
+		Anaconda = {
+			Linux = "~/anaconda3/envs",
+			Darwin = "~/anaconda3/envs",
+			Windows = "%USERPROFILE%\\anaconda3\\envs",
+		},
 	},
 }
 

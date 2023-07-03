@@ -82,7 +82,7 @@ return {
 		-- directory structure all the time.
 		auto_refresh = false,
 
-		-- search_venv_managers (default: true). Will search for Poetry and Pipenv virtual environments in their
+		-- search_venv_managers (default: true). Will search for Poetry/Pipenv/Anaconda virtual environments in their
 		-- default location. If you dont use the default location, you can
 		search_venv_managers = true,
 
@@ -288,29 +288,32 @@ once = true,
 })
 ```
 
-### If you use Poetry, Pipenv or Pyenv-virtualenv
+### If you use Poetry, Pipenv, Pyenv-virtualenv or Anaconda
 
-If you use Poetry, Pipenv or Pyenv-virtualenv, you typically have all the virtual environments located in the same path as subfolders.
+If you use Poetry, Pipenv, Pyenv-virtualenv or Anaconda, you typically have all the virtual environments located in the same path as subfolders.
 
-VenvSelector automatically looks in the default paths for both Poetry, Pipenv and Pyenv-virtualenv virtual environments:
+VenvSelector automatically looks in the default paths for both Poetry, Pipenv, Pyenv-virtualenv and Anaconda virtual environments:
 
 _Mac:_
 
 - Poetry: `$HOME/Library/Caches/pypoetry/virtualenvs`
 - Pipenv: `$HOME/.local/share/virtualenvs`
-- Pyenv: `HOME/.pyenv.versions`
+- Pyenv: `$HOME/.pyenv.versions`
+- Anaconda: `$CONDA_PREFIX/envs`
 
 _Linux:_
 
 - Poetry: `$HOME/.cache/pypoetry/virtualenvs`
 - Pipenv: `$HOME/.local/share/virtualenvs`
 - Pyenv: `HOME/.pyenv.versions`
+- Anaconda: `$CONDA_PREFIX/envs`
 
 _Windows:_
 
 - Poetry: `%APPDATA%\\pypoetry\\virtualenvs`
 - Pipenv: `$HOME\\virtualenvs`
 - Pyenv: `%USERPROFILE%\\.pyenv\\versions`
+- Anaconda: `%CONDA_PREFIX%\\envs`
 
 You can override the default paths if the virtual environments are not being found by `VenvSelector`:
 
@@ -318,7 +321,8 @@ You can override the default paths if the virtual environments are not being fou
 require("venv-selector").setup({
 	poetry_path = "your_path_here",
 	pipenv_path = "your_path_here",
-    pyenv_path = "your_path_here",
+  	pyenv_path = "your_path_here",
+  	anaconda_path = "your_path_here",
 })
 ```
 
@@ -388,6 +392,22 @@ Copy the virtualenv path and set it as a parameter to the `VenvSelector` setup f
 ```lua
 require("venv-selector").setup({
     pyenv_path = "/home/cado/.pyenv/versions",
+})
+```
+
+#### Anaconda
+
+First run `echo $CONDA_PREFIX` to get the rootfolder for Anaconda. You should get some output similar to this:
+
+`/home/cado/anaconda3`
+
+The virtualenvs are stored under the `envs` folder inside that directory. In this case it would be `/home/cado/anaconda3/envs`.
+
+Copy the virtualenv path and set it as a parameter to the `VenvSelector` setup function:
+
+```lua
+require("venv-selector").setup({
+    anaconda_path = "/home/cado/anaconda/envs",
 })
 ```
 

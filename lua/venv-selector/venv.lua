@@ -247,6 +247,7 @@ M.find_venv_manager_venvs = function()
 		config.settings.poetry_path,
 		config.settings.pipenv_path,
 		config.settings.pyenv_path,
+		config.settings.anaconda_path,
 	}
 	local search_path_string = utils.create_fd_search_path_string(paths)
 	if search_path_string:len() ~= 0 then

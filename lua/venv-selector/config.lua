@@ -15,6 +15,7 @@ config.default_settings = {
 	poetry_path = system.get_venv_manager_default_path("Poetry"),
 	pipenv_path = system.get_venv_manager_default_path("Pipenv"),
 	pyenv_path = system.get_venv_manager_default_path("Pyenv"),
+	anaconda_path = system.get_venv_manager_default_path("Anaconda"),
 	enable_debug_output = false,
 	auto_refresh = false, -- Uses cached results from last search
 	fd_binary_name = "fd",

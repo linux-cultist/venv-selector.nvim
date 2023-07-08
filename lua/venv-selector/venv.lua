@@ -212,12 +212,14 @@ end
 
 -- Gets called when user hits enter in the Telescope results dialog
 M.activate_venv = function()
-  dbg("User selected venv in telescope:")
-  -- dir has path to venv without slash at the end
   local selected_venv = telescope.actions_state.get_selected_entry()
-  dbg(selected_venv)
-  M.set_venv_and_system_paths(selected_venv)
-  M.cache_venv(selected_venv)
+  if selected_venv.value ~= nil then
+    dbg("User selected venv in telescope: " .. selected_venv.value)
+    M.set_venv_and_system_paths(selected_venv)
+    M.cache_venv(selected_venv)
+  else
+    dbg("No virtual env selected in telescope.")
+  end
 end
 
 function M.list_pyright_workspace_folders()

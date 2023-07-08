@@ -21,6 +21,11 @@ local M = {
       Darwin = "~/Library/Application Support/hatch/env/virtual",
       Windows_NT = "%USERPROFILE%\\AppData\\Local\\hatch\\env\\virtual",
     },
+    VenvWrapper = {
+      Linux = "$HOME/.virtualenvs",
+      Darwin = "$HOME/.virtualenvs",
+      Windows_NT = "%USERPROFILE%\\.virtualenvs", -- VenvWrapper not supported on Windows but need something here
+    },
     Anaconda = {
       Linux = "$CONDA_PREFIX/envs",
       Darwin = "$CONDA_PREFIX/envs",

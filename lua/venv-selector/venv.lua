@@ -262,6 +262,7 @@ M.find_venv_manager_venvs = function()
     config.settings.pipenv_path,
     config.settings.pyenv_path,
     config.settings.hatch_path,
+    config.settings.venvwrapper_path,
     config.settings.anaconda_path,
   }
   local search_path_string = utils.create_fd_search_path_string(paths)

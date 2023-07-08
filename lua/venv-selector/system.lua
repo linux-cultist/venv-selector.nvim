@@ -14,12 +14,17 @@ local M = {
     Pyenv = {
       Linux = "~/.pyenv/versions",
       Darwin = "~/.pyenv/versions",
-      Windows = "%USERPROFILE%\\.pyenv\\versions",
+      Windows_NT = "%USERPROFILE%\\.pyenv\\versions",
+    },
+    Hatch = {
+      Linux = "~/.local/share/hatch/env/virtual",
+      Darwin = "~/Library/Application Support/hatch/env/virtual",
+      Windows_NT = "%USERPROFILE%\\AppData\\Local\\hatch\\env\\virtual",
     },
     Anaconda = {
       Linux = "$CONDA_PREFIX/envs",
       Darwin = "$CONDA_PREFIX/envs",
-      Windows = "%CONDA_PREFIX%\\envs",
+      Windows_NT = "%CONDA_PREFIX%\\envs",
     },
   },
 }

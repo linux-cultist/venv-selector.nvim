@@ -246,7 +246,6 @@ M.find_workspace_venvs = function()
         .. search_path_regexp
         .. "' "
         .. search_path_string
-
     dbg("Running search for workspace venvs with: " .. cmd)
     local openPop = assert(io.popen(cmd, "r"))
     telescope.add_lines(openPop:lines(), "Workspace")
@@ -262,6 +261,7 @@ M.find_venv_manager_venvs = function()
     config.settings.poetry_path,
     config.settings.pipenv_path,
     config.settings.pyenv_path,
+    config.settings.hatch_path,
     config.settings.anaconda_path,
   }
   local search_path_string = utils.create_fd_search_path_string(paths)

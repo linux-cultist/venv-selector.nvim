@@ -116,9 +116,15 @@ end
 M.create_fd_search_path_string = function(paths)
   local search_path_string = ""
   for _, path in pairs(paths) do
+    local ishatch = path == config.settings.hatch_path
     local expanded_path = vim.fn.expand(path)
     if vim.fn.isdirectory(expanded_path) ~= 0 then
-      search_path_string = search_path_string .. "--search-path " .. expanded_path .. " "
+      if ishatch == false then
+        search_path_string = search_path_string .. "--full-path " .. expanded_path .. " "
+      else
+        -- special handling for hatch
+        search_path_string = search_path_string .. "--full-path " .. expanded_path .. "/*/*" .. " "
+      end
     end
   end
   return search_path_string

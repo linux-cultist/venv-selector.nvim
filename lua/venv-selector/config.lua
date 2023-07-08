@@ -16,6 +16,7 @@ config.default_settings = {
   pipenv_path = system.get_venv_manager_default_path("Pipenv"),
   pyenv_path = system.get_venv_manager_default_path("Pyenv"),
   anaconda_path = system.get_venv_manager_default_path("Anaconda"),
+  hatch_path = system.get_venv_manager_default_path("Hatch"),
   enable_debug_output = false,
   auto_refresh = false, -- Uses cached results from last search
   fd_binary_name = nil,

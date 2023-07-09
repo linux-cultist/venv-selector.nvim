@@ -160,7 +160,9 @@ M.prepare_results = function(results)
     end
   end
 
-  dbg("There is " .. M.tablelength(res) .. " results to show.")
+  dbg("There are " .. M.tablelength(res) .. " results to show:")
+  dbg(res)
+
   return res
 end
 

@@ -147,7 +147,6 @@ end
 -- Start a search for venvs in all directories under the nstart_dir
 -- Async function to search for venvs - it will call VS.show_results() when its done by itself.
 M.find_parent_venvs = function(parent_dir)
-  dbg("Finding parent venvs in: " .. parent_dir)
   local stdout = vim.loop.new_pipe(false)
   local stderr = vim.loop.new_pipe(false)
   local venv_names = utils.create_fd_venv_names_regexp(config.settings.name)
@@ -155,6 +154,9 @@ M.find_parent_venvs = function(parent_dir)
     args = { "--absolute-path", "--color", "never", "-HItd", venv_names, parent_dir },
     stdio = { nil, stdout, stderr },
   }
+
+  dbg("Looking for parent venvs in '" .. parent_dir .. "' using the following parameters:")
+  dbg(fdconfig.args)
 
   M.fd_handle = vim.loop.spawn(
     config.settings.fd_binary_name,

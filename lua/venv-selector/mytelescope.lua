@@ -1,5 +1,6 @@
 local utils = require("venv-selector.utils")
 local dbg = require("venv-selector.utils").dbg
+
 local M = {
   results = {},
   finders = require("telescope.finders"),
@@ -21,9 +22,32 @@ M.add_lines = function(lines, source)
   end
 end
 
+M.tablelength = function(t)
+  local count = 0
+  for _ in pairs(t) do count = count + 1 end
+  return count
+end
+
+
+-- This function removes duplicate results when loading results into telescope
+M.prepare_results = function()
+  local hash = {}
+  local res = {}
+
+  for _, v in ipairs(M.results) do
+    if not hash[v.path] then
+      res[#res + 1] = v
+      hash[v.path] = true
+    end
+  end
+
+  M.results = res
+
+  dbg("There are " .. M.tablelength(M.results) .. " results to show:")
+end
+
 M.remove_results = function()
-  local telescope = require("venv-selector.telescope")
-  telescope.results = {}
+  M.results = {}
   dbg("Removed telescope results.")
 end
 
@@ -36,29 +60,36 @@ M.show_results = function()
       { width = 0.95 },
     },
   })
-  local make_display = function(entry)
-    return displayer({
-      { entry.icon },
-      { entry.path },
-    })
-  end
+
+
   local title = "Virtual environments"
+
   if config.settings.auto_refresh == false then
     title = title .. " (ctrl-r to refresh)"
   end
-  local venv = require("venv-selector.venv")
+
+  M.prepare_results();
+
+  local finder = M.finders.new_table({
+    results = M.results,
+    entry_maker = function(entry)
+      entry.value = entry.path
+      entry.ordinal = entry.path
+      entry.display = function(e)
+        return displayer({
+          { e.icon },
+          { e.path },
+        })
+      end
+
+      return entry
+    end,
+  })
+
   local opts = {
     prompt_title = title,
+    finder = finder,
     -- results_title = title,
-    finder = M.finders.new_table({
-      results = venv.prepare_results(M.results),
-      entry_maker = function(entry)
-        entry.value = entry.path
-        entry.ordinal = entry.path
-        entry.display = make_display
-        return entry
-      end,
-    }),
     layout_strategy = "horizontal",
     layout_config = {
       height = 0.4,
@@ -69,6 +100,7 @@ M.show_results = function()
     sorting_strategy = "descending",
     sorter = M.conf.file_sorter({}),
     attach_mappings = function(bufnr, map)
+      local venv = require("venv-selector.venv")
       map("i", "<CR>", function()
         local actions = require("telescope.actions")
         -- actions.drop_all(bufnr)
@@ -83,7 +115,7 @@ M.show_results = function()
       return true
     end,
   }
-
+  -- utils.print_table(opts)
   M.pickers.new({}, opts):find()
 end
 

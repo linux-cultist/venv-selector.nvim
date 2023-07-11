@@ -1,7 +1,7 @@
 local system = require("venv-selector.system")
 local utils = require("venv-selector.utils")
 local dbg = require("venv-selector.utils").dbg
-local telescope = require("venv-selector.telescope")
+local mytelescope = require("venv-selector.mytelescope")
 local config = require("venv-selector.config")
 
 local M = {
@@ -18,7 +18,7 @@ M.reload = function(action)
 
   local dont_refresh_telescope = config.settings.auto_refresh == false and act.force_refresh ~= true
   local ready_for_new_search = M.fd_handle == nil or M.fd_handle:is_closing() == true
-  local no_telescope_results = next(telescope.results) == nil
+  local no_telescope_results = next(mytelescope.results) == nil
   -- This is needed because Telescope doesnt send the right buffer path when doing a refresh, so we use
   -- the path from the original loading of content to refresh.
   if act.force_refresh ~= true then
@@ -30,13 +30,13 @@ M.reload = function(action)
     if no_telescope_results then
       dbg("Refresh telescope since there are no previous results.")
     else
-      telescope.show_results()
+      mytelescope.show_results()
       return
     end
   end
 
   if ready_for_new_search then
-    telescope.remove_results()
+    mytelescope.remove_results()
 
     -- Only search for parent venvs if search option is true
     if config.settings.search == true then
@@ -72,7 +72,7 @@ M.find_other_venvs = function()
     M.find_venv_manager_venvs()
   end
 
-  telescope.show_results()
+  mytelescope.show_results()
 end
 -- Manages the paths to python since they are different on Linux, Mac and Windows
 -- systems. The user selects the virtual environment to use in the Telescope picker,
@@ -142,29 +142,7 @@ M.deactivate_venv = function()
 end
 
 
-M.tablelength = function(t)
-  local count = 0
-  for _ in pairs(t) do count = count + 1 end
-  return count
-end
 
--- This function removes duplicate results when loading results into telescope
-M.prepare_results = function(results)
-  local hash = {}
-  local res = {}
-
-  for _, v in ipairs(results) do
-    if not hash[v.path] then
-      res[#res + 1] = v
-      hash[v.path] = true
-    end
-  end
-
-  dbg("There are " .. M.tablelength(res) .. " results to show:")
-  dbg(res)
-
-  return res
-end
 
 -- Start a search for venvs in all directories under the nstart_dir
 -- Async function to search for venvs - it will call VS.show_results() when its done by itself.
@@ -190,7 +168,7 @@ M.find_parent_venvs = function(parent_dir)
       M.fd_handle:close()
     end)
   )
-  vim.loop.read_start(stdout, telescope.on_read)
+  vim.loop.read_start(stdout, mytelescope.on_read)
 end
 
 -- Hook into lspconfig so we can set the python to use.
@@ -214,7 +192,7 @@ end
 
 -- Gets called when user hits enter in the Telescope results dialog
 M.activate_venv = function()
-  local selected_venv = telescope.actions_state.get_selected_entry()
+  local selected_venv = mytelescope.actions_state.get_selected_entry()
   if selected_venv.value ~= nil then
     dbg("User selected venv in telescope: " .. selected_venv.value)
     M.set_venv_and_system_paths(selected_venv)
@@ -226,14 +204,20 @@ end
 
 function M.list_pyright_workspace_folders()
   local workspace_folders = {}
+  local workspace_folders_found = false
   for _, client in pairs(vim.lsp.buf_get_clients()) do
     if client.name == "pyright" then
       for _, folder in pairs(client.workspace_folders or {}) do
         dbg("Found workspace folder: " .. folder.name)
         table.insert(workspace_folders, folder.name)
+        workspace_folders_found = true
       end
     end
   end
+  if workspace_folders_found == false then
+    dbg("No workspace folders found")
+  end
+
   return workspace_folders
 end
 
@@ -250,7 +234,7 @@ M.find_workspace_venvs = function()
         .. search_path_string
     dbg("Running search for workspace venvs with: " .. cmd)
     local openPop = assert(io.popen(cmd, "r"))
-    telescope.add_lines(openPop:lines(), "Workspace")
+    mytelescope.add_lines(openPop:lines(), "Workspace")
     openPop:close()
   else
     dbg("Found no workspaces to search for venvs.")
@@ -274,7 +258,7 @@ M.find_venv_manager_venvs = function()
         .. search_path_string
     dbg("Running search for venv manager venvs with: " .. cmd)
     local openPop = assert(io.popen(cmd, "r"))
-    telescope.add_lines(openPop:lines(), "VenvManager")
+    mytelescope.add_lines(openPop:lines(), "VenvManager")
     openPop:close()
   else
     dbg("Found no venv manager directories to search for venvs.")

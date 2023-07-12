@@ -18,7 +18,7 @@ local M = {
     },
     Hatch = {
       Linux = "~/.local/share/hatch/env/virtual",
-      Darwin = "~/Library/Application Support/hatch/env/virtual",
+      Darwin = "~/Library/Application\\ Support/hatch/env/virtual",
       Windows_NT = "%USERPROFILE%\\AppData\\Local\\hatch\\env\\virtual",
     },
     VenvWrapper = {

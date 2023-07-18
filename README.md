@@ -52,7 +52,7 @@ return {
 	keys = {{
 		"<leader>vs", "<cmd>:VenvSelect<cr>",
 		-- key mapping for directly retrieve from cache. You may set autocmd if you prefer the no hand approach
-		"<leader>vs", "<cmd>:VenvSelectCached<cr>"
+		"<leader>vc", "<cmd>:VenvSelectCached<cr>"
 	}}
 }
 ```
@@ -266,6 +266,8 @@ This plugin will look for python virtual environments located close to your code
 It will start looking in the same directory as your currently opened file. Usually the venv is located in a parent
 directory. By default it will go up 2 levels in the directory tree (relative to your currently open file), and then go back down into all the directories under that
 directory. Finally it will give you a list of found virtual environments so you can pick one to activate.
+
+There is also the `:VenvSelectCurrent` command to get a message saying which venv is active.
 
 ## 🤖 Automate
 

@@ -19,6 +19,10 @@ M = {
       M.retrieve_from_cache,
       "Use VenvSelect to retrieve a venv from cache"
     )
+    user_commands.setup_user_commands("VenvShowCurrent", function()
+      utils.notify("Activated '" .. (M.get_active_venv() or "None") .. "'")
+    end, "Show venv selected")
+
 
     -- Check if the user has the requirements to run VenvSelect
     if utils.fd_or_fdfind_exists() == false then

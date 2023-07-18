@@ -93,7 +93,7 @@ M.set_venv_and_system_paths = function(venv_row)
   end
 
   if config.settings.notify_user_on_activate == true then
-    utils.notify("Activated '" .. venv_python)
+    utils.notify("Activated '" .. venv_python .. "'")
   end
 
   for _, hook in ipairs(config.settings.changed_venv_hooks) do

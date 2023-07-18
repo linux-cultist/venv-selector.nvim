@@ -20,7 +20,11 @@ M = {
       "Use VenvSelect to retrieve a venv from cache"
     )
     user_commands.setup_user_commands("VenvSelectCurrent", function()
-      utils.notify("Activated '" .. (M.get_active_venv() or "None") .. "'")
+      if M.get_active_venv() ~= nil then
+        utils.notify("Activated '" .. (M.get_active_venv()) .. "'")
+      else
+        utils.notify("No venv has been selected yet.")
+      end
     end, "Show currently selected venv")
 
 

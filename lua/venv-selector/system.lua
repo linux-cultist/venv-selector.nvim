@@ -2,7 +2,7 @@ local M = {
   sysname = vim.loop.os_uname().sysname,
   venv_manager_default_paths = {
     Poetry = {
-      Linux = "~/.cache/pypoetry/virtual envs",
+      Linux = "~/.cache/pypoetry/virtualenvs",
       Darwin = "~/Library/Caches/pypoetry/virtualenvs",
       Windows_NT = "%APPDATA%\\pypoetry\\virtualenvs",
     },

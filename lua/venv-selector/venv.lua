@@ -10,60 +10,43 @@ local M = {
   current_bin_path = nil,    -- Keeps track of old system path so we can remove it when adding a new one
   fd_handle = nil,
   path_to_search = nil,
-  buffer_dir = nil,
 }
 
-M.reload = function(action)
+M.load = function(action)
   local act = action or {}
 
-  local dont_refresh_telescope = config.settings.auto_refresh == false and act.force_refresh ~= true
   local ready_for_new_search = M.fd_handle == nil or M.fd_handle:is_closing() == true
-  local no_telescope_results = next(mytelescope.results) == nil
-  -- This is needed because Telescope doesnt send the right buffer path when doing a refresh, so we use
-  -- the path from the original loading of content to refresh.
-  if act.force_refresh ~= true then
-    M.buffer_dir = config.get_buffer_dir()
-  end
-  -- if config.settings.auto_refresh == false and next(telescope.results) ~= nil and opts.force_refresh ~= true then
-  if dont_refresh_telescope then
-    -- Use cached results
-    if no_telescope_results then
-      dbg("Refresh telescope since there are no previous results.")
-    else
-      mytelescope.show_results()
-      return
-    end
+  if ready_for_new_search == false then
+    dbg("Cannot start a new search while old one is running.")
+    return
   end
 
-  if ready_for_new_search then
-    mytelescope.remove_results()
+  local buffer_dir = config.get_buffer_dir()
 
-    -- Only search for parent venvs if search option is true
-    if config.settings.search == true then
-      if act.force_refresh == true then
-        if M.path_to_search == nil then
-          dbg("No previous search path when asked to refresh results.")
-          M.path_to_search = utils.find_parent_dir(M.buffer_dir, config.settings.parents)
-          M.find_parent_venvs(M.path_to_search)
-        else
-          dbg("User refreshed results - buffer_dir is: " .. M.buffer_dir)
-          M.path_to_search = utils.find_parent_dir(M.buffer_dir, config.settings.parents)
-          M.find_parent_venvs(M.path_to_search)
-        end
+  -- Only search for parent venvs if search option is true
+  if config.settings.search == true then
+    if act.force_refresh == true then
+      if M.path_to_search == nil then
+        dbg("No previous search path when asked to refresh results.")
+        M.path_to_search = utils.find_parent_dir(buffer_dir, config.settings.parents)
+        M.find_parent_venvs(M.path_to_search)
       else
-        M.path_to_search = utils.find_parent_dir(M.buffer_dir, config.settings.parents)
+        dbg("User refreshed results - buffer_dir is: " .. buffer_dir)
+        M.path_to_search = utils.find_parent_dir(buffer_dir, config.settings.parents)
         M.find_parent_venvs(M.path_to_search)
       end
     else
-      M.find_other_venvs()
+      M.path_to_search = utils.find_parent_dir(buffer_dir, config.settings.parents)
+      M.find_parent_venvs(M.path_to_search)
     end
   else
-    dbg("Cannot start a new search while old one is running.")
+    M.find_other_venvs()
   end
 end
 
 -- This gets called as soon as the parent venv search is done.
-M.find_other_venvs = function()
+M.find_other_venvs = function(event)
+  event = event or {}
   if config.settings.search_workspace == true then
     M.find_workspace_venvs()
   end
@@ -74,6 +57,7 @@ M.find_other_venvs = function()
 
   mytelescope.show_results()
 end
+
 -- Manages the paths to python since they are different on Linux, Mac and Windows
 -- systems. The user selects the virtual environment to use in the Telescope picker,
 -- but inside the virtual environment, the actual python and its parent directory name

@@ -53,6 +53,7 @@ end
 
 -- Shows the results from the search in a Telescope picker.
 M.show_results = function()
+  M.prepare_results()
   local displayer = M.entry_display.create({
     separator = " ",
     items = {
@@ -60,16 +61,6 @@ M.show_results = function()
       { width = 0.95 },
     },
   })
-
-
-  local title = "Virtual environments"
-
-  if config.settings.auto_refresh == false then
-    title = title .. " (ctrl-r to refresh)"
-  end
-
-  M.prepare_results();
-
   local finder = M.finders.new_table({
     results = M.results,
     entry_maker = function(entry)
@@ -85,38 +76,9 @@ M.show_results = function()
       return entry
     end,
   })
-
-  local opts = {
-    prompt_title = title,
-    finder = finder,
-    -- results_title = title,
-    layout_strategy = "horizontal",
-    layout_config = {
-      height = 0.4,
-      width = 120,
-      prompt_position = "top",
-    },
-    cwd = require("telescope.utils").buffer_dir(),
-    sorting_strategy = "descending",
-    sorter = M.conf.file_sorter({}),
-    attach_mappings = function(bufnr, map)
-      local venv = require("venv-selector.venv")
-      map("i", "<CR>", function()
-        local actions = require("telescope.actions")
-        -- actions.drop_all(bufnr)
-        -- actions.add_selection(bufnr)
-        venv.activate_venv()
-        actions.close(bufnr)
-        -- M.mypicker:refresh()
-      end)
-      map("i", "<C-r>", function()
-        venv.reload({ force_refresh = true })
-      end)
-      return true
-    end,
-  }
-  -- utils.print_table(opts)
-  M.pickers.new({}, opts):find()
+  local bufnr = vim.api.nvim_get_current_buf()
+  local picker = M.actions_state.get_current_picker(bufnr)
+  picker:refresh(finder, { reset_prompt = true })
 end
 
 -- Gets called on results from the async search and adds the findings
@@ -135,6 +97,79 @@ M.on_read = function(err, data)
       end
     end
   end
+end
+
+M.open = function()
+  local dont_refresh_telescope = config.settings.auto_refresh == false
+  local has_telescope_results = next(M.results) ~= nil
+
+  local displayer = M.entry_display.create({
+    separator = " ",
+    items = {
+      { width = 2 },
+      { width = 0.95 },
+    },
+  })
+
+  local title = "Virtual environments"
+
+  if config.settings.auto_refresh == false then
+    title = title .. " (ctrl-r to refresh)"
+  end
+
+  local finder = M.finders.new_table({
+    results = M.results,
+    entry_maker = function(entry)
+      entry.value = entry.path
+      entry.ordinal = entry.path
+      entry.display = function(e)
+        return displayer({
+          { e.icon },
+          { e.path },
+        })
+      end
+
+      return entry
+    end,
+  })
+
+  local venv = require("venv-selector.venv")
+  local opts = {
+    prompt_title = title,
+    finder = finder,
+    -- results_title = title,
+    layout_strategy = "horizontal",
+    layout_config = {
+      height = 0.4,
+      width = 120,
+      prompt_position = "top",
+    },
+    cwd = require("telescope.utils").buffer_dir(),
+    sorting_strategy = "descending",
+    sorter = M.conf.file_sorter({}),
+    attach_mappings = function(bufnr, map)
+      map("i", "<CR>", function()
+        venv.activate_venv()
+        M.actions.close(bufnr)
+      end)
+
+      map("i", "<C-r>", function()
+        M.remove_results()
+        venv.load({ force_refresh = true })
+      end)
+
+      return true
+    end,
+  }
+
+  M.pickers.new({}, opts):find()
+  if dont_refresh_telescope and has_telescope_results then
+    dbg("Use cached results.")
+    return
+  end
+
+  -- venv.load must be called after the picker is displayed; otherwise, Vim will not be able to get the correct bufnr.
+  venv.load()
 end
 
 return M

@@ -2,6 +2,7 @@ local venv = require("venv-selector.venv")
 local config = require("venv-selector.config")
 local user_commands = require("venv-selector.user_commands")
 local dbg = require("venv-selector.utils").dbg
+local mytelescope = require("venv-selector.mytelescope")
 local hooks = require("venv-selector.hooks")
 local utils = require("venv-selector.utils")
 
@@ -13,7 +14,7 @@ M = {
     dbg(config.settings)
 
     -- Create the VenvSelect command.
-    user_commands.setup_user_commands("VenvSelect", M.reload, "Use VenvSelect to activate a venv")
+    user_commands.setup_user_commands("VenvSelect", M.open, "Use VenvSelect to activate a venv")
     user_commands.setup_user_commands(
       "VenvSelectCached",
       M.retrieve_from_cache,
@@ -42,8 +43,8 @@ M = {
     return venv.current_venv
   end,
   -- The main function runs when user executes VenvSelect command
-  reload = function()
-    venv.reload()
+  open = function()
+    mytelescope.open()
   end,
   deactivate_venv = function()
     venv.deactivate_venv()

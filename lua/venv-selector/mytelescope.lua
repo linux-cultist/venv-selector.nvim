@@ -155,7 +155,12 @@ M.open = function()
 
       map("i", "<C-r>", function()
         M.remove_results()
-        venv.load({ force_refresh = true })
+        local picker = M.actions_state.get_current_picker(bufnr)
+        -- Delay by 10ms to achieve the refresh animation.
+        picker:refresh(finder, { reset_prompt = true })
+        vim.defer_fn(function()
+          venv.load({ force_refresh = true })
+        end, 10)
       end)
 
       return true

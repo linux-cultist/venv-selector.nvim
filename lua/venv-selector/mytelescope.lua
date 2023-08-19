@@ -150,7 +150,7 @@ M.open = function()
       prompt_position = "top",
     },
     cwd = require("telescope.utils").buffer_dir(),
-    sorting_strategy = "descending",
+    sorting_strategy = "ascending",
     sorter = conf.file_sorter({}),
     attach_mappings = function(bufnr, map)
       map("i", "<CR>", function()

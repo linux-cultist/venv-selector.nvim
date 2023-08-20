@@ -55,6 +55,7 @@ M = {
   hooks = {
     pyright = hooks.pyright_hook,
     pylsp = hooks.pylsp_hook,
+    pylance = hooks.pylance_hook,
   },
 }
 

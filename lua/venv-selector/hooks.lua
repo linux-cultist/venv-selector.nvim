@@ -32,6 +32,19 @@ M.pyright_hook = function(_, venv_python)
 end
 
 --- @type VenvChangedHook
+M.pylance_hook = function(_, venv_python)
+  execute_for_client("pylance", function(pylance)
+    local settings = vim.deepcopy(pylance.config.settings)
+    lspconfig.pylance.setup({
+      settings = settings,
+      before_init = function(_, c)
+        c.settings.python.pythonPath = venv_python
+      end,
+    })
+  end)
+end
+
+--- @type VenvChangedHook
 M.pylsp_hook = function(venv_path, _)
   local utils = require("venv-selector.utils")
   local system = require("venv-selector.system")

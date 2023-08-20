@@ -159,12 +159,18 @@ M.set_pythonpath = function(python_path)
 	vim.api.nvim_create_autocmd({ "BufReadPost" }, {
 		pattern = { "*.py" },
 		callback = function()
+			local active_clients = {}
 			for _, client in
-				ipairs(vim.lsp.get_active_clients({
-					name = "pyright",
-					bufnr = vim.api.nvim_get_current_buf(),
-				}))
+				ipairs(vim.lsp.get_active_clients({ name = "pyright", bufnr = vim.api.nvim_get_current_buf() }))
 			do
+				table.insert(active_clients, client)
+			end
+			for _, client in
+				ipairs(vim.lsp.get_active_clients({ name = "pylance", bufnr = vim.api.nvim_get_current_buf() }))
+			do
+				table.insert(active_clients, client)
+			end
+			for _, client in ipairs(active_clients) do
 				client.config.settings =
 					vim.tbl_deep_extend("force", client.config.settings, { python = { pythonPath = python_path } })
 				client.notify("workspace/didChangeConfiguration", { settings = nil })
@@ -193,7 +199,7 @@ function M.list_pyright_workspace_folders()
 	local workspace_folders = {}
 	local workspace_folders_found = false
 	for _, client in pairs(vim.lsp.get_active_clients()) do
-		if client.name == "pyright" then
+		if vim.tbl_contains({ "pyright", "pylance" }, client.name) then
 			for _, folder in pairs(client.workspace_folders or {}) do
 				dbg("Found workspace folder: " .. folder.name)
 				table.insert(workspace_folders, folder.name)

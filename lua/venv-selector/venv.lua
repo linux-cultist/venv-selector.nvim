@@ -132,7 +132,7 @@ M.find_parent_venvs = function(parent_dir)
 	local stderr = vim.loop.new_pipe(false)
 	local venv_names = utils.create_fd_venv_names_regexp(config.settings.name)
 	local fdconfig = {
-		args = { "--absolute-path", "--color", "never", "-E", "/proc", "-HItd", venv_names, parent_dir },
+		args = { "--absolute-path", "--color", "never", "-E", config.settings.anaconda_base_path, "-E", config.settings.anaconda_envs_path, "-E", "/proc", "-HItd", venv_names, parent_dir },
 		stdio = { nil, stdout, stderr },
 	}
 
@@ -242,7 +242,7 @@ M.find_venv_manager_venvs = function()
 		config.settings.pyenv_path,
 		config.settings.hatch_path,
 		config.settings.venvwrapper_path,
-		config.settings.anaconda_path,
+		config.settings.anaconda_envs_path,
 	}
 	local search_path_string = utils.create_fd_search_path_string(paths)
 	if search_path_string:len() ~= 0 then
@@ -253,6 +253,13 @@ M.find_venv_manager_venvs = function()
 		local openPop = assert(io.popen(cmd, "r"))
 		mytelescope.add_lines(openPop:lines(), "VenvManager")
 		openPop:close()
+
+    -- If $CONDA_PREFIX is defined and exists, add the path as an existing venv
+		if vim.fn.isdirectory(config.settings.anaconda_base_path) ~= 0 then
+      print("Adding: " .. config.settings.anaconda_base_path .. "/")
+      table.insert(mytelescope.results, { icon = "", path = utils.remove_last_slash(config.settings.anaconda_base_path .. "/") })
+    end
+
 	else
 		dbg("Found no venv manager directories to search for venvs.")
 	end

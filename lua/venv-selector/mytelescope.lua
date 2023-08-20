@@ -3,12 +3,6 @@ local dbg = require("venv-selector.utils").dbg
 
 local M = {
   results = {},
-  finders = require("telescope.finders"),
-  conf = require("telescope.config").values,
-  pickers = require("telescope.pickers"),
-  actions_state = require("telescope.actions.state"),
-  actions = require("telescope.actions"),
-  entry_display = require("telescope.pickers.entry_display"),
 }
 
 M.add_lines = function(lines, source)
@@ -53,15 +47,19 @@ end
 
 -- Shows the results from the search in a Telescope picker.
 M.show_results = function()
+  local finders = require("telescope.finders")
+  local actions_state = require("telescope.actions.state")
+  local entry_display = require("telescope.pickers.entry_display")
+
   M.prepare_results()
-  local displayer = M.entry_display.create({
+  local displayer = entry_display.create({
     separator = " ",
     items = {
       { width = 2 },
       { width = 0.95 },
     },
   })
-  local finder = M.finders.new_table({
+  local finder = finders.new_table({
     results = M.results,
     entry_maker = function(entry)
       entry.value = entry.path
@@ -77,7 +75,7 @@ M.show_results = function()
     end,
   })
   local bufnr = vim.api.nvim_get_current_buf()
-  local picker = M.actions_state.get_current_picker(bufnr)
+  local picker = actions_state.get_current_picker(bufnr)
   picker:refresh(finder, { reset_prompt = true })
 end
 
@@ -100,10 +98,17 @@ M.on_read = function(err, data)
 end
 
 M.open = function()
+  local finders = require("telescope.finders")
+  local conf = require("telescope.config").values
+  local pickers = require("telescope.pickers")
+  local actions_state = require("telescope.actions.state")
+  local actions = require("telescope.actions")
+  local entry_display = require("telescope.pickers.entry_display")
+
   local dont_refresh_telescope = config.settings.auto_refresh == false
   local has_telescope_results = next(M.results) ~= nil
 
-  local displayer = M.entry_display.create({
+  local displayer = entry_display.create({
     separator = " ",
     items = {
       { width = 2 },
@@ -117,7 +122,7 @@ M.open = function()
     title = title .. " (ctrl-r to refresh)"
   end
 
-  local finder = M.finders.new_table({
+  local finder = finders.new_table({
     results = M.results,
     entry_maker = function(entry)
       entry.value = entry.path
@@ -145,17 +150,17 @@ M.open = function()
       prompt_position = "top",
     },
     cwd = require("telescope.utils").buffer_dir(),
-    sorting_strategy = "descending",
-    sorter = M.conf.file_sorter({}),
+    sorting_strategy = "ascending",
+    sorter = conf.file_sorter({}),
     attach_mappings = function(bufnr, map)
       map("i", "<CR>", function()
         venv.activate_venv()
-        M.actions.close(bufnr)
+        actions.close(bufnr)
       end)
 
       map("i", "<C-r>", function()
         M.remove_results()
-        local picker = M.actions_state.get_current_picker(bufnr)
+        local picker = actions_state.get_current_picker(bufnr)
         -- Delay by 10ms to achieve the refresh animation.
         picker:refresh(finder, { reset_prompt = true })
         vim.defer_fn(function()
@@ -167,7 +172,7 @@ M.open = function()
     end,
   }
 
-  M.pickers.new({}, opts):find()
+  pickers.new({}, opts):find()
   if dont_refresh_telescope and has_telescope_results then
     dbg("Use cached results.")
     return

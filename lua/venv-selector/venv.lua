@@ -175,14 +175,18 @@ end
 
 -- Gets called when user hits enter in the Telescope results dialog
 M.activate_venv = function()
-	local selected_venv = mytelescope.actions_state.get_selected_entry()
-	if selected_venv.value ~= nil then
-		dbg("User selected venv in telescope: " .. selected_venv.value)
-		M.set_venv_and_system_paths(selected_venv)
-		M.cache_venv(selected_venv)
-	else
-		dbg("No virtual env selected in telescope.")
-	end
+
+  local actions_state = require("telescope.actions.state")
+
+  local selected_venv = actions_state.get_selected_entry()
+  if selected_venv.value ~= nil then
+    dbg("User selected venv in telescope: " .. selected_venv.value)
+    M.set_venv_and_system_paths(selected_venv)
+    M.cache_venv(selected_venv)
+  else
+    dbg("No virtual env selected in telescope.")
+  end
+
 end
 
 function M.list_pyright_workspace_folders()

@@ -1,41 +1,52 @@
-local M = {
-	sysname = vim.loop.os_uname().sysname,
-	venv_manager_default_paths = {
-		Poetry = {
-			Linux = "~/.cache/pypoetry/virtualenvs",
-			Darwin = "~/Library/Caches/pypoetry/virtualenvs",
-			Windows_NT = vim.fn.getenv("%APPDATA%\\pypoetry\\virtualenvs"),
-		},
-		Pipenv = {
-			Linux = "~/.local/share/virtualenvs",
-			Darwin = "~/.local/share/virtualenvs",
-			Windows_NT = "~\\virtualenvs",
-		},
-		Pyenv = {
-			Linux = "~/.pyenv/versions",
-			Darwin = "~/.pyenv/versions",
-			Windows_NT = vim.fn.getenv("%USERPROFILE%\\.pyenv\\versions"),
-		},
-		Hatch = {
-			Linux = "~/.local/share/hatch/env/virtual",
-			Darwin = "~/Library/Application/Support/hatch/env/virtual",
-			Windows_NT = vim.fn.getenv("%USERPROFILE%\\AppData\\Local\\hatch\\env\\virtual"),
-		},
-		VenvWrapper = {
-			Linux = vim.fn.getenv("HOME") .. "/.virtualenvs",
-			Darwin = vim.fn.getenv("HOME") .. "/.virtualenvs",
-			Windows_NT = vim.fn.getenv("%USERPROFILE%\\.virtualenvs"), -- VenvWrapper not supported on Windows but need something here
-		},
-		AnacondaBase = {
-			Linux = vim.fn.getenv("CONDA_PREFIX"),
-			Darwin = vim.fn.getenv("CONDA_PREFIX"),
-			Windows_NT = vim.fn.getenv("CONDA_PREFIX"),
-		},
-    AnacondaEnvs = {
-			Linux = vim.fn.getenv("HOME") .. "/.conda",
-			Darwin = vim.fn.getenv("HOME") .. "/.conda",
-			Windows_NT = vim.fn.getenv("HOME") .. "./conda",
-    }
+local M = {}
+
+M.getenv = function(var)
+	local v = os.getenv(var)
+	if v == nil then
+		return ""
+	else
+		return v
+	end
+end
+
+M.sysname = vim.loop.os_uname().sysname
+
+-- Use M.getenv here because env variables like $CONDA_PREFIX doesnt get resolved automatically (but $HOME and ~ does).
+M.venv_manager_default_paths = {
+	Poetry = {
+		Linux = "~/.cache/pypoetry/virtualenvs",
+		Darwin = "~/Library/Caches/pypoetry/virtualenvs",
+		Windows_NT = M.getenv("APPDATA" .. "\\pypoetry\\virtualenvs"),
+	},
+	Pipenv = {
+		Linux = "~/.local/share/virtualenvs",
+		Darwin = "~/.local/share/virtualenvs",
+		Windows_NT = "~\\virtualenvs",
+	},
+	Pyenv = {
+		Linux = "~/.pyenv/versions",
+		Darwin = "~/.pyenv/versions",
+		Windows_NT = M.getenv("USERPROFILE") .. "\\.pyenv\\versions",
+	},
+	Hatch = {
+		Linux = "~/.local/share/hatch/env/virtual",
+		Darwin = "~/Library/Application/Support/hatch/env/virtual",
+		Windows_NT = M.getenv("USERPROFILE") .. "\\AppData\\Local\\hatch\\env\\virtual",
+	},
+	VenvWrapper = {
+		Linux = "~/.virtualenvs",
+		Darwin = "~/.virtualenvs",
+		Windows_NT = M.getenv("USERPROFILE") .. ".virtualenvs", -- VenvWrapper not supported on Windows but need something here
+	},
+	AnacondaBase = {
+		Linux = M.getenv("CONDA_PREFIX"),
+		Darwin = M.getenv("CONDA_PREFIX"),
+		Windows_NT = M.getenv("CONDA_PREFIX"),
+	},
+	AnacondaEnvs = {
+		Linux = M.getenv("HOME") .. "/.conda",
+		Darwin = M.getenv("HOME") .. "/.conda",
+		Windows_NT = M.getenv("HOME") .. "./conda",
 	},
 }
 

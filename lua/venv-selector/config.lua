@@ -25,7 +25,7 @@ config.default_settings = {
   cache_dir = system.get_cache_default_path(),
   dap_enabled = false,
   notify_user_on_activate = true,
-  changed_venv_hooks = { hooks.pyright_hook, hooks.pylsp_hook },
+  changed_venv_hooks = { hooks.pyright_hook, hooks.pylsp_hook, hooks.pylance_hook },
 }
 
 -- Gets the search path supplied by the user in the setup function, or use current open buffer directory.

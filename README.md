@@ -20,7 +20,7 @@ Browse existing python virtual environments on your computer and select one to a
 - Currently supports virtual environments created in:
   - [Python](https://www.python.org/) (`python3 -m venv venv`)
   - [Poetry](https://python-poetry.org)
-  - [Pipenv](https://pipenv.pypa.io/en/atest/)
+  - [Pipenv](https://pipenv.pypa.io/en/latest/)
   - [Anaconda](https://www.anaconda.com)
   - [Pyenv](https://github.com/pyenv/pyenv)
   - [Virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/)

@@ -12,7 +12,7 @@
 
 # ⚡️ Features
 
-Browse existing python virtual environments on your computer and select one to activate with pyright inside neovim.
+Browse existing python virtual environments on your computer and select one to activate inside neovim.
 
 - Plug and play, no configuration required
 - Switch back and forth between virtual environments without restarting neovim
@@ -45,6 +45,8 @@ return {
 	dependencies = { "neovim/nvim-lspconfig", "nvim-telescope/telescope.nvim", "mfussenegger/nvim-dap-python" },
 	opts = {
     -- Your options go here
+    -- name = "venv",
+    -- auto_refresh = false
   },
 	event = "VeryLazy" -- Optional: needed only if you want to type `:VenvSelect` without a keymapping
 	keys = {{
@@ -65,6 +67,8 @@ return {
 	config = function()
       require("venv-selector").setup({
     -- Your options go here
+    -- name = "venv",
+    -- auto_refresh = false
   }) end,
 	event = "VeryLazy" -- Optional: needed only if you want to type `:VenvSelect` without a keymapping
 	keys = {{

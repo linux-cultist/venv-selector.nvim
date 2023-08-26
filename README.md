@@ -209,45 +209,6 @@ once = true,
 })
 ```
 
-### If you use Poetry, Pipenv, Pyenv-virtualenv or Anaconda
-
-If you use Poetry, Pipenv, Pyenv-virtualenv or Anaconda, you typically have all the virtual environments located in the same path as subfolders.
-
-VenvSelector automatically looks in the default paths for both Poetry, Pipenv, Pyenv-virtualenv and Anaconda virtual environments:
-
-_Mac:_
-
-- Poetry: `$HOME/Library/Caches/pypoetry/virtualenvs`
-- Pipenv: `$HOME/.local/share/virtualenvs`
-- Pyenv: `$HOME/.pyenv.versions`
-- Anaconda: `$CONDA_PREFIX/envs`
-
-_Linux:_
-
-- Poetry: `$HOME/.cache/pypoetry/virtualenvs`
-- Pipenv: `$HOME/.local/share/virtualenvs`
-- Pyenv: `HOME/.pyenv.versions`
-- Anaconda: `$CONDA_PREFIX/envs`
-
-_Windows:_
-
-- Poetry: `%APPDATA%\\pypoetry\\virtualenvs`
-- Pipenv: `$HOME\\virtualenvs`
-- Pyenv: `%USERPROFILE%\\.pyenv\\versions`
-- Anaconda: `%CONDA_PREFIX%\\envs`
-
-You can override the default paths if the virtual environments are not being found by `VenvSelector`:
-
-```lua
-require("venv-selector").setup({
-	poetry_path = "your_path_here",
-	pipenv_path = "your_path_here",
-  	pyenv_path = "your_path_here",
-  	anaconda_base_path = "your_path_here", -- Example: /opt/anaconda
-  	anaconda_envs_path = "your_path_here", -- Example: ~/.conda/envs
-})
-```
-
 #### Find out where your virtual environments are located
 
 ##### Poetry

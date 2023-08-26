@@ -16,15 +16,21 @@ Browse existing python virtual environments on your computer and select one to a
 
 - Plug and play, no configuration required
 - Switch back and forth between virtual environments without restarting neovim
+- Support [Pyright](https://github.com/microsoft/pyright), [Pylance](https://github.com/microsoft/pylance-release) and [Pylsp](https://github.com/python-lsp/python-lsp-server) lsp servers with ability to config hooks for others.
+- Currently supports virtual environments created in:
+  - [Poetry](https://python-poetry.org)
+  - [Pipenv](https://pipenv.pypa.io/en/atest/)
+  - [Anaconda](https://www.anaconda.com)
+  - [Pyenv](https://github.com/pyenv/pyenv)
+  - [Virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/)
+  - [Hatch](https://hatch.pypa.io/latest/)
 - Cached virtual environment that ties to your workspace for easy activation subsequently
-- Support pyright and pylsp with ability to config hooks for other LSP
-- Requires [fd](https://github.com/sharkdp/fd) and
-  [Telescope](https://github.com/nvim-telescope/telescope.nvim) for fast searches, and visual pickers.
+- Requires [fd](https://github.com/sharkdp/fd) and [Telescope](https://github.com/nvim-telescope/telescope.nvim) for fast searches, and visual pickers.
 - Requires [nvim-dap-python](https://github.com/mfussenegger/nvim-dap-python), [debugpy](https://github.com/microsoft/debugpy) and [nvim-dap](https://github.com/mfussenegger/nvim-dap) for debugger support
 
 ## 📋 Installation and Configuration
 
-The plugin works with **pyright** and **pylsp** lsp servers. If you want to take advantage of this plugin's default behaviour, you need to have either of them installed
+The plugin works with **pyright**, **pylsp** or **pylance** lsp servers. If you want to take advantage of this plugin's default behaviour, you need to have either of them installed
 and configured using [lspconfig](https://github.com/neovim/nvim-lspconfig). If you want to use custom integration, see [hooks section](#hooks)
 before using this plugin. You can see example setup instructions here: https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#pyright
 

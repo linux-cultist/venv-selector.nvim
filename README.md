@@ -207,7 +207,7 @@ return {
 
 ### Hooks
 
-By default, the plugin tries to setup `pyright` and `pylsp` automatically using hooks. If you want to add a custom integration, you need to write
+By default, the plugin tries to setup `pyright`, `pylsp` and `pylance` automatically using hooks. If you want to add a custom integration, you need to write
 a hook with following signature:
 
 ```lua
@@ -242,6 +242,7 @@ Currently provided hooks are:
 
 - `require("venv-selector").hooks.pyright`
 - `require("venv-selector").hooks.pylsp`
+- `require("venv-selector").hooks.pylance`
 
 ### Helpful functions
 
@@ -251,7 +252,6 @@ The selected virtual environment and path to the python executable is available 
 require("venv-selector").get_active_path() -- Gives path to the python executable inside the activated virtual environment
 require("venv-selector").get_active_venv() -- Gives path to the activated virtual environment folder
 require("venv-selector").retrieve_from_cache() -- To activate the last virtual environment set in the current working directory
-require("venv-selector").deactivate_venv() -- Deactivates the virtual environment and unsets VIRTUAL_ENV environment variable.
 ```
 
 This can be used to print out the virtual environment in a status bar, or make the plugin work with other plugins that
@@ -324,7 +324,8 @@ require("venv-selector").setup({
 	poetry_path = "your_path_here",
 	pipenv_path = "your_path_here",
   	pyenv_path = "your_path_here",
-  	anaconda_path = "your_path_here",
+  	anaconda_base_path = "your_path_here", # Example: /opt/anaconda
+  	anaconda_envs_path = "your_path_here", # Example: ~/.conda/envs
 })
 ```
 
@@ -399,17 +400,23 @@ require("venv-selector").setup({
 
 #### Anaconda
 
-First run `echo $CONDA_PREFIX` to get the rootfolder for Anaconda. You should get some output similar to this:
+Once you have your anaconda environment activated in a shell, you can use the `conda env list` command to list
+both the base environment and the other environments:
 
-`/home/cado/anaconda3`
+```
+# conda environments:
+#
+conda1                   /home/cado/.conda/envs/conda1
+conda2                   /home/cado/.conda/envs/conda2
+base                  *  /opt/anaconda
+```
 
-The virtualenvs are stored under the `envs` folder inside that directory. In this case it would be `/home/cado/anaconda3/envs`.
-
-Copy the virtualenv path and set it as a parameter to the `VenvSelector` setup function:
+Configure `VenvSelect` like this in this example:
 
 ```lua
 require("venv-selector").setup({
-    anaconda_path = "/home/cado/anaconda/envs",
+  anaconda_base_paths = "/opt/anaconda",
+  anaconda_envs_path = "/home/cado/.conda/envs",
 })
 ```
 

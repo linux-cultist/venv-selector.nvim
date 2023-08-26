@@ -44,9 +44,9 @@ M.venv_manager_default_paths = {
 		Windows_NT = M.getenv("CONDA_PREFIX"),
 	},
 	AnacondaEnvs = {
-		Linux = M.getenv("HOME") .. "/.conda",
-		Darwin = M.getenv("HOME") .. "/.conda",
-		Windows_NT = M.getenv("HOME") .. "./conda",
+		Linux = M.getenv("HOME") .. "/.conda/envs",
+		Darwin = M.getenv("HOME") .. "/.conda/envs",
+		Windows_NT = M.getenv("HOME") .. "./conda/envs",
 	},
 }
 

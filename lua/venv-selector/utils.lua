@@ -32,15 +32,19 @@ M.fd_or_fdfind_exists = function()
 
 	local fd_exists = vim.fn.executable("fd")
 	local fdfind_exists = vim.fn.executable("fdfind")
+	local fd_find_exists = vim.fn.executable("fd-find")
 
 	if fd_exists == 1 then
 		config.settings.fd_binary_name = "fd"
 		utils.dbg("Setting fd_binary_name to 'fd' since it was found on system.")
 		return true
 	elseif fdfind_exists == 1 then
-		-- Help user by automatically using fdfind if it exists
 		config.settings.fd_binary_name = "fdfind"
 		utils.dbg("Setting fd_binary_name to 'fdfind' since it was found on system instead of fd.")
+		return true
+	elseif fd_find_exists == 2 then
+		config.settings.fd_binary_name = "fd-find"
+		utils.dbg("Setting fd_binary_name to 'fd-find' since it was found on system instead of fd.")
 		return true
 	else
 		return false
@@ -117,7 +121,6 @@ M.create_fd_search_path_string = function(paths)
 	local search_path_string = ""
 	for _, path in pairs(paths) do
 		local ishatch = path == config.settings.hatch_path
-		local isconda = path == config.settings.anaconda_envs_path
 		local expanded_path = vim.fn.expand(path)
 
 		if vim.fn.isdirectory(expanded_path) ~= 0 then
@@ -125,8 +128,6 @@ M.create_fd_search_path_string = function(paths)
 			if ishatch == true then
 				-- special handling for hatch
 				search_path_string = search_path_string .. expanded_path .. "/*/*" .. " "
-      elseif isconda == true then
-				search_path_string = search_path_string .. expanded_path .. "/envs" .. " "
 			else
 				search_path_string = search_path_string .. expanded_path .. " "
 			end

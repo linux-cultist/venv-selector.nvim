@@ -131,11 +131,36 @@ M.find_parent_venvs = function(parent_dir)
 	local stdout = vim.loop.new_pipe(false)
 	local stderr = vim.loop.new_pipe(false)
 	local venv_names = utils.create_fd_venv_names_regexp(config.settings.name)
+
 	local fdconfig = {
-		args = { "--absolute-path", "--color", "never", "-E", config.settings.anaconda_base_path, "-E", config.settings.anaconda_envs_path, "-E", "/proc", "-HItd", venv_names, parent_dir },
+		args = {
+			"--absolute-path",
+			"--color",
+			"never",
+			"-E",
+			config.settings.anaconda_base_path,
+			"-E",
+			config.settings.anaconda_envs_path,
+			"-E",
+			"/proc",
+			"-HItd",
+			venv_names,
+			parent_dir,
+		},
 		stdio = { nil, stdout, stderr },
 	}
 
+	-- local conda_env_path_inside_conda_base_path = config.settings.anaconda_envs_path:find(
+	-- 	config.settings.anaconda_base_path,
+	-- 	1,
+	-- 	true
+	-- ) == 1
+	--
+	-- print("conda env " .. "inside conda base")
+	-- print(conda_env_path_inside_conda_base_path)
+	-- if conda_env_path_inside_conda_base_path == false then
+	-- 	fdconfig.insert({ "-E", config.settings.anaconda_base_path })
+	-- end
 	dbg("Looking for parent venvs in '" .. parent_dir .. "' using the following parameters:")
 	dbg(fdconfig.args)
 
@@ -181,18 +206,16 @@ end
 
 -- Gets called when user hits enter in the Telescope results dialog
 M.activate_venv = function()
+	local actions_state = require("telescope.actions.state")
 
-  local actions_state = require("telescope.actions.state")
-
-  local selected_venv = actions_state.get_selected_entry()
-  if selected_venv.value ~= nil then
-    dbg("User selected venv in telescope: " .. selected_venv.value)
-    M.set_venv_and_system_paths(selected_venv)
-    M.cache_venv(selected_venv)
-  else
-    dbg("No virtual env selected in telescope.")
-  end
-
+	local selected_venv = actions_state.get_selected_entry()
+	if selected_venv.value ~= nil then
+		dbg("User selected venv in telescope: " .. selected_venv.value)
+		M.set_venv_and_system_paths(selected_venv)
+		M.cache_venv(selected_venv)
+	else
+		dbg("No virtual env selected in telescope.")
+	end
 end
 
 function M.list_pyright_workspace_folders()
@@ -254,12 +277,14 @@ M.find_venv_manager_venvs = function()
 		mytelescope.add_lines(openPop:lines(), "VenvManager")
 		openPop:close()
 
-    -- If $CONDA_PREFIX is defined and exists, add the path as an existing venv
+		-- If $CONDA_PREFIX is defined and exists, add the path as an existing venv
 		if vim.fn.isdirectory(config.settings.anaconda_base_path) ~= 0 then
-      print("Adding: " .. config.settings.anaconda_base_path .. "/")
-      table.insert(mytelescope.results, { icon = "", path = utils.remove_last_slash(config.settings.anaconda_base_path .. "/") })
-    end
-
+			print("Adding: " .. config.settings.anaconda_base_path .. "/")
+			table.insert(
+				mytelescope.results,
+				{ icon = "", path = utils.remove_last_slash(config.settings.anaconda_base_path .. "/") }
+			)
+		end
 	else
 		dbg("Found no venv manager directories to search for venvs.")
 	end

@@ -38,10 +38,15 @@ M.venv_manager_default_paths = {
 		Darwin = "~/.virtualenvs",
 		Windows_NT = M.getenv("USERPROFILE") .. ".virtualenvs", -- VenvWrapper not supported on Windows but need something here
 	},
-	Anaconda = {
+	AnacondaBase = {
 		Linux = M.getenv("CONDA_PREFIX"),
 		Darwin = M.getenv("CONDA_PREFIX"),
 		Windows_NT = M.getenv("CONDA_PREFIX"),
+	},
+	AnacondaEnvs = {
+		Linux = M.getenv("HOME") .. "/.conda/envs",
+		Darwin = M.getenv("HOME") .. "/.conda/envs",
+		Windows_NT = M.getenv("HOME") .. "./conda/envs",
 	},
 }
 

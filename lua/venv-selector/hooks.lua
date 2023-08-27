@@ -2,10 +2,11 @@ local lspconfig = require("lspconfig")
 
 local M = {}
 
+
 --- @alias NvimLspClient table
 --- @alias LspClientCallback fun(client: NvimLspClient): nil
 --- @type fun(name: string, callback: LspClientCallback): nil
-local function execute_for_client(name, callback)
+function M.execute_for_client(name, callback)
   local dbg = require("venv-selector.utils").dbg
   local client = vim.lsp.get_active_clients({ name = name })[1]
 
@@ -19,8 +20,8 @@ end
 
 --- @alias VenvChangedHook fun(venv_path: string, venv_python: string): nil
 --- @type VenvChangedHook
-M.pyright_hook = function(_, venv_python)
-  execute_for_client("pyright", function(pyright)
+function M.pyright_hook(_, venv_python)
+  M.execute_for_client("pyright", function(pyright)
     local settings = vim.deepcopy(pyright.config.settings)
     lspconfig.pyright.setup({
       settings = settings,
@@ -32,8 +33,8 @@ M.pyright_hook = function(_, venv_python)
 end
 
 --- @type VenvChangedHook
-M.pylance_hook = function(_, venv_python)
-  execute_for_client("pylance", function(pylance)
+function M.pylance_hook(_, venv_python)
+  M.execute_for_client("pylance", function(pylance)
     local settings = vim.deepcopy(pylance.config.settings)
     lspconfig.pylance.setup({
       settings = settings,
@@ -45,12 +46,12 @@ M.pylance_hook = function(_, venv_python)
 end
 
 --- @type VenvChangedHook
-M.pylsp_hook = function(venv_path, _)
+function M.pylsp_hook(venv_path, _)
   local utils = require("venv-selector.utils")
   local system = require("venv-selector.system")
   local sys = system.get_info()
 
-  execute_for_client("pylsp", function(pylsp)
+  M.execute_for_client("pylsp", function(pylsp)
     local settings = vim.deepcopy(pylsp.config.settings)
     local lib_path = venv_path .. sys.path_sep .. "lib" .. sys.path_sep
     local site_packages = nil

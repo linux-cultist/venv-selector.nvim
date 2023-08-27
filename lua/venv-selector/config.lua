@@ -1,12 +1,12 @@
 local system = require("venv-selector.system")
 local hooks = require("venv-selector.hooks")
 
-config = {
-  settings = {},
-}
+local M = {}
+
+M.settings = {}
 
 -- Default settings if user is not setting anything in setup() call
-config.default_settings = {
+M.default_settings = {
   search = true,
   name = "venv",
   search_workspace = true,
@@ -30,19 +30,19 @@ config.default_settings = {
 }
 
 -- Gets the search path supplied by the user in the setup function, or use current open buffer directory.
-config.get_buffer_dir = function()
+function M.get_buffer_dir()
   local dbg = require("venv-selector.utils").dbg
   local path
-  if config.settings.path == nil then
+  if M.settings.path == nil then
     path = require("telescope.utils").buffer_dir()
     dbg("Telescope path: " .. path)
     -- path = vim.fn.expand("%:p:h")
     -- dbg("Using path from vim.fn.expand: " .. path)
   else
-    path = config.settings.path
+    path = M.settings.path
     dbg("Using path from settings path: " .. path)
   end
   return path
 end
 
-return config
+return M

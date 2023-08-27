@@ -1,11 +1,12 @@
 local utils = require("venv-selector.utils")
 local dbg = require("venv-selector.utils").dbg
+local config = require("venv-selector.config")
 
-local M = {
-  results = {},
-}
+local M = {}
 
-M.add_lines = function(lines, source)
+M.results = {}
+
+function M.add_lines(lines, source)
   local icon = source == "Workspace" and "" or ""
 
   for row in lines do
@@ -16,15 +17,14 @@ M.add_lines = function(lines, source)
   end
 end
 
-M.tablelength = function(t)
+function M.tablelength(t)
   local count = 0
   for _ in pairs(t) do count = count + 1 end
   return count
 end
 
-
 -- This function removes duplicate results when loading results into telescope
-M.prepare_results = function()
+function M.prepare_results()
   local hash = {}
   local res = {}
 
@@ -40,13 +40,13 @@ M.prepare_results = function()
   dbg("There are " .. M.tablelength(M.results) .. " results to show:")
 end
 
-M.remove_results = function()
+function M.remove_results()
   M.results = {}
   dbg("Removed telescope results.")
 end
 
 -- Shows the results from the search in a Telescope picker.
-M.show_results = function()
+function M.show_results()
   local finders = require("telescope.finders")
   local actions_state = require("telescope.actions.state")
   local entry_display = require("telescope.pickers.entry_display")
@@ -81,7 +81,7 @@ end
 
 -- Gets called on results from the async search and adds the findings
 -- to telescope.results to show when its done.
-M.on_read = function(err, data)
+function M.on_read(err, data)
   if err then
     print("Error:" .. err)
   end
@@ -97,7 +97,7 @@ M.on_read = function(err, data)
   end
 end
 
-M.open = function()
+function M.open()
   local finders = require("telescope.finders")
   local conf = require("telescope.config").values
   local pickers = require("telescope.pickers")

@@ -133,12 +133,22 @@ function M.find_parent_venvs(parent_dir)
   local stderr = vim.loop.new_pipe(false)
   local venv_names = utils.create_fd_venv_names_regexp(config.settings.name)
 
+
   local fdconfig = {
-    args = { "--absolute-path", "--color", "never", "-E", config.settings.anaconda_base_path, "-E",
-      config.settings.anaconda_envs_path, "-E", "/proc", "-HItd", venv_names, parent_dir,
+    args = { "--absolute-path", "--color", "never", "-E", "/proc", "-HItd", venv_names, parent_dir,
     },
     stdio = { nil, stdout, stderr },
   }
+
+  if config.settings.anaconda_base_path:len() > 0 then
+    table.insert(fdconfig, "-E")
+    table.insert(fdconfig, config.settings.anaconda_base_path)
+  end
+
+  if config.settings.anaconda_envs_path:len() > 0 then
+    table.insert(fdconfig, "-E")
+    table.insert(fdconfig, config.settings.anaconda_envs_path)
+  end
 
   dbg("Looking for parent venvs in '" .. parent_dir .. "' using the following parameters:")
   dbg(fdconfig.args)

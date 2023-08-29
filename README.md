@@ -299,7 +299,7 @@ Configure `VenvSelect` like this in this example:
 
 ```lua
 require("venv-selector").setup({
-  anaconda_base_paths = "/opt/anaconda",
+  anaconda_base_path = "/opt/anaconda",
   anaconda_envs_path = "/home/cado/.conda/envs",
 })
 ```

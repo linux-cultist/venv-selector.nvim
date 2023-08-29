@@ -188,7 +188,7 @@ function M.activate_venv()
   local actions_state = require("telescope.actions.state")
 
   local selected_venv = actions_state.get_selected_entry()
-  if selected_venv.value ~= nil then
+  if selected_venv ~= nil and selected_venv.value ~= nil then
     dbg("User selected venv in telescope: " .. selected_venv.value)
     M.set_venv_and_system_paths(selected_venv)
     M.cache_venv(selected_venv)

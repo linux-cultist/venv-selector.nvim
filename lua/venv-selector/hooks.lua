@@ -22,11 +22,14 @@ end
 --- @type VenvChangedHook
 function M.pyright_hook(_, venv_python)
   M.execute_for_client("pyright", function(pyright)
+    local utils = require("venv-selector.utils")
     local settings = vim.deepcopy(pyright.config.settings)
     lspconfig.pyright.setup({
       settings = settings,
       before_init = function(_, c)
         c.settings.python.pythonPath = venv_python
+        utils.dbg("Pyright settings:")
+        utils.dbg(c.settings)
       end,
     })
   end)

@@ -76,7 +76,9 @@ function M.show_results()
   })
   local bufnr = vim.api.nvim_get_current_buf()
   local picker = actions_state.get_current_picker(bufnr)
-  picker:refresh(finder, { reset_prompt = true })
+  if picker ~= nil then
+    picker:refresh(finder, { reset_prompt = true })
+  end
 end
 
 -- Gets called on results from the async search and adds the findings

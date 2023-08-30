@@ -175,10 +175,8 @@ function M.open()
   }
   pickers.new({}, opts):find()
 
-
-
   if dont_refresh_telescope and has_telescope_results then
-    dbg("Use cached results.")
+    dbg("Using cached results.")
     return
   end
 

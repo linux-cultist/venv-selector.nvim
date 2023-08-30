@@ -37,7 +37,7 @@ function M.prepare_results()
 
   M.results = res
 
-  dbg("There are " .. M.tablelength(M.results) .. " results to show:")
+  dbg("There are " .. M.tablelength(M.results) .. " results to show.")
 end
 
 function M.remove_results()
@@ -85,7 +85,7 @@ end
 -- to telescope.results to show when its done.
 function M.on_read(err, data)
   if err then
-    print("Error:" .. err)
+    dbg("Error:" .. err)
   end
 
   if data then
@@ -155,7 +155,7 @@ function M.open()
     sorting_strategy = "ascending",
     sorter = conf.file_sorter({}),
     attach_mappings = function(bufnr, map)
-      map("i", "<CR>", function()
+      map("i", "<cr>", function()
         venv.activate_venv()
         actions.close(bufnr)
       end)
@@ -173,15 +173,17 @@ function M.open()
       return true
     end,
   }
-
   pickers.new({}, opts):find()
+
+
+
   if dont_refresh_telescope and has_telescope_results then
     dbg("Use cached results.")
     return
   end
 
-  -- venv.load must be called after the picker is displayed; otherwise, Vim will not be able to get the correct bufnr.
   venv.load()
+  -- venv.load must be called after the picker is displayed; otherwise, Vim will not be able to get the correct bufnr.
 end
 
 return M

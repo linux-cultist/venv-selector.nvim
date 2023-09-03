@@ -257,7 +257,7 @@ function M.find_venv_manager_venvs()
   if search_path_string:len() ~= 0 then
     local cmd = config.settings.fd_binary_name
         .. " . -HItd -tl --absolute-path --max-depth 1 --color never "
-        .. search_path_string
+        .. search_path_string .. " --exclude '3.*.*'"
     dbg("Running search for venv manager venvs with: " .. cmd)
     local openPop = assert(io.popen(cmd, "r"))
     mytelescope.add_lines(openPop:lines(), "VenvManager")

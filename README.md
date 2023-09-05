@@ -127,8 +127,8 @@ Neovim when you have a file opened and your LSP has started. `VenvSelect` looks 
 | venvwrapper_path        | [system.lua](https://github.com/linux-cultist/venv-selector.nvim/blob/main/lua/venv-selector/system.lua) | The default path on your system where the plugin looks for VenvWrapper venvs.                                                                                                                                                                                                                                                                                                                             |
 | anaconda_base_path      | [system.lua](https://github.com/linux-cultist/venv-selector.nvim/blob/main/lua/venv-selector/system.lua) | The default path on your system where the plugin looks for Anaconda venvs.                                                                                                                                                                                                                                                                                                                                |
 | anaconda_envs_path      | [system.lua](https://github.com/linux-cultist/venv-selector.nvim/blob/main/lua/venv-selector/system.lua) | The default path on your system where the plugin looks for Anaconda venvs.                                                                                                                                                                                                                                                                                                                                |
-| anaconda.python_executable = nil | 'python' or 'python3' | The name of the anaconda python executable
-| anaconda.python_parent_dir = nil | 'bin' or 'Scripts' | The name of the anaconda python parent directory
+| anaconda {python_executable = nil} | 'python' or 'python3' | The name of the anaconda python executable
+| anaconda {python_parent_dir = nil} | 'bin' or 'Scripts' | The name of the anaconda python parent directory
 
 
 ## ☄ Getting started

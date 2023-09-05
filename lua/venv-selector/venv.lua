@@ -69,16 +69,25 @@ function M.set_venv_and_system_paths(venv_row)
   local sys = system.get_info()
   dbg(sys)
   local venv_path = venv_row.value
-  local new_bin_path = venv_path .. sys.path_sep .. sys.python_parent_path
-  local venv_python = new_bin_path .. sys.path_sep .. sys.python_name
+  local new_bin_path
+  local venv_python
 
-  M.set_pythonpath(venv_python)
+  if sys.python_parent_path:len() == 0 then
+    -- If we dont have a python_parent_path (user may have set it to an empty string), use just the venv_path
+    new_bin_path = venv_path
+    venv_python = new_bin_path .. sys.path_sep .. sys.python_name
+  else
+    new_bin_path = venv_path .. sys.path_sep .. sys.python_parent_path
+    venv_python = new_bin_path .. sys.path_sep .. sys.python_name
+  end
 
   -- Make sure our python exists on disk before activating it, in case paths are wrong
   if vim.fn.executable(venv_python) == 0 then
     utils.notify("The python path '" .. venv_python .. "' doesnt exist.")
     return
   end
+
+  M.set_pythonpath(venv_python)
 
   if config.settings.dap_enabled == true then
     M.setup_dap_venv(venv_python)

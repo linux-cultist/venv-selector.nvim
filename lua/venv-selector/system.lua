@@ -56,18 +56,24 @@ function M.get_venv_manager_default_path(venv_manager_name)
 end
 
 function M.get_python_parent_path()
+  local config = require("venv-selector.config")
+  local parent_dir = config.settings.anaconda.python_parent_dir
+
   if M.sysname == "Linux" or M.sysname == "Darwin" then
-    return "bin"
+    return parent_dir or "bin"
   else
-    return "Scripts"
+    return parent_dir or "Scripts"
   end
 end
 
 function M.get_python_name()
+  local config = require("venv-selector.config")
+  local python_executable = config.settings.anaconda.python_executable
+
   if M.sysname == "Linux" or M.sysname == "Darwin" then
-    return "python"
+    return python_executable or "python"
   else
-    return "python.exe"
+    return python_executable or "python.exe"
   end
 end
 
@@ -83,7 +89,7 @@ function M.get_cache_default_path()
   if M.sysname == "Windows_NT" then
     return vim.fn.getenv("APPDATA") .. "\\venv-selector\\"
   end
-  return vim.env.HOME .. "/.cache/venv-selector/" 
+  return vim.env.HOME .. "/.cache/venv-selector/"
 end
 
 function M.get_info()

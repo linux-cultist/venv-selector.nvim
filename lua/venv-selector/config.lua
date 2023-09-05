@@ -17,6 +17,10 @@ M.default_settings = {
   pyenv_path = system.get_venv_manager_default_path("Pyenv"),
   anaconda_base_path = system.get_venv_manager_default_path("AnacondaBase"),
   anaconda_envs_path = system.get_venv_manager_default_path("AnacondaEnvs"),
+  anaconda = {
+    python_parent_dir = nil,
+    python_executable = nil
+  },
   venvwrapper_path = system.get_venv_manager_default_path("VenvWrapper"),
   hatch_path = system.get_venv_manager_default_path("Hatch"),
   enable_debug_output = false,

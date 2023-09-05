@@ -87,6 +87,9 @@ function M.get_cache_default_path()
   if M.sysname == "Darwin" then
     return "/Users/" .. user .. "/.cache/venv-selector/"
   end
+  if user == nil
+    return "/root/.cache/venv-selector/"
+  end
   return "/home/" .. user .. "/.cache/venv-selector/"
 end
 

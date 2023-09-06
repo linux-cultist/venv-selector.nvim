@@ -189,19 +189,18 @@ function M.set_pythonpath(python_path)
     pattern = { "*.py" },
     callback = function()
       local active_clients = {}
-      for _, client in
-      ipairs(vim.lsp.get_active_clients({ name = "pyright", bufnr = vim.api.nvim_get_current_buf() }))
-      do
+      for _, client in ipairs(vim.lsp.get_active_clients({ name = "pyright", bufnr = vim.api.nvim_get_current_buf() })) do
         table.insert(active_clients, client)
       end
-      for _, client in
-      ipairs(vim.lsp.get_active_clients({ name = "pylance", bufnr = vim.api.nvim_get_current_buf() }))
-      do
+
+      for _, client in ipairs(vim.lsp.get_active_clients({ name = "pylance", bufnr = vim.api.nvim_get_current_buf() })) do
         table.insert(active_clients, client)
       end
+
       for _, client in ipairs(active_clients) do
-        client.config.settings =
-            vim.tbl_deep_extend("force", client.config.settings, { python = { pythonPath = python_path } })
+        client.config.settings = vim.tbl_deep_extend("force", client.config.settings,
+          { python = { pythonPath = python_path } })
+
         client.notify("workspace/didChangeConfiguration", { settings = nil })
       end
     end,

@@ -106,11 +106,11 @@ function M.set_venv_and_system_paths(venv_row)
 
   -- Remove previous bin path from path
   if prev_bin_path ~= nil then
-    current_system_path = string.gsub(current_system_path, utils.escape_pattern(prev_bin_path .. ":"), "")
+    current_system_path = string.gsub(current_system_path, utils.escape_pattern(prev_bin_path .. sys.path_env_sep), "")
   end
 
   -- Add new bin path to path
-  local new_system_path = new_bin_path .. ":" .. current_system_path
+  local new_system_path = new_bin_path .. sys.path_env_sep .. current_system_path
   vim.fn.setenv("PATH", new_system_path)
   M.current_bin_path = new_bin_path
 
@@ -128,7 +128,7 @@ function M.deactivate_venv()
   local prev_bin_path = M.current_bin_path
 
   if prev_bin_path ~= nil then
-    current_system_path = string.gsub(current_system_path, utils.escape_pattern(prev_bin_path .. ":"), "")
+    current_system_path = string.gsub(current_system_path, utils.escape_pattern(prev_bin_path .. sys.path_env_sep), "")
     vim.fn.setenv("PATH", current_system_path)
   end
 

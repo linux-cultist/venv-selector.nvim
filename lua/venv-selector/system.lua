@@ -85,6 +85,14 @@ function M.get_path_separator()
   end
 end
 
+function M.get_path_env_separator()
+  if M.sysname == "Windows_NT" then
+    return ";"
+  else
+    return ":"
+  end
+end
+
 function M.get_cache_default_path()
   if M.sysname == "Windows_NT" then
     return vim.fn.getenv("APPDATA") .. "\\venv-selector\\"
@@ -94,13 +102,15 @@ end
 
 function M.get_info()
   --- @class SystemInfo
-  --- @field sysname string System namme
+  --- @field sysname string System name
   --- @field path_sep string Path separator appropriate for user system
+  --- @field path_env_sep string System-specific $PATH entry separator
   --- @field python_name string Name of Python binary
   --- @field python_parent_path string Directory containing Python binary on user system
   return {
     sysname = vim.loop.os_uname().sysname,
     path_sep = M.get_path_separator(),
+    path_env_sep = M.get_path_env_separator(),
     python_name = M.get_python_name(),
     python_parent_path = M.get_python_parent_path(),
   }

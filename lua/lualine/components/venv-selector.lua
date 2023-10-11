@@ -20,7 +20,7 @@ function M:update_status()
     local venv_name = venv_parts[#venv_parts]
     return venv_name
   else
-    return 'Select Virtual Environment'
+    return 'Select Venv'
   end
 end
 

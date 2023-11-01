@@ -20,6 +20,7 @@ Browse existing python virtual environments on your computer and select one to a
 - Currently supports virtual environments created in:
   - [Python](https://www.python.org/) (`python3 -m venv venv`)
   - [Poetry](https://python-poetry.org)
+  - PDM
   - [Pipenv](https://pipenv.pypa.io/en/latest/)
   - [Anaconda](https://www.anaconda.com)
   - [Pyenv](https://github.com/pyenv/pyenv)
@@ -98,7 +99,7 @@ Look into options like `parents` and `name` to change the specifics of this kind
 
 **Venv Manager Search**
 
-`VenvSelect` looks for virtual environments managed by Poetry, Pipenv, Anaconda etc in specific locations where they normally are. This kind of search
+`VenvSelect` looks for virtual environments managed by Poetry, PDM, Pipenv, Anaconda etc in specific locations where they normally are. This kind of search
 does not go up to parent directories - it just looks in the specific default folders on your machine.
 
 Look into options like `poetry_path`, `pipenv_path` etc to change where the plugin will look. The options `name` or `parents` has no effect on this search.
@@ -121,6 +122,7 @@ Neovim when you have a file opened and your LSP has started. `VenvSelect` looks 
 | fd_binary_name          | fd                                                                                                       | `VenvSelect` also tries to find other names for the same program, like `fdfind` and `fd-find` and will use those if found. But you can set something specific here if you need to.                                                                                                                                                                                                                        |
 | notify_user_on_activate | true                                                                                                     | `VenvSelect` will notify you with a message when a venv is selected in the user interface.                                                                                                                                                                                                                                                                                                                |
 | poetry_path             | [system.lua](https://github.com/linux-cultist/venv-selector.nvim/blob/main/lua/venv-selector/system.lua) | The default path on your system where the plugin looks for Poetry venvs.                                                                                                                                                                                                                                                                                                                                  |
+| pdm_path                | [system.lua](https://github.com/linux-cultist/venv-selector.nvim/blob/main/lua/venv-selector/system.lua) | The default path on your system where the plugin looks for PDM venvs.                                                                                                                                                                                                                                                                                                                                  |
 | pipenv_path             | [system.lua](https://github.com/linux-cultist/venv-selector.nvim/blob/main/lua/venv-selector/system.lua) | The default path on your system where the plugin looks for Pipenv venvs.                                                                                                                                                                                                                                                                                                                                  |
 | pyenv_path              | [system.lua](https://github.com/linux-cultist/venv-selector.nvim/blob/main/lua/venv-selector/system.lua) | The default path on your system where the plugin looks for Pyenv venvs.                                                                                                                                                                                                                                                                                                                                   |
 | hatch_path              | [system.lua](https://github.com/linux-cultist/venv-selector.nvim/blob/main/lua/venv-selector/system.lua) | The default path on your system where the plugin looks for Hatch venvs.                                                                                                                                                                                                                                                                                                                                   |

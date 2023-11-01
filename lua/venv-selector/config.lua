@@ -13,6 +13,7 @@ M.default_settings = {
 	search_venv_managers = true,
 	parents = 2, -- When search is true, go this many directories up from the current opened buffer
 	poetry_path = system.get_venv_manager_default_path("Poetry"),
+	pdm_path = system.get_venv_manager_default_path("PDM"),
 	pipenv_path = system.get_venv_manager_default_path("Pipenv"),
 	pyenv_path = system.get_venv_manager_default_path("Pyenv"),
 	anaconda_base_path = system.get_venv_manager_default_path("AnacondaBase"),

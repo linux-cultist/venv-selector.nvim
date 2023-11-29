@@ -21,18 +21,11 @@ end
 --- @alias VenvChangedHook fun(venv_path: string, venv_python: string): nil
 --- @type VenvChangedHook
 function M.pyright_hook(_, venv_python)
-  M.execute_for_client("pyright", function(pyright)
-    local utils = require("venv-selector.utils")
-    local settings = vim.deepcopy(pyright.config.settings)
-    lspconfig.pyright.setup({
-      settings = settings,
-      before_init = function(_, c)
-        c.settings.python.pythonPath = venv_python
-        utils.dbg("Pyright settings:")
-        utils.dbg(c.settings)
-      end,
-    })
-  end)
+  local clients = vim.lsp.get_active_clients({ name = "pyright" })
+  for _, client in ipairs(clients) do
+    client.config.settings = vim.tbl_deep_extend("force", client.config.settings, { python = { pythonPath = venv_python } })
+    client.notify("workspace/didChangeConfiguration", { settings = nil })
+  end
 end
 
 --- @type VenvChangedHook

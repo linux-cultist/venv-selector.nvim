@@ -125,6 +125,7 @@ function M.deactivate_venv()
   local prev_bin_path = M.current_bin_path
 
   if prev_bin_path ~= nil then
+    local sys = system.get_info()
     current_system_path = string.gsub(current_system_path, utils.escape_pattern(prev_bin_path .. sys.path_env_sep), '')
     vim.fn.setenv('PATH', current_system_path)
   end

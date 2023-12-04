@@ -1,6 +1,5 @@
 local venv = require 'venv-selector.venv'
 local config = require 'venv-selector.config'
-local user_commands = require 'venv-selector.user_commands'
 local dbg = require('venv-selector.utils').dbg
 local mytelescope = require 'venv-selector.mytelescope'
 local hooks = require 'venv-selector.hooks'
@@ -13,20 +12,19 @@ function M.setup(settings)
   -- Let user config overwrite any default config options.
   config.settings = vim.tbl_deep_extend('force', config.default_settings, settings or {})
   dbg(config.settings)
+
   -- Create the VenvSelect command.
-  user_commands.setup_user_commands('VenvSelect', M.open, 'Use VenvSelect to activate a venv')
-  user_commands.setup_user_commands(
-    'VenvSelectCached',
-    M.retrieve_from_cache,
-    'Use VenvSelect to retrieve a venv from cache'
-  )
-  user_commands.setup_user_commands('VenvSelectCurrent', function()
+  local venv_select_current = function()
     if M.get_active_venv() ~= nil then
       utils.notify("Activated '" .. (M.get_active_venv()) .. "'")
     else
       utils.notify 'No venv has been selected yet.'
     end
-  end, 'Show currently selected venv')
+  end
+
+  vim.api.nvim_create_user_command('VenvSelect', M.open, { desc = 'Activate venv' })
+  vim.api.nvim_create_user_command('VenvSelectCached', M.retrieve_from_cache, { desc = 'Retrieve venv from cache' })
+  vim.api.nvim_create_user_command('VenvSelectCurrent', venv_select_current, { desc = 'Show currently selected venv' })
 
   -- Check if the user has the requirements to run VenvSelect
   if utils.fd_or_fdfind_exists() == false then

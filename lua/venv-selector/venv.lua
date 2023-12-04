@@ -86,8 +86,6 @@ function M.set_venv_and_system_paths(venv_row)
     return
   end
 
-  M.set_pythonpath(venv_python)
-
   if config.settings.dap_enabled == true then
     M.setup_dap_venv(venv_python)
   end
@@ -179,30 +177,6 @@ function M.find_parent_venvs(parent_dir)
     end)
   )
   vim.loop.read_start(stdout, mytelescope.on_read)
-end
-
--- Hook into lspconfig so we can set the python to use.
-function M.set_pythonpath(python_path)
-  vim.api.nvim_create_autocmd({ 'BufReadPost' }, {
-    pattern = { '*.py' },
-    callback = function()
-      local active_clients = {}
-      for _, client in ipairs(vim.lsp.get_active_clients { name = 'pyright', bufnr = vim.api.nvim_get_current_buf() }) do
-        table.insert(active_clients, client)
-      end
-
-      for _, client in ipairs(vim.lsp.get_active_clients { name = 'pylance', bufnr = vim.api.nvim_get_current_buf() }) do
-        table.insert(active_clients, client)
-      end
-
-      for _, client in ipairs(active_clients) do
-        client.config.settings =
-          vim.tbl_deep_extend('force', client.config.settings, { python = { pythonPath = python_path } })
-
-        client.notify('workspace/didChangeConfiguration', { settings = nil })
-      end
-    end,
-  })
 end
 
 -- Gets called when user hits enter in the Telescope results dialog

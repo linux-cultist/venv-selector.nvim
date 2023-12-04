@@ -1,26 +1,24 @@
 local M = {}
 
-local config = require("venv-selector.config")
-local msg_prefix = "VenvSelect: "
+local config = require 'venv-selector.config'
+local msg_prefix = 'VenvSelect: '
 
 function M.notify(msg)
-  vim.notify(msg_prefix .. msg, vim.log.levels.INFO, { title = "VenvSelect" })
+  vim.notify(msg_prefix .. msg, vim.log.levels.INFO, { title = 'VenvSelect' })
 end
 
 function M.error(msg)
-  vim.notify(msg_prefix .. msg, vim.log.levels.ERROR, { title = "VenvSelect" })
+  vim.notify(msg_prefix .. msg, vim.log.levels.ERROR, { title = 'VenvSelect' })
 end
 
 function M.fd_or_fdfind_exists()
-  local utils = require("venv-selector.utils")
+  local utils = require 'venv-selector.utils'
   local custom_fd = config.settings.fd_binary_name
 
   if custom_fd ~= nil then
     if vim.fn.executable(custom_fd) == 1 then
       utils.dbg(
-        "Setting fd binary to '"
-        .. custom_fd
-        .. "' since it was found on system and requested by user instead of fd."
+        "Setting fd binary to '" .. custom_fd .. "' since it was found on system and requested by user instead of fd."
       )
       config.settings.fd_binary_name = custom_fd
       return true
@@ -30,21 +28,21 @@ function M.fd_or_fdfind_exists()
     end
   end
 
-  local fd_exists = vim.fn.executable("fd")
-  local fdfind_exists = vim.fn.executable("fdfind")
-  local fd_find_exists = vim.fn.executable("fd-find")
+  local fd_exists = vim.fn.executable 'fd'
+  local fdfind_exists = vim.fn.executable 'fdfind'
+  local fd_find_exists = vim.fn.executable 'fd-find'
 
   if fd_exists == 1 then
-    config.settings.fd_binary_name = "fd"
-    utils.dbg("Setting fd_binary_name to 'fd' since it was found on system.")
+    config.settings.fd_binary_name = 'fd'
+    utils.dbg "Setting fd_binary_name to 'fd' since it was found on system."
     return true
   elseif fdfind_exists == 1 then
-    config.settings.fd_binary_name = "fdfind"
-    utils.dbg("Setting fd_binary_name to 'fdfind' since it was found on system instead of fd.")
+    config.settings.fd_binary_name = 'fdfind'
+    utils.dbg "Setting fd_binary_name to 'fdfind' since it was found on system instead of fd."
     return true
   elseif fd_find_exists == 2 then
-    config.settings.fd_binary_name = "fd-find"
-    utils.dbg("Setting fd_binary_name to 'fd-find' since it was found on system instead of fd.")
+    config.settings.fd_binary_name = 'fd-find'
+    utils.dbg "Setting fd_binary_name to 'fd-find' since it was found on system instead of fd."
     return true
   else
     return false
@@ -56,16 +54,16 @@ function M.dbg(msg)
     return
   end
 
-  if type(msg) == "string" then
+  if type(msg) == 'string' then
     print(msg_prefix .. msg)
   else
-    if type(msg) == "table" then
+    if type(msg) == 'table' then
       print(msg_prefix)
       M.print_table(msg)
-    elseif type(msg) == "boolean" then
+    elseif type(msg) == 'boolean' then
       print(msg_prefix .. tostring(msg))
     else
-      print("Unhandled message type to dbg: message type is " .. type(msg))
+      print('Unhandled message type to dbg: message type is ' .. type(msg))
     end
   end
 end
@@ -75,7 +73,7 @@ function M.print_table(t)
 end
 
 function M.escape_pattern(text)
-  return text:gsub("([^%w])", "%%%1")
+  return text:gsub('([^%w])', '%%%1')
 end
 
 -- Go up in the directory tree "limit" amount of times, and then returns the path.
@@ -97,18 +95,18 @@ end
 -- the '|' character. We also make sure that the venv name is an exact match
 -- using '^' and '$' so we dont match on paths with the venv name in the middle.
 function M.create_fd_venv_names_regexp(config_venv_name)
-  local venv_names = ""
+  local venv_names = ''
 
-  if type(config_venv_name) == "table" then
-    venv_names = venv_names .. "("
+  if type(config_venv_name) == 'table' then
+    venv_names = venv_names .. '('
     for _, venv_name in pairs(config_venv_name) do
-      venv_names = venv_names .. "^" .. venv_name .. "$" .. "|" -- Creates (^venv_name1$ | ^venv_name2$ ) etc
+      venv_names = venv_names .. '^' .. venv_name .. '$' .. '|' -- Creates (^venv_name1$ | ^venv_name2$ ) etc
     end
-    venv_names = venv_names:sub(1, -2)                          -- Always remove last '|' since we only want it between words
-    venv_names = venv_names .. ")"
+    venv_names = venv_names:sub(1, -2) -- Always remove last '|' since we only want it between words
+    venv_names = venv_names .. ')'
   else
-    if type(config_venv_name) == "string" then
-      venv_names = "^" .. config_venv_name .. "$"
+    if type(config_venv_name) == 'string' then
+      venv_names = '^' .. config_venv_name .. '$'
     end
   end
 
@@ -118,18 +116,18 @@ end
 -- Create a search path string to fd command with all paths instead of
 -- running fd several times.
 function M.create_fd_search_path_string(paths)
-  local search_path_string = ""
+  local search_path_string = ''
   for _, path in pairs(paths) do
     local ishatch = path == config.settings.hatch_path
     local expanded_path = vim.fn.expand(path)
 
     if vim.fn.isdirectory(expanded_path) ~= 0 then
-      expanded_path = expanded_path:gsub(" ", "\\ ") -- escape space so paths can have a space
+      expanded_path = expanded_path:gsub(' ', '\\ ') -- escape space so paths can have a space
       if ishatch == true then
         -- special handling for hatch
-        search_path_string = search_path_string .. expanded_path .. "/*/*" .. " "
+        search_path_string = search_path_string .. expanded_path .. '/*/*' .. ' '
       else
-        search_path_string = search_path_string .. expanded_path .. " "
+        search_path_string = search_path_string .. expanded_path .. ' '
       end
     end
   end
@@ -140,7 +138,7 @@ end
 function M.remove_last_slash(s)
   local last_character = string.sub(s, -1, -1)
 
-  if last_character == "/" or last_character == "\\" then
+  if last_character == '/' or last_character == '\\' then
     return string.sub(s, 1, -2)
   end
 

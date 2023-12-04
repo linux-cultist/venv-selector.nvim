@@ -12,18 +12,15 @@ function M.error(msg)
 end
 
 function M.fd_or_fdfind_exists()
-  local utils = require 'venv-selector.utils'
   local custom_fd = config.settings.fd_binary_name
 
   if custom_fd ~= nil then
     if vim.fn.executable(custom_fd) == 1 then
-      utils.dbg(
-        "Setting fd binary to '" .. custom_fd .. "' since it was found on system and requested by user instead of fd."
-      )
+      M.dbg("Setting fd binary to '" .. custom_fd .. "' since it was found and requested by user instead of fd.")
       config.settings.fd_binary_name = custom_fd
       return true
     else
-      utils.error("You have set fd_binary_name to '" .. custom_fd .. "' but it doesnt exist on your system.")
+      M.error("You have set fd_binary_name to '" .. custom_fd .. "' but it doesnt exist on your system.")
       return false
     end
   end
@@ -34,15 +31,15 @@ function M.fd_or_fdfind_exists()
 
   if fd_exists == 1 then
     config.settings.fd_binary_name = 'fd'
-    utils.dbg "Setting fd_binary_name to 'fd' since it was found on system."
+    M.dbg "Setting fd_binary_name to 'fd' since it was found on system."
     return true
   elseif fdfind_exists == 1 then
     config.settings.fd_binary_name = 'fdfind'
-    utils.dbg "Setting fd_binary_name to 'fdfind' since it was found on system instead of fd."
+    M.dbg "Setting fd_binary_name to 'fdfind' since it was found on system instead of fd."
     return true
   elseif fd_find_exists == 2 then
     config.settings.fd_binary_name = 'fd-find'
-    utils.dbg "Setting fd_binary_name to 'fd-find' since it was found on system instead of fd."
+    M.dbg "Setting fd_binary_name to 'fd-find' since it was found on system instead of fd."
     return true
   else
     return false
@@ -56,15 +53,13 @@ function M.dbg(msg)
 
   if type(msg) == 'string' then
     print(msg_prefix .. msg)
+  elseif type(msg) == 'table' then
+    print(msg_prefix)
+    M.print_table(msg)
+  elseif type(msg) == 'boolean' then
+    print(msg_prefix .. tostring(msg))
   else
-    if type(msg) == 'table' then
-      print(msg_prefix)
-      M.print_table(msg)
-    elseif type(msg) == 'boolean' then
-      print(msg_prefix .. tostring(msg))
-    else
-      print('Unhandled message type to dbg: message type is ' .. type(msg))
-    end
+    print('Unhandled message type to dbg: message type is ' .. type(msg))
   end
 end
 
@@ -104,10 +99,8 @@ function M.create_fd_venv_names_regexp(config_venv_name)
     end
     venv_names = venv_names:sub(1, -2) -- Always remove last '|' since we only want it between words
     venv_names = venv_names .. ')'
-  else
-    if type(config_venv_name) == 'string' then
-      venv_names = '^' .. config_venv_name .. '$'
-    end
+  elseif type(config_venv_name) == 'string' then
+    venv_names = '^' .. config_venv_name .. '$'
   end
 
   return venv_names

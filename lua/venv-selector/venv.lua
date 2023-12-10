@@ -221,7 +221,7 @@ function M.list_pyright_workspace_folders()
   local workspace_folders = {}
   local workspace_folders_found = false
   for _, client in pairs(vim.lsp.get_active_clients()) do
-    if vim.tbl_contains({ 'pyright', 'pylance' }, client.name) then
+    if vim.tbl_contains({ 'pyright' }, client.name) then
       for _, folder in pairs(client.workspace_folders or {}) do
         dbg('Found workspace folder: ' .. folder.name)
         table.insert(workspace_folders, folder.name)

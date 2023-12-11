@@ -5,6 +5,19 @@ local M = {}
 --- @alias NvimLspClient table
 --- @alias LspClientCallback fun(client: NvimLspClient): nil
 --- @type fun(name: string, callback: LspClientCallback): nil
+function M.execute_for_clients(name, callback)
+  local dbg = require('venv-selector.utils').dbg
+  -- get_active_clients deprecated in neovim v0.10
+  local clients = (vim.lsp.get_clients or vim.lsp.get_active_clients) { name = name }
+
+  if not next(clients) then
+    dbg('No client named: ' .. name .. ' found')
+  else
+    vim.tbl_map(callback, clients)
+  end
+end
+
+--- @type fun(name: string, callback: LspClientCallback): nil
 function M.execute_for_client(name, callback)
   local dbg = require('venv-selector.utils').dbg
   -- get_active_clients deprecated in neovim v0.10
@@ -20,12 +33,11 @@ end
 --- @alias VenvChangedHook fun(venv_path: string, venv_python: string): nil
 --- @type VenvChangedHook
 function M.pyright_hook(_, venv_python)
-  local clients = vim.lsp.get_active_clients { name = 'pyright' }
-  for _, client in ipairs(clients) do
+  M.execute_for_clients('pyright', function(client)
     client.config.settings =
       vim.tbl_deep_extend('force', client.config.settings, { python = { pythonPath = venv_python } })
     client.notify('workspace/didChangeConfiguration', { settings = nil })
-  end
+  end)
 end
 
 --- @type VenvChangedHook

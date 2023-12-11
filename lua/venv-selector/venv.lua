@@ -86,8 +86,6 @@ function M.set_venv_and_system_paths(venv_row)
     return
   end
 
-  M.set_pythonpath(venv_python)
-
   if config.settings.dap_enabled == true then
     M.setup_dap_venv(venv_python)
   end
@@ -127,6 +125,7 @@ function M.deactivate_venv()
   local prev_bin_path = M.current_bin_path
 
   if prev_bin_path ~= nil then
+    local sys = system.get_info()
     current_system_path = string.gsub(current_system_path, utils.escape_pattern(prev_bin_path .. sys.path_env_sep), '')
     vim.fn.setenv('PATH', current_system_path)
   end
@@ -146,8 +145,12 @@ end
 function M.find_parent_venvs(parent_dir)
   local stdout = vim.loop.new_pipe(false)
   local stderr = vim.loop.new_pipe(false)
-  local venv_names = utils.create_fd_venv_names_regexp(config.settings.name)
+  if stdout == nil or stderr == nil then
+    dbg 'Failed to create pipes for fd process.'
+    return
+  end
 
+  local venv_names = utils.create_fd_venv_names_regexp(config.settings.name)
   local fdconfig = {
     args = { '--absolute-path', '--color', 'never', '-E', '/proc', '-HItd', venv_names, parent_dir },
     stdio = { nil, stdout, stderr },
@@ -181,30 +184,6 @@ function M.find_parent_venvs(parent_dir)
   vim.loop.read_start(stdout, mytelescope.on_read)
 end
 
--- Hook into lspconfig so we can set the python to use.
-function M.set_pythonpath(python_path)
-  vim.api.nvim_create_autocmd({ 'BufReadPost' }, {
-    pattern = { '*.py' },
-    callback = function()
-      local active_clients = {}
-      for _, client in ipairs(vim.lsp.get_active_clients { name = 'pyright', bufnr = vim.api.nvim_get_current_buf() }) do
-        table.insert(active_clients, client)
-      end
-
-      for _, client in ipairs(vim.lsp.get_active_clients { name = 'pylance', bufnr = vim.api.nvim_get_current_buf() }) do
-        table.insert(active_clients, client)
-      end
-
-      for _, client in ipairs(active_clients) do
-        client.config.settings =
-          vim.tbl_deep_extend('force', client.config.settings, { python = { pythonPath = python_path } })
-
-        client.notify('workspace/didChangeConfiguration', { settings = nil })
-      end
-    end,
-  })
-end
-
 -- Gets called when user hits enter in the Telescope results dialog
 function M.activate_venv()
   local actions_state = require 'telescope.actions.state'
@@ -221,7 +200,7 @@ function M.list_pyright_workspace_folders()
   local workspace_folders = {}
   local workspace_folders_found = false
   for _, client in pairs(vim.lsp.get_active_clients()) do
-    if vim.tbl_contains({ 'pyright', 'pylance' }, client.name) then
+    if vim.tbl_contains({ 'pyright' }, client.name) then
       for _, folder in pairs(client.workspace_folders or {}) do
         dbg('Found workspace folder: ' .. folder.name)
         table.insert(workspace_folders, folder.name)

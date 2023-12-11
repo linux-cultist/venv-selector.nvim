@@ -16,7 +16,7 @@ Browse existing python virtual environments on your computer and select one to a
 
 - Plug and play, no configuration required
 - Switch back and forth between virtual environments without restarting neovim
-- Support [Pyright](https://github.com/microsoft/pyright) and [Pylsp](https://github.com/python-lsp/python-lsp-server) lsp servers with ability to config hooks for others.
+- Support [Pyright](https://github.com/microsoft/pyright), [Pylance](https://github.com/microsoft/pylance-release) and [Pylsp](https://github.com/python-lsp/python-lsp-server) lsp servers with ability to config hooks for others.
 - Currently supports virtual environments created in:
   - [Python](https://www.python.org/) (`python3 -m venv venv`)
   - [Poetry](https://python-poetry.org)
@@ -32,7 +32,7 @@ Browse existing python virtual environments on your computer and select one to a
 
 ## 📋 Installation and Configuration
 
-The plugin works with **pyright** or **pylsp** lsp servers. If you want to take advantage of this plugin's default behaviour, you need to have either of them installed
+The plugin works with **pyright**, **pylance**, or **pylsp** lsp servers. If you want to take advantage of this plugin's default behaviour, you need to have either of them installed
 and configured using [lspconfig](https://github.com/neovim/nvim-lspconfig). If you want to use custom integration, see [hooks section](#hooks)
 before using this plugin. You can see example setup instructions here: https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#pyright
 
@@ -42,20 +42,20 @@ Easiest way if you use [Lazy.nvim](https://github.com/folke/lazy.nvim) is to use
 
 ```lua
 return {
-    "linux-cultist/venv-selector.nvim",
-    dependencies = { "neovim/nvim-lspconfig", "nvim-telescope/telescope.nvim", "mfussenegger/nvim-dap-python" },
-    opts = {
-        -- Your options go here
-        -- name = "venv",
-        -- auto_refresh = false
-    },
-    event = "VeryLazy", -- Optional: needed only if you want to type `:VenvSelect` without a keymapping
-    keys = {
-        -- Keymap to open VenvSelector to pick a venv.
-        { "<leader>vs", "<cmd>VenvSelect<cr>" },
-        -- Keymap to retrieve the venv from a cache (the one previously used for the same project directory).
-        { "<leader>vc", "<cmd>VenvSelectCached<cr>" },
-    }
+  'linux-cultist/venv-selector.nvim',
+  dependencies = { 'neovim/nvim-lspconfig', 'nvim-telescope/telescope.nvim', 'mfussenegger/nvim-dap-python' },
+  opts = {
+    -- Your options go here
+    -- name = "venv",
+    -- auto_refresh = false
+  },
+  event = 'VeryLazy', -- Optional: needed only if you want to type `:VenvSelect` without a keymapping
+  keys = {
+    -- Keymap to open VenvSelector to pick a venv.
+    { '<leader>vs', '<cmd>VenvSelect<cr>' },
+    -- Keymap to retrieve the venv from a cache (the one previously used for the same project directory).
+    { '<leader>vc', '<cmd>VenvSelectCached<cr>' },
+  },
 }
 ```
 
@@ -63,22 +63,22 @@ But if you want, you can also manually call the setup function like this:
 
 ```lua
 return {
-    "linux-cultist/venv-selector.nvim",
-    dependencies = { "neovim/nvim-lspconfig", "nvim-telescope/telescope.nvim", "mfussenegger/nvim-dap-python" },
-    config = function()
-        require("venv-selector").setup({
-            -- Your options go here
-            -- name = "venv",
-            -- auto_refresh = false
-        })
-    end,
-    event = "VeryLazy", -- Optional: needed only if you want to type `:VenvSelect` without a keymapping
-    keys = {
-        -- Keymap to open VenvSelector to pick a venv.
-        { "<leader>vs", "<cmd>VenvSelect<cr>" },
-        -- Keymap to retrieve the venv from a cache (the one previously used for the same project directory).
-        { "<leader>vc", "<cmd>VenvSelectCached<cr>" },
+  'linux-cultist/venv-selector.nvim',
+  dependencies = { 'neovim/nvim-lspconfig', 'nvim-telescope/telescope.nvim', 'mfussenegger/nvim-dap-python' },
+  config = function()
+    require('venv-selector').setup {
+      -- Your options go here
+      -- name = "venv",
+      -- auto_refresh = false
     }
+  end,
+  event = 'VeryLazy', -- Optional: needed only if you want to type `:VenvSelect` without a keymapping
+  keys = {
+    -- Keymap to open VenvSelector to pick a venv.
+    { '<leader>vs', '<cmd>VenvSelect<cr>' },
+    -- Keymap to retrieve the venv from a cache (the one previously used for the same project directory).
+    { '<leader>vc', '<cmd>VenvSelectCached<cr>' },
+  },
 }
 ```
 
@@ -147,40 +147,41 @@ There is also the `:VenvSelectCurrent` command to get a message saying which ven
 
 ### Hooks
 
-By default, the plugin tries to setup `pyright` and `pylsp` automatically using hooks. If you want to add a custom integration, you need to write
+By default, the plugin tries to setup `pyright`, `pylance`, and `pylsp` automatically using hooks. If you want to add a custom integration, you need to write
 a hook with following signature:
 
 ```lua
 --- @param venv_path string A string containing the absolute path to selected virtualenv
 --- @param venv_python string A string containing the absolute path to python binary in selected venv
 function your_hook_name(venv_path, venv_python)
-	--- your custom integration here
+  --- your custom integration here
 end
 ```
 
 And provide it to a setup function:
 
 ```lua
-require("venv-selector").setup({
-	--- other configuration
-	changed_venv_hooks = { your_hook_name }
-})
+require('venv-selector').setup {
+  --- other configuration
+  changed_venv_hooks = { your_hook_name },
+}
 ```
 
 The plugin-provided hooks are exposed for convenience in case you want to use them alongside your custom one:
 
 ```lua
-local venv_selector = require("venv-selector")
+local venv_selector = require 'venv-selector'
 
-venv_selector.setup({
-	--- other configuration
-	changed_venv_hooks = { your_hook_name, venv_selector.hooks.pyright }
-})
+venv_selector.setup {
+  --- other configuration
+  changed_venv_hooks = { your_hook_name, venv_selector.hooks.pyright },
+}
 ```
 
 Currently provided hooks are:
 
 - `require("venv-selector").hooks.pyright`
+- `require("venv-selector").hooks.pylance`
 - `require("venv-selector").hooks.pylsp`
 
 ### Helpful functions
@@ -188,9 +189,9 @@ Currently provided hooks are:
 The selected virtual environment and path to the python executable is available from these two functions:
 
 ```lua
-require("venv-selector").get_active_path() -- Gives path to the python executable inside the activated virtual environment
-require("venv-selector").get_active_venv() -- Gives path to the activated virtual environment folder
-require("venv-selector").retrieve_from_cache() -- To activate the last virtual environment set in the current working directory
+require('venv-selector').get_active_path() -- Gives path to the python executable inside the activated virtual environment
+require('venv-selector').get_active_venv() -- Gives path to the activated virtual environment folder
+require('venv-selector').retrieve_from_cache() -- To activate the last virtual environment set in the current working directory
 ```
 
 This can be used to print out the virtual environment in a status bar, or make the plugin work with other plugins that
@@ -204,16 +205,16 @@ the next time, simply use `:VenvSelectCached` to reactivate your virtual environ
 This can also be automated to run whenever you enter into a python project, for example.
 
 ```lua
-vim.api.nvim_create_autocmd("VimEnter", {
-desc = "Auto select virtualenv Nvim open",
-pattern = "*",
-callback = function()
-  local venv = vim.fn.findfile("pyproject.toml", vim.fn.getcwd() .. ";")
-  if venv ~= "" then
-    require("venv-selector").retrieve_from_cache()
-  end
-end,
-once = true,
+vim.api.nvim_create_autocmd('VimEnter', {
+  desc = 'Auto select virtualenv Nvim open',
+  pattern = '*',
+  callback = function()
+    local venv = vim.fn.findfile('pyproject.toml', vim.fn.getcwd() .. ';')
+    if venv ~= '' then
+      require('venv-selector').retrieve_from_cache()
+    end
+  end,
+  once = true,
 })
 ```
 
@@ -246,9 +247,9 @@ You can see that the path shows that the virtual environments are located under 
 Copy the virtualenv path and set it as a parameter to the `VenvSelector` setup function:
 
 ```lua
-require("venv-selector").setup({
-	poetry_path = "/home/cado/.cache/pypoetry/virtualenvs",
-})
+require('venv-selector').setup {
+  poetry_path = '/home/cado/.cache/pypoetry/virtualenvs',
+}
 ```
 
 ##### Pipenv
@@ -265,9 +266,9 @@ You can see that the path shows that the virtual environments are located under 
 Copy the virtualenv path and set it as a parameter to the `VenvSelector` setup function:
 
 ```lua
-require("venv-selector").setup({
-	pipenv_path = "/home/cado/.local/share/virtualenvs",
-})
+require('venv-selector').setup {
+  pipenv_path = '/home/cado/.local/share/virtualenvs',
+}
 ```
 
 #### Pyenv-virtualenv
@@ -281,9 +282,9 @@ The virtualenvs are stored under the `versions` folder inside that directory. In
 Copy the virtualenv path and set it as a parameter to the `VenvSelector` setup function:
 
 ```lua
-require("venv-selector").setup({
-    pyenv_path = "/home/cado/.pyenv/versions",
-})
+require('venv-selector').setup {
+  pyenv_path = '/home/cado/.pyenv/versions',
+}
 ```
 
 #### Anaconda
@@ -302,10 +303,10 @@ base                  *  /opt/anaconda
 Configure `VenvSelect` like this in this example:
 
 ```lua
-require("venv-selector").setup({
-  anaconda_base_path = "/opt/anaconda",
-  anaconda_envs_path = "/home/cado/.conda/envs",
-})
+require('venv-selector').setup {
+  anaconda_base_path = '/opt/anaconda',
+  anaconda_envs_path = '/home/cado/.conda/envs',
+}
 ```
 
 ## Dependencies
@@ -330,21 +331,25 @@ To add a clickable component to your heirline statusline.
 
 ```lua
 local actived_venv = function()
-	local venv_name = require("venv-selector").get_active_venv()
-	if venv_name ~= nil then
-		return string.gsub(venv_name, ".*/pypoetry/virtualenvs/", "(poetry) ")
-	else
-		return "venv"
-	end
+  local venv_name = require('venv-selector').get_active_venv()
+  if venv_name ~= nil then
+    return string.gsub(venv_name, '.*/pypoetry/virtualenvs/', '(poetry) ')
+  else
+    return 'venv'
+  end
 end
 
 local venv = {
-	{
-		provider = function() return  "  " .. actived_venv() end,
-	},
-	on_click = {
-		callback = function() vim.cmd.VenvSelect() end,
-		name = "heirline_statusline_venv_selector",
-	},
+  {
+    provider = function()
+      return '  ' .. actived_venv()
+    end,
+  },
+  on_click = {
+    callback = function()
+      vim.cmd.VenvSelect()
+    end,
+    name = 'heirline_statusline_venv_selector',
+  },
 }
 ```

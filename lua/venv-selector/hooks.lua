@@ -41,6 +41,15 @@ function M.pyright_hook(_, venv_python)
 end
 
 --- @type VenvChangedHook
+function M.pylance_hook(_, venv_python)
+  M.execute_for_clients('pylance', function(client)
+    client.config.settings =
+      vim.tbl_deep_extend('force', client.config.settings, { python = { pythonPath = venv_python } })
+    client.notify('workspace/didChangeConfiguration', { settings = nil })
+  end)
+end
+
+--- @type VenvChangedHook
 function M.pylsp_hook(venv_path, _)
   local utils = require 'venv-selector.utils'
   local system = require 'venv-selector.system'

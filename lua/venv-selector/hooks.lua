@@ -7,14 +7,14 @@ local M = {}
 --- @type fun(name: string, callback: LspClientCallback): nil
 function M.execute_for_client(name, callback)
   local dbg = require('venv-selector.utils').dbg
-  local client = vim.lsp.get_active_clients({ name = name })[1]
+  -- get_active_clients deprecated in neovim v0.10
+  local client = (vim.lsp.get_clients or vim.lsp.get_active_clients)({ name = name })[1]
 
   if not client then
     dbg('No client named: ' .. name .. ' found')
-    return
+  else
+    callback(client)
   end
-
-  callback(client)
 end
 
 --- @alias VenvChangedHook fun(venv_path: string, venv_python: string): nil

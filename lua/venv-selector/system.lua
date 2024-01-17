@@ -17,9 +17,9 @@ M.venv_manager_default_paths = {
     Windows_NT = M.getenv('APPDATA' .. '\\pypoetry\\virtualenvs'),
   },
   PDM = {
-    Linux = '~/.local/share/venvs',
-    Darwin = '~/.local/share/venvs',
-    Windows_NT = M.getenv('APPDATA' .. '\\venvs'),
+    Linux = '~/.local/share/pdm/venvs',
+    Darwin = '~/.local/share/pdm/venvs',
+    Windows_NT = M.getenv('APPDATA' .. '\\pdm\\venvs'),
   },
   Pipenv = {
     Linux = '~/.local/share/virtualenvs',

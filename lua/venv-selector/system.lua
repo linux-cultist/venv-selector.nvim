@@ -14,12 +14,12 @@ M.venv_manager_default_paths = {
   Poetry = {
     Linux = '~/.cache/pypoetry/virtualenvs',
     Darwin = '~/Library/Caches/pypoetry/virtualenvs',
-    Windows_NT = M.getenv('APPDATA' .. '\\pypoetry\\virtualenvs'),
+    Windows_NT = M.getenv 'APPDATA' .. '\\pypoetry\\virtualenvs',
   },
   PDM = {
     Linux = '~/.local/share/pdm/venvs',
     Darwin = '~/.local/share/pdm/venvs',
-    Windows_NT = M.getenv('APPDATA' .. '\\pdm\\venvs'),
+    Windows_NT = M.getenv 'APPDATA' .. '\\pdm\\venvs',
   },
   Pipenv = {
     Linux = '~/.local/share/virtualenvs',
@@ -29,7 +29,7 @@ M.venv_manager_default_paths = {
   Pyenv = {
     Linux = '~/.pyenv/versions',
     Darwin = '~/.pyenv/versions',
-    Windows_NT = M.getenv 'USERPROFILE' .. '\\.pyenv\\versions',
+    Windows_NT = M.getenv 'USERPROFILE' .. '\\.pyenv\\pyenv-win\\versions',
   },
   Hatch = {
     Linux = '~/.local/share/hatch/env/virtual',

@@ -1,5 +1,3 @@
-local lspconfig = require 'lspconfig'
-
 local M = {}
 
 --- @alias NvimLspClient table
@@ -50,41 +48,18 @@ function M.pylance_hook(_, venv_python)
 end
 
 --- @type VenvChangedHook
-function M.pylsp_hook(venv_path, _)
-  local utils = require 'venv-selector.utils'
-  local system = require 'venv-selector.system'
-  local sys = system.get_info()
-
-  M.execute_for_client('pylsp', function(pylsp)
-    local settings = vim.deepcopy(pylsp.config.settings)
-    local lib_path = venv_path .. sys.path_sep .. 'lib' .. sys.path_sep
-    local site_packages = nil
-
-    for filename, _ in vim.fs.dir(lib_path) do
-      if utils.starts_with(filename, 'python') then
-        site_packages = lib_path .. sys.path_sep .. filename .. sys.path_sep .. 'site-packages'
-      end
-    end
-
-    if site_packages == nil then
-      utils.dbg('Failed to find site packages directory in: ' .. lib_path)
-      return
-    end
-
-    lspconfig.pylsp.setup {
-      settings = settings,
-      before_init = function(_, c)
-        local jedi_config = settings.pylsp.plugins.jedi or {}
-
-        if jedi_config.extra_paths ~= nil then
-          table.insert(jedi_config.extra_paths, site_packages)
-        else
-          jedi_config['extra_paths'] = { site_packages }
-        end
-
-        c.settings.pylsp.plugins.jedi = jedi_config
-      end,
-    }
+function M.pylsp_hook(_, venv_python)
+  M.execute_for_client('pylsp', function(client)
+    local settings = vim.tbl_deep_extend('force', client.config.settings, {
+      pylsp = {
+        plugins = {
+          jedi = {
+            environment = venv_python,
+          },
+        },
+      },
+    })
+    client.notify('workspace/didChangeConfiguration', { settings = settings })
   end)
 end
 

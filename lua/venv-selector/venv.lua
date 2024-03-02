@@ -113,7 +113,7 @@ function M.set_venv_and_system_paths(venv_row)
 
   -- Set VIRTUAL_ENV
   -- Set CONDA_PREFIX instead if we are on Windows and a conda environment is activated
-  if vim.fn.has("win32") then
+  if vim.fn.has("win32") == 1 then
     local venv_path_std = string.gsub(venv_path, '/', '\\')
     local conda_base_path_std = string.gsub(config.settings.anaconda_base_path, '/', '\\')
     local conda_envs_path_std = string.gsub(config.settings.anaconda_envs_path, '/', '\\')

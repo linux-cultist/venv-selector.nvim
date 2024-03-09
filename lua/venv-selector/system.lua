@@ -24,7 +24,7 @@ M.venv_manager_default_paths = {
   Pipenv = {
     Linux = '~/.local/share/virtualenvs',
     Darwin = '~/.local/share/virtualenvs',
-    Windows_NT = '~\\virtualenvs',
+    Windows_NT = '~\\.virtualenvs',
   },
   Pyenv = {
     Linux = '~/.pyenv/versions',

@@ -56,6 +56,7 @@ function M.retrieve_from_cache()
 end
 
 M.hooks = {
+  basedpyright = hooks.basedpyright_hook,
   pyright = hooks.pyright_hook,
   pylance = hooks.pylance_hook,
   pylsp = hooks.pylsp_hook,

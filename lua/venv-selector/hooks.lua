@@ -15,6 +15,19 @@ function M.execute_for_client(name, callback)
   end
 end
 
+--- @type VenvChangedHook
+function M.basedpyright_hook(_, venv_python)
+  M.execute_for_client('basedpyright', function(client)
+    if client.settings then
+      client.settings = vim.tbl_deep_extend('force', client.settings, { python = { pythonPath = venv_python } })
+    else
+      client.config.settings =
+        vim.tbl_deep_extend('force', client.config.settings, { python = { pythonPath = venv_python } })
+    end
+    client.notify('workspace/didChangeConfiguration', { settings = nil })
+  end)
+end
+
 --- @alias VenvChangedHook fun(venv_path: string, venv_python: string): nil
 --- @type VenvChangedHook
 function M.pyright_hook(_, venv_python)

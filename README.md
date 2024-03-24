@@ -16,7 +16,7 @@ Browse existing python virtual environments on your computer and select one to a
 
 - Plug and play, no configuration required
 - Switch back and forth between virtual environments without restarting neovim
-- Support [Pyright](https://github.com/microsoft/pyright), [Pylance](https://github.com/microsoft/pylance-release) and [Pylsp](https://github.com/python-lsp/python-lsp-server) lsp servers with ability to config hooks for others.
+- Support [Basedpyright](https://github.com/detachhead/basedpyright), [Pyright](https://github.com/microsoft/pyright), [Pylance](https://github.com/microsoft/pylance-release) and [Pylsp](https://github.com/python-lsp/python-lsp-server) lsp servers with ability to config hooks for others.
 - Currently supports virtual environments created in:
   - [Python](https://www.python.org/) (`python3 -m venv venv`)
   - [Poetry](https://python-poetry.org)
@@ -32,7 +32,7 @@ Browse existing python virtual environments on your computer and select one to a
 
 ## 📋 Installation and Configuration
 
-The plugin works with **pyright**, **pylance**, or **pylsp** lsp servers. If you want to take advantage of this plugin's default behaviour, you need to have either of them installed
+The plugin works with **basedpyright**, **pyright**, **pylance**, or **pylsp** lsp servers. If you want to take advantage of this plugin's default behaviour, you need to have either of them installed
 and configured using [lspconfig](https://github.com/neovim/nvim-lspconfig). If you want to use custom integration, see [hooks section](#hooks)
 before using this plugin. You can see example setup instructions here: https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#pyright
 
@@ -147,7 +147,7 @@ There is also the `:VenvSelectCurrent` command to get a message saying which ven
 
 ### Hooks
 
-By default, the plugin tries to setup `pyright`, `pylance`, and `pylsp` automatically using hooks. If you want to add a custom integration, you need to write
+By default, the plugin tries to setup `basedpyright`, `pyright`, `pylance`, and `pylsp` automatically using hooks. If you want to add a custom integration, you need to write
 a hook with following signature:
 
 ```lua
@@ -180,6 +180,7 @@ venv_selector.setup {
 
 Currently provided hooks are:
 
+- `require("venv-selector").hooks.basedpyright`
 - `require("venv-selector").hooks.pyright`
 - `require("venv-selector").hooks.pylance`
 - `require("venv-selector").hooks.pylsp`

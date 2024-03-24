@@ -113,7 +113,7 @@ function M.set_venv_and_system_paths(venv_row)
 
   -- Set VIRTUAL_ENV
   -- Set CONDA_PREFIX instead if we are on Windows and a conda environment is activated
-  if vim.fn.has("win32") == 1 then
+  if vim.fn.has 'win32' == 1 then
     local venv_path_std = string.gsub(venv_path, '/', '\\')
     local conda_base_path_std = string.gsub(config.settings.anaconda_base_path, '/', '\\')
     local conda_envs_path_std = string.gsub(config.settings.anaconda_envs_path, '/', '\\')
@@ -214,7 +214,7 @@ function M.list_pyright_workspace_folders()
   local workspace_folders = {}
   local workspace_folders_found = false
   for _, client in pairs((vim.lsp.get_clients or vim.lsp.get_active_clients)()) do
-    if vim.tbl_contains({ 'pyright', 'pylance' }, client.name) then
+    if vim.tbl_contains({ 'basedpyright', 'pyright', 'pylance' }, client.name) then
       for _, folder in pairs(client.workspace_folders or {}) do
         dbg('Found workspace folder: ' .. folder.name)
         table.insert(workspace_folders, folder.name)

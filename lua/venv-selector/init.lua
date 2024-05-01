@@ -71,11 +71,11 @@ M.user_settings = {
         },
         {
             name = "Virtualenvs",
-            command = "fd 'python$' ~/.virtualenvs --full-path"
+            command = "fd 'python$' ~/.virtualenvs"
         },
         {
             name = "Hatch",
-            command = "fd 'python$' ~/.local/share/hatch --full-path"
+            command = "fd 'python$' ~/.local/share/hatch"
         },
         {
             name = "Pypoetry",

@@ -54,6 +54,8 @@ function M.show_results()
   local entry_display = require 'telescope.pickers.entry_display'
 
   M.prepare_results()
+
+  utils.print_table(M.results)
   local displayer = entry_display.create {
     separator = ' ',
     items = {

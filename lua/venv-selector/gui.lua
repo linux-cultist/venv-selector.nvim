@@ -3,8 +3,6 @@ M = {}
 -- Shows the results from the search in a Telescope picker.
 function M.show(results)
     M.results = results
-    print(vim.inspect(M.results))
-    M.results = { path = "xxxx" }
     local finders = require 'telescope.finders'
     local actions_state = require 'telescope.actions.state'
     local entry_display = require 'telescope.pickers.entry_display'

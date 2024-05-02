@@ -3,16 +3,23 @@ local utils = require 'venv-selector.utils'
 
 local M = {}
 
-function M.flatten_table(nested_tbl)
-    local flat_table = {}
+function M.convert_for_gui(nested_tbl)
+ local transformed_table = {}
     for _, sublist in pairs(nested_tbl) do
-        for _, item in ipairs(sublist) do
-            if item ~= "" then  -- Skip empty strings
-                table.insert(flat_table, item)
+        for _, path in ipairs(sublist) do
+            if path ~= "" then  -- Skip empty strings
+                -- Remove '/bin/python' from the path to get the environment root
+                local env_path = path:gsub("/bin/python", "")
+                -- Add transformed data to the new table
+                table.insert(transformed_table, {
+                    icon = "",  -- Set default icon
+                    path = env_path,
+                    source = "Search"  -- Optional, if you want to include a source or any other additional info
+                })
             end
         end
     end
-    return flat_table
+    return transformed_table
 end
 
 
@@ -52,7 +59,7 @@ function M.run_searches(settings)
                 end
 
                 local gui = require 'venv-selector.gui'
-                gui.show(M.flatten_table(results))
+                gui.show(M.convert_for_gui(results))
             end
         end
     end

@@ -1,6 +1,21 @@
 local utils = require 'venv-selector.utils'
 
+
 local M = {}
+
+function M.flatten_table(nested_tbl)
+    local flat_table = {}
+    for _, sublist in pairs(nested_tbl) do
+        for _, item in ipairs(sublist) do
+            if item ~= "" then  -- Skip empty strings
+                table.insert(flat_table, item)
+            end
+        end
+    end
+    return flat_table
+end
+
+
 
 function M.run_searches(settings)
     local jobs = {}
@@ -35,6 +50,9 @@ function M.run_searches(settings)
                         print(line)
                     end
                 end
+
+                local gui = require 'venv-selector.gui'
+                gui.show(M.flatten_table(results))
             end
         end
     end

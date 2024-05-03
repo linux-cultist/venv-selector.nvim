@@ -80,6 +80,8 @@ end
 
 function M.New(opts, settings)
     --utils.printTable(settings)
+    -- TODO: Make it possible to give a search on the command line and have results in the GUI.
+    -- TODO: Need to stop the search if it takes too long to have a good user experience.
     M.run_searches(settings)
 end
 

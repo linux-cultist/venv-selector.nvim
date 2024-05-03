@@ -3,18 +3,17 @@ local gui = require 'venv-selector.gui'
 
 local M = {}
 
-function M.convert_for_gui(nested_tbl)
+local function convert_for_gui(nested_tbl)
     local transformed_table = {}
     for _, sublist in pairs(nested_tbl) do
         for _, path in ipairs(sublist) do
             if path ~= "" then -- Skip empty strings
                 -- Remove '/bin/python' from the path to get the environment root
                 local env_path = path:gsub("/bin/python", "")
-                -- Add transformed data to the new table
                 table.insert(transformed_table, {
-                    icon = "", -- Set default icon
+                    icon = "",
                     path = env_path,
-                    source = "Search" -- Optional, if you want to include a source or any other additional info
+                    source = "Search"
                 })
             end
         end
@@ -22,7 +21,7 @@ function M.convert_for_gui(nested_tbl)
     return transformed_table
 end
 
-function M.set_interactive_search(args)
+local function set_interactive_search(args)
     if #args > 0 then
         return {
             search = {
@@ -37,11 +36,11 @@ function M.set_interactive_search(args)
     return nil
 end
 
-function M.run_searches(opts, settings)
+local function run_searches(opts, settings)
     local jobs = {}
     local job_count = 0
     local results = {}
-    local search_settings = M.set_interactive_search(opts.args) or settings
+    local search_settings = set_interactive_search(opts.args) or settings
 
     local function on_event(job_id, data, event)
         local job_name = jobs[job_id]
@@ -68,7 +67,7 @@ function M.run_searches(opts, settings)
                     end
                 end
 
-                gui.show(M.convert_for_gui(results))
+                gui.show(convert_for_gui(results))
             end
         end
     end
@@ -92,7 +91,7 @@ function M.New(opts, settings)
     --utils.printTable(settings)
     -- TODO: Make it possible to give a search on the command line and have results in the GUI.
     -- TODO: Need to stop the search if it takes too long to have a good user experience.
-    M.run_searches(opts, settings)
+    run_searches(opts, settings)
 end
 
 return M

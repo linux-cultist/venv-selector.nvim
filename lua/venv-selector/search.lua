@@ -1,5 +1,5 @@
 local utils = require 'venv-selector.utils'
-
+local gui = require 'venv-selector.gui'
 
 local M = {}
 
@@ -22,57 +22,59 @@ function M.convert_for_gui(nested_tbl)
     return transformed_table
 end
 
+function M.set_interactive_search(args)
+    if #args > 0 then
+        return {
+            search = {
+                {
+                    name = "Interactive",
+                    command = args
+                }
+            }
+        }
+    end
+
+    return nil
+end
+
 function M.run_searches(opts, settings)
     local jobs = {}
     local job_count = 0
     local results = {}
-
-    if #opts.args > 0 then
-        local manual_search = {
-            name = "Manual",
-            command = utils.expand_home_path(opts.args)
-        }
-        table.insert(settings.search, manual_search)
-    end
+    local search_settings = M.set_interactive_search(opts.args) or settings
 
     local function on_event(job_id, data, event)
-        local job_name = jobs[job_id] -- Retrieve the job's name for more informative output
+        local job_name = jobs[job_id]
         if event == 'stdout' and data then
             if not results[job_id] then results[job_id] = {} end
             for _, line in ipairs(data) do
                 table.insert(results[job_id], line)
             end
         elseif event == 'stderr' and data then
-            if data and #data > 0 then -- Check if there is actual data to process
+            if data and #data > 0 then
                 for _, line in ipairs(data) do
-                    if line ~= "" then -- Ensure the line isn't empty
+                    if line ~= "" then
                         print("Error from job " .. job_name .. " : " .. vim.inspect(line))
                     end
                 end
             end
         elseif event == 'exit' then
             job_count = job_count - 1
-            --print(job_name .. " (" .. job_id .. ") completed.") -- Print which job has completed
             if job_count == 0 then
-                -- All jobs have completed
-                --print("All search jobs completed")
-                -- Process results or print them
                 for id, lines in pairs(results) do
-                    print("Results from " .. jobs[id] .. ":") -- Use job_name for clarity
+                    print("Results from " .. jobs[id] .. ":")
                     for _, line in ipairs(lines) do
                         print(line)
                     end
                 end
 
-                local gui = require 'venv-selector.gui'
                 gui.show(M.convert_for_gui(results))
             end
         end
     end
 
-
     -- Start each job
-    for _, search in ipairs(settings.search) do
+    for _, search in ipairs(search_settings.search) do
         local job_id = vim.fn.jobstart(utils.expand_home_path(search.command), {
             stdout_buffered = true,
             stderr_buffered = true,

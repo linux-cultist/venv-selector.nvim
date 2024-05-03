@@ -67,27 +67,27 @@ M.user_settings = {
     search = {
         {
             name = "My venvs",
-            command = "fd '/venv/bin/python$' ~/Code --full-path"
+            command = "fd '/venv/bin/python$' ~/Code --full-path --color never -E /proc"
         },
         {
             name = "Virtualenvs",
-            command = "fd 'python$' ~/.virtualenvs"
+            command = "fd 'python$' ~/.virtualenvs --color never -E /proc"
         },
         {
             name = "Hatch",
-            command = "fd 'python$' ~/.local/share/hatch"
+            command = "fd 'python$' ~/.local/share/hatch --color never -E /proc"
         },
         {
             name = "Pypoetry",
-            command = "fd 'versions/([0-9.]+)/bin/python$' ~/.pyenv/versions --full-path",
+            command = "fd 'versions/([0-9.]+)/bin/python$' ~/.pyenv/versions --full-path --color never -E /proc",
         },
         {
             name = "Anaconda Envs",
-            command = "fd 'bin/python$' ~/.conda/envs --full-path"
+            command = "fd 'bin/python$' ~/.conda/envs --full-path --color never -E /proc"
         },
         {
             name = "Anaconda Base",
-            command = "fd '/python$' /opt/anaconda/bin --full-path",
+            command = "fd '/python$' /opt/anaconda/bin --full-path --color never -E /proc",
         },
     }
 }

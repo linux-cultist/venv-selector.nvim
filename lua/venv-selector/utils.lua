@@ -149,7 +149,7 @@
 
 M = {}
 
-function M.expand_path(path)
+function M.expand_home_path(path)
     local home_dir = M.get_home_directory()
     return path:gsub("~", home_dir)
 end

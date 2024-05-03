@@ -22,10 +22,18 @@ function M.convert_for_gui(nested_tbl)
     return transformed_table
 end
 
-function M.run_searches(settings)
+function M.run_searches(opts, settings)
     local jobs = {}
     local job_count = 0
     local results = {}
+
+    if #opts.args > 0 then
+        local manual_search = {
+            name = "Manual",
+            command = utils.expand_home_path(opts.args)
+        }
+        table.insert(settings.search, manual_search)
+    end
 
     local function on_event(job_id, data, event)
         local job_name = jobs[job_id] -- Retrieve the job's name for more informative output
@@ -65,7 +73,7 @@ function M.run_searches(settings)
 
     -- Start each job
     for _, search in ipairs(settings.search) do
-        local job_id = vim.fn.jobstart(utils.expand_path(search.command), {
+        local job_id = vim.fn.jobstart(utils.expand_home_path(search.command), {
             stdout_buffered = true,
             stderr_buffered = true,
             on_stdout = on_event,
@@ -82,7 +90,7 @@ function M.New(opts, settings)
     --utils.printTable(settings)
     -- TODO: Make it possible to give a search on the command line and have results in the GUI.
     -- TODO: Need to stop the search if it takes too long to have a good user experience.
-    M.run_searches(settings)
+    M.run_searches(opts, settings)
 end
 
 return M

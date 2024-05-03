@@ -4,25 +4,23 @@ local utils = require 'venv-selector.utils'
 local M = {}
 
 function M.convert_for_gui(nested_tbl)
- local transformed_table = {}
+    local transformed_table = {}
     for _, sublist in pairs(nested_tbl) do
         for _, path in ipairs(sublist) do
-            if path ~= "" then  -- Skip empty strings
+            if path ~= "" then -- Skip empty strings
                 -- Remove '/bin/python' from the path to get the environment root
                 local env_path = path:gsub("/bin/python", "")
                 -- Add transformed data to the new table
                 table.insert(transformed_table, {
-                    icon = "",  -- Set default icon
+                    icon = "", -- Set default icon
                     path = env_path,
-                    source = "Search"  -- Optional, if you want to include a source or any other additional info
+                    source = "Search" -- Optional, if you want to include a source or any other additional info
                 })
             end
         end
     end
     return transformed_table
 end
-
-
 
 function M.run_searches(settings)
     local jobs = {}
@@ -37,9 +35,9 @@ function M.run_searches(settings)
                 table.insert(results[job_id], line)
             end
         elseif event == 'stderr' and data then
-            if data and #data > 0 then         -- Check if there is actual data to process
+            if data and #data > 0 then -- Check if there is actual data to process
                 for _, line in ipairs(data) do
-                    if line ~= "" then         -- Ensure the line isn't empty
+                    if line ~= "" then -- Ensure the line isn't empty
                         print("Error from job " .. job_name .. " : " .. vim.inspect(line))
                     end
                 end

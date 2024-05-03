@@ -1,4 +1,4 @@
-M = {}
+local M = {}
 
 -- Shows the results from the search in a Telescope picker.
 function M.show(results)
@@ -43,8 +43,8 @@ function M.show(results)
     -- results_title = title,
     layout_strategy = 'horizontal',
     layout_config = {
-      height = 0.4,
-      width = 120,
+      height = 0.6,
+      width = 140,
       prompt_position = 'top',
     },
     cwd = require('telescope.utils').buffer_dir(),
@@ -52,17 +52,17 @@ function M.show(results)
     sorter = conf.file_sorter {},
     attach_mappings = function(bufnr, map)
       map('i', '<cr>', function()
-        venv.activate_venv()
+        --venv.activate_venv()
         actions.close(bufnr)
       end)
 
       map('i', '<C-r>', function()
-        M.remove_results()
+        --M.remove_results()
         local picker = actions_state.get_current_picker(bufnr)
         -- Delay by 10ms to achieve the refresh animation.
         picker:refresh(finder, { reset_prompt = true })
         vim.defer_fn(function()
-          venv.load { force_refresh = true }
+          --venv.load { force_refresh = true }
         end, 10)
       end)
 

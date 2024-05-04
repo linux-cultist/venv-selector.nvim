@@ -70,7 +70,7 @@ local function on_lsp_attach()
 end
 
 vim.api.nvim_create_autocmd("LspAttach", {
-    pattern = "*", -- This could be set to a specific filetype, e.g., '*.lua', if needed
+    pattern = "*.py", -- This could be set to a specific filetype, e.g., '*.lua', if needed
     callback = on_lsp_attach,
 })
 

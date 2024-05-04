@@ -27,10 +27,10 @@
   - [Virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/)
   - [Hatch](https://hatch.pypa.io/latest/)
 - Supports callbacks to further filter or rename telescope results as they are found.
-- Supports using any program to find virtual environments (fd, find, ls, dir etc)
+- Supports using any program to find virtual environments (`fd`, `find`, `ls`, `dir` etc)
 - Supports running any interactive command to populate the telescope viewer:
   - `:VenvSelect ls -1 /tmp`
-  - `:VenvSelect fd 'venv/bin/python$' . --full-path --color never -E /proc -I`
+  - `:VenvSelect fd 'venv/bin/python$' . --full-path -I`
 
 - Support [Pyright](https://github.com/microsoft/pyright), [Pylance](https://github.com/microsoft/pylance-release) and [Pylsp](https://github.com/python-lsp/python-lsp-server) lsp servers with ability to config hooks for others.
 - Cached virtual environment that ties to your current working directory for quick activation
@@ -52,9 +52,7 @@ return {
   'linux-cultist/venv-selector.nvim',
   dependencies = { 'neovim/nvim-lspconfig', 'nvim-telescope/telescope.nvim', 'mfussenegger/nvim-dap-python' },
   opts = {
-    -- Your options go here
-    -- name = "venv",
-    -- auto_refresh = false
+    
   },
   event = 'VeryLazy', -- Optional: needed only if you want to type `:VenvSelect` without a keymapping
   keys = {
@@ -74,9 +72,7 @@ return {
   dependencies = { 'neovim/nvim-lspconfig', 'nvim-telescope/telescope.nvim', 'mfussenegger/nvim-dap-python' },
   config = function()
     require('venv-selector').setup {
-      -- Your options go here
-      -- name = "venv",
-      -- auto_refresh = false
+      
     }
   end,
   event = 'VeryLazy', -- Optional: needed only if you want to type `:VenvSelect` without a keymapping

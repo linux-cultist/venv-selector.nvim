@@ -64,10 +64,20 @@ local search = require 'venv-selector.search'
 local M = {}
 
 M.callback = function(filename)
-    return filename .. "2"
+    -- return nil or "" to not include it in search results. Alter the filename how you want before returning.
+    return filename:gsub("/bin/python", "")
+end
+
+M.workspace_callback = function(filename)
+    -- return nil or "" to not include it in search results. Alter the filename how you want before returning.
+    return filename:gsub("/bin/python", "")
 end
 
 M.user_settings = {
+    workspace = {
+        command = "fd 'venv$' $WORKSPACE_PATH --full-path --color never -E /proc -I",
+        callback = M.workspace_callback
+    },
     search = {
         {
             name = "My venvs",
@@ -102,5 +112,5 @@ function M.setup(settings)
         search.New(opts, M.user_settings)
     end, { nargs = '*', desc = 'Activate venv' })
 end
-
 return M
+

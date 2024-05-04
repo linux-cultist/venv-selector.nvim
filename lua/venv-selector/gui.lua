@@ -23,11 +23,11 @@ function M.show(results)
         results = results,
         entry_maker = function(entry)
             entry.value = entry.path
-            entry.ordinal = entry.path
+            entry.ordinal = entry.name
             entry.display = function(e)
                 return displayer {
                     { e.icon },
-                    { e.path },
+                    { e.name },
                 }
             end
 

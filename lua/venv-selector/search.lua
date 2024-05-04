@@ -6,15 +6,14 @@ local M = {}
 
 local function convert_for_gui(nested_tbl)
     local transformed_table = {}
+
     for _, sublist in pairs(nested_tbl) do
-        for _, path in ipairs(sublist) do
-            if path ~= "" then -- Skip empty strings
-                -- Remove '/bin/python' from the path to get the environment root
-                local env_path = path:gsub("/bin/python", "")
+        for _, rv in ipairs(sublist) do
+            if rv.name ~= "" then
                 table.insert(transformed_table, {
                     icon = "",
-                    path = env_path,
-                    source = "Search"
+                    name = rv.name,
+                    path = rv.path
                 })
             end
         end
@@ -38,17 +37,28 @@ local function set_interactive_search(args)
 end
 
 local function run_search(opts, settings)
-    local jobs = {}
+    local s = {}
+    local workspace_folders = workspace.list_folders()
     local job_count = 0
     local results = {}
     local search_settings = set_interactive_search(opts.args) or settings
 
     local function on_event(job_id, data, event)
-        local job_name = jobs[job_id]
+        local job_name = s[job_id].name
+        local callback = s[job_id].callback
+
         if event == 'stdout' and data then
             if not results[job_id] then results[job_id] = {} end
             for _, line in ipairs(data) do
-                table.insert(results[job_id], line)
+                local rv = {}
+                rv.path = line
+                rv.name = line
+                if callback then
+                    rv.name = callback(line)
+                end
+                if line ~= "" and line ~= nil then
+                    table.insert(results[job_id], rv)
+                end
             end
         elseif event == 'stderr' and data then
             if data and #data > 0 then
@@ -62,19 +72,16 @@ local function run_search(opts, settings)
             job_count = job_count - 1
             if job_count == 0 then
                 for id, lines in pairs(results) do
-                    print("Results from " .. jobs[id] .. ":")
                     for _, line in ipairs(lines) do
-                        print(line)
+                        --print(line)
                     end
                 end
-
                 gui.show(convert_for_gui(results))
             end
         end
     end
 
-    -- Start each job
-    for _, search in ipairs(search_settings.search) do
+    local function start_search_job(search, count)
         local job_id = vim.fn.jobstart(utils.expand_home_path(search.command), {
             stdout_buffered = true,
             stderr_buffered = true,
@@ -83,17 +90,29 @@ local function run_search(opts, settings)
             on_exit = on_event,
         })
 
-        jobs[job_id] = search.name
-        job_count = job_count + 1
+        s[job_id] = search
+        count = count + 1
+        return count
+    end
+
+    -- Start each search job
+    for _, search in ipairs(search_settings.search) do
+        job_count = start_search_job(search, job_count)
+    end
+    -- Start job for each workspace
+    if workspace_folders ~= nil then
+        for i, workspace_path in pairs(workspace_folders) do
+            local search = {}
+            search.name = "Workspace Path " .. i
+            search.command = search_settings.workspace.command:gsub("$WORKSPACE_PATH", workspace_path)
+            search.callback = search_settings.workspace.callback
+            job_count = start_search_job(search, job_count)
+        end
     end
 end
 
 function M.New(opts, settings)
-    --utils.printTable(settings)
     run_search(opts, settings)
-    -- TODO: How to do with lsp workspace? Should we call the user once per workspace found to let him define a search to run?
-    -- TODO: Because he may want to specify what to look for in a workspace.
-    utils.printTable(workspace.list_folders())
 end
 
 return M

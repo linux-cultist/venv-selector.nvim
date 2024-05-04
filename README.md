@@ -12,7 +12,7 @@
 
 # ⚡️ Features
 
-#### **NOTE:** This regexp branch of the plugin is a rewrite that works differently under the hood to support more advanced features.
+#### **NOTE:** This regexp branch of the plugin is a rewrite that works differently under the hood to support more advanced features. Its under development and not ready for public use yet.
 
 - Switch back and forth between virtual environments without restarting neovim
 - New and much more flexible configuration to support finding the exact venvs you want.

@@ -6,10 +6,12 @@ local M = {}
 
 local function convert_for_gui(nested_tbl)
     local transformed_table = {}
+    local seen = {} -- Table to keep track of items already added
 
     for _, sublist in pairs(nested_tbl) do
         for _, rv in ipairs(sublist) do
-            if rv.name ~= "" then
+            if rv.name ~= "" and not seen[rv.path] then -- Check if the path has not been added yet
+                seen[rv.path] = true                    -- Mark this path as seen
                 table.insert(transformed_table, {
                     icon = "",
                     name = rv.name,
@@ -20,6 +22,7 @@ local function convert_for_gui(nested_tbl)
     end
     return transformed_table
 end
+
 
 local function set_interactive_search(args)
     if #args > 0 then
@@ -82,8 +85,6 @@ local function run_search(opts, settings)
     end
 
     local function start_search_job(search, count)
-        --print("new job")
-        --utils.print_table(search)
         local job_id = vim.fn.jobstart(utils.expand_home_path(search.command), {
             stdout_buffered = true,
             stderr_buffered = true,
@@ -97,24 +98,19 @@ local function run_search(opts, settings)
         return count
     end
 
-    -- Start each search job
+    -- Start search jobs from config
     for _, search in ipairs(search_settings.search) do
         job_count = start_search_job(search, job_count)
     end
 
-    -- Start job for cwd
-    -- utils.print_table(search_settings)
-    -- TODO: Doesnt work below yet
-    for _, search in pairs(search_settings.cwd) do
-        --utils.print_table(search)
-        --local search = {}
-        --search.name = "CWD"
-        --search.command = c:gsub("$CWD", vim.fn.getcwd())
-        --search.callback = search_settings.cwd.callback
-        --job_count = start_search_job(search, job_count)
-    end
+    -- Start job to search cwd
+    local cwd = search_settings.cwd
+    local c = cwd
+    c.name = "CWD"
+    c.command = c.command:gsub("$CWD", vim.fn.getcwd())
+    job_count = start_search_job(c, job_count)
 
-    -- Start job for each workspace
+    -- Start jobs to search each workspace
     if workspace_folders ~= nil then
         for i, workspace_path in pairs(workspace_folders) do
             local search = {}

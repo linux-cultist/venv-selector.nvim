@@ -14,18 +14,10 @@
 
 #### **NOTE:** This regexp branch of the plugin is a rewrite that works differently under the hood to support more advanced features.
 
-- Supports configuration where any number of searches can be run to find what you need.
-- Supports regular expressions to find any virtual environment.
-- Supports callbacks to further filter or rename telescope results as they are found.
-- Supports using any program to find virtual environments (fd, find, ls, dir etc)
-- Supports running any interactive command to populate the telescope viewer:
-  - `:VenvSelect ls -1 /tmp`
-  - `:VenvSelect fd 'venv/bin/python$' . --full-path --color never -E /proc -I`
-
-- Browse existing python virtual environments on your computer and select one to activate inside neovim.
 - Switch back and forth between virtual environments without restarting neovim
-- Support [Pyright](https://github.com/microsoft/pyright), [Pylance](https://github.com/microsoft/pylance-release) and [Pylsp](https://github.com/python-lsp/python-lsp-server) lsp servers with ability to config hooks for others.
-- Supports all virtual environments using **user regexp expressions**, such as:
+- New and much more flexible configuration to support finding the exact venvs you want.
+- Browse existing python virtual environments on your computer and select one to activate inside neovim.
+- Supports **all** virtual environments using configurable **regular expressions expressions**, such as:
   - [Python](https://www.python.org/) (`python3 -m venv venv`)
   - [Poetry](https://python-poetry.org)
   - [PDM](https://github.com/pdm-project/pdm)
@@ -34,7 +26,13 @@
   - [Pyenv](https://github.com/pyenv/pyenv)
   - [Virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/)
   - [Hatch](https://hatch.pypa.io/latest/)
+- Supports callbacks to further filter or rename telescope results as they are found.
+- Supports using any program to find virtual environments (fd, find, ls, dir etc)
+- Supports running any interactive command to populate the telescope viewer:
+  - `:VenvSelect ls -1 /tmp`
+  - `:VenvSelect fd 'venv/bin/python$' . --full-path --color never -E /proc -I`
 
+- Support [Pyright](https://github.com/microsoft/pyright), [Pylance](https://github.com/microsoft/pylance-release) and [Pylsp](https://github.com/python-lsp/python-lsp-server) lsp servers with ability to config hooks for others.
 - Cached virtual environment that ties to your current working directory for quick activation
 - Requires [fd](https://github.com/sharkdp/fd) and [Telescope](https://github.com/nvim-telescope/telescope.nvim) for fast searches, and visual pickers.
 - Requires [nvim-dap-python](https://github.com/mfussenegger/nvim-dap-python), [debugpy](https://github.com/microsoft/debugpy) and [nvim-dap](https://github.com/mfussenegger/nvim-dap) for debugger support

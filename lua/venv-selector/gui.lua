@@ -1,3 +1,5 @@
+local venv = require 'venv-selector.venv'
+
 local M = {}
 
 -- Shows the results from the search in a Telescope picker.
@@ -53,7 +55,7 @@ function M.show(results)
         end,
     }
 
-    --local venv = require 'venv-selector.venv'
+
     local opts = {
         prompt_title = title,
         finder = finder,
@@ -70,7 +72,7 @@ function M.show(results)
         --sorter = conf.file_sorter {},
         attach_mappings = function(bufnr, map)
             map('i', '<cr>', function()
-                --venv.activate_venv()
+                venv.activate()
                 actions.close(bufnr)
             end)
 

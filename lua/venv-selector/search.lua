@@ -1,5 +1,6 @@
 local utils = require 'venv-selector.utils'
 local gui = require 'venv-selector.gui'
+local workspace = require 'venv-selector.workspace'
 
 local M = {}
 
@@ -36,7 +37,7 @@ local function set_interactive_search(args)
     return nil
 end
 
-local function run_searches(opts, settings)
+local function run_search(opts, settings)
     local jobs = {}
     local job_count = 0
     local results = {}
@@ -89,9 +90,10 @@ end
 
 function M.New(opts, settings)
     --utils.printTable(settings)
-    -- TODO: Make it possible to give a search on the command line and have results in the GUI.
-    -- TODO: Need to stop the search if it takes too long to have a good user experience.
-    run_searches(opts, settings)
+    run_search(opts, settings)
+    -- TODO: How to do with lsp workspace? Should we call the user once per workspace found to let him define a search to run?
+    -- TODO: Because he may want to specify what to look for in a workspace.
+    utils.printTable(workspace.list_folders())
 end
 
 return M

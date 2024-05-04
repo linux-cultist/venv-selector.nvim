@@ -63,11 +63,16 @@ local search = require 'venv-selector.search'
 
 local M = {}
 
+M.callback = function(filename)
+    return filename .. "2"
+end
+
 M.user_settings = {
     search = {
         {
             name = "My venvs",
-            command = "fd '/venv/bin/python$' ~/Code --full-path --color never -E /proc"
+            command = "fd '/venv/bin/python$' ~/Code --full-path --color never -E /proc",
+            callback = M.callback
         },
         {
             name = "Virtualenvs",

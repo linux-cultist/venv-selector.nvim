@@ -146,16 +146,7 @@
 --
 --return M
 
-
-M = {}
-
-function M.expand_home_path(path)
-    local home_dir = M.get_home_directory()
-    return path:gsub("~", home_dir)
-end
-
-
-function M.get_home_directory()
+local function get_home_directory()
     if vim.loop.os_uname().sysname == "Windows" then
         return os.getenv("USERPROFILE") -- Windows
     else
@@ -164,10 +155,19 @@ function M.get_home_directory()
 end
 
 
+local M = {}
+
+function M.expand_home_path(path)
+    local home_dir = get_home_directory()
+    return path:gsub("~", home_dir)
+end
+
+
+
 function M.printTable(tbl, indent)
     if not indent then indent = 0 end
     for k, v in pairs(tbl) do
-        formatting = string.rep("  ", indent) .. k .. ": "
+        local formatting = string.rep("  ", indent) .. k .. ": "
         if type(v) == "table" then
             print(formatting)
             M.printTable(v, indent+1)

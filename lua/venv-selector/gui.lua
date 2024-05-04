@@ -3,11 +3,29 @@ local M = {}
 -- Shows the results from the search in a Telescope picker.
 function M.show(results)
     local finders = require 'telescope.finders'
-    local conf = require('telescope.config').values
+    --local conf = require('telescope.config').values
     local pickers = require 'telescope.pickers'
     local actions_state = require 'telescope.actions.state'
     local actions = require 'telescope.actions'
     local entry_display = require 'telescope.pickers.entry_display'
+    local Sorter = require('telescope.sorters').Sorter
+
+    local substring_sorter = Sorter:new({
+        scoring_function = function(_, prompt, entry)
+            if not prompt or prompt == "" then
+                return 0
+            end
+
+            local entry_str = string.lower(entry)
+            local prompt_str = string.lower(prompt)
+            local start_pos = string.find(entry_str, prompt_str, 1, true)
+            if start_pos then
+                return -start_pos
+            end
+
+            return nil
+        end,
+    })
 
     local displayer = entry_display.create {
         separator = ' ',
@@ -48,7 +66,8 @@ function M.show(results)
         },
         cwd = require('telescope.utils').buffer_dir(),
         sorting_strategy = 'ascending',
-        sorter = conf.file_sorter {},
+        sorter = substring_sorter,
+        --sorter = conf.file_sorter {},
         attach_mappings = function(bufnr, map)
             map('i', '<cr>', function()
                 --venv.activate_venv()

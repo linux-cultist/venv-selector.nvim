@@ -75,7 +75,7 @@ end
 
 M.user_settings = {
     workspace = {
-        command = "fd 'venv$' $WORKSPACE_PATH --full-path --color never -E /proc -I",
+        command = "fd 'venv/bin/python$' $WORKSPACE_PATH --full-path --color never -E /proc -I",
         callback = M.workspace_callback
     },
     search = {

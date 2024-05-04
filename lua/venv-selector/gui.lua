@@ -77,7 +77,6 @@ function M.show(results, settings)
             end)
 
             map('i', '<C-r>', function()
-                --M.remove_results()
                 local picker = actions_state.get_current_picker(bufnr)
                 -- Delay by 10ms to achieve the refresh animation.
                 picker:refresh(finder, { reset_prompt = true })
@@ -92,8 +91,6 @@ function M.show(results, settings)
     }
     pickers.new({}, opts):find()
 
-    --venv.load()
-    -- venv.load must be called after the picker is displayed; otherwise, Vim will not be able to get the correct bufnr.
 end
 
 return M

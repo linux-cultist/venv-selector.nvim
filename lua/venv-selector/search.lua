@@ -105,10 +105,12 @@ local function run_search(opts, settings)
 
     -- Start job to search cwd
     local cwd = search_settings.cwd
-    local c = cwd
-    c.name = "CWD"
-    c.command = c.command:gsub("$CWD", vim.fn.getcwd())
-    job_count = start_search_job(c, job_count)
+    if cwd ~= nil then
+        local c = cwd
+        c.name = "CWD"
+        c.command = c.command:gsub("$CWD", vim.fn.getcwd())
+        job_count = start_search_job(c, job_count)
+    end
 
     -- Start jobs to search each workspace
     if workspace_folders ~= nil then

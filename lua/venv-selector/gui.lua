@@ -1,4 +1,5 @@
 local venv = require 'venv-selector.venv'
+local search = require 'venv-selector.search'
 
 local M = {}
 
@@ -82,6 +83,7 @@ function M.show(results, settings)
                 -- Delay by 10ms to achieve the refresh animation.
                 picker:refresh(finder, { reset_prompt = true })
                 vim.defer_fn(function()
+                 --search.New({}, search.user_settings)
                     --venv.load { force_refresh = true }
                 end, 10)
             end)

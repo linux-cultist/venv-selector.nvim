@@ -1,5 +1,4 @@
 local venv = require 'venv-selector.venv'
-local search = require 'venv-selector.search'
 
 local M = {}
 

@@ -146,7 +146,11 @@
 --
 --return M
 
-local function get_home_directory()
+
+
+local M = {}
+
+function M.get_home_directory()
     if vim.loop.os_uname().sysname == "Windows" then
         return os.getenv("USERPROFILE") -- Windows
     else
@@ -155,14 +159,16 @@ local function get_home_directory()
 end
 
 
-local M = {}
-
 function M.expand_home_path(path)
-    local home_dir = get_home_directory()
+    local home_dir = M.get_home_directory()
     return path:gsub("~", home_dir)
 end
 
-
+function M.get_base_path(path)
+    -- This pattern handles both forward slashes and backslashes
+    local pattern = "(.*[/\\])"
+    return path:match(pattern)
+end
 
 function M.print_table(tbl, indent)
     if not indent then indent = 0 end

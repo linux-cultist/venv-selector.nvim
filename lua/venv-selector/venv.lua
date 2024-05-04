@@ -1,5 +1,6 @@
 local actions_state = require 'telescope.actions.state'
 local utils = require("venv-selector.utils")
+local cache = require("venv-selector.cached_venv")
 
 --local system = require 'venv-selector.system'
 --local utils = require 'venv-selector.utils'
@@ -338,81 +339,91 @@ local M = {}
 
 function M.activate(settings)
     local selected_entry = actions_state.get_selected_entry()
+
     if selected_entry ~= nil then
         for _, hook in pairs(settings.hooks) do
-            --hook(venv_path, venv_python)
             hook(selected_entry.path)
         end
-        --M.cache_venv(selected_venv)
     end
-    --dbg 'Getting local system info...'
-    --local sys = system.get_info()
-    --dbg(sys)
-    --local venv_path = venv_row.value
-    --local new_bin_path
-    --local venv_python
-    --
-    --if sys.python_parent_path:len() == 0 then
-    --    -- If we dont have a python_parent_path (user may have set it to an empty string), use just the venv_path
-    --    new_bin_path = venv_path
-    --    venv_python = new_bin_path .. sys.path_sep .. sys.python_name
-    --else
-    --    new_bin_path = venv_path .. sys.path_sep .. sys.python_parent_path
-    --    venv_python = new_bin_path .. sys.path_sep .. sys.python_name
-    --end
-    --
-    ---- Make sure our python exists on disk before activating it, in case paths are wrong
-    --if vim.fn.executable(venv_python) == 0 then
-    --    utils.notify("The python path '" .. venv_python .. "' doesnt exist.")
-    --    return
-    --end
-    --
-    --if config.settings.dap_enabled == true then
-    --    M.setup_dap_venv(venv_python)
-    --end
-    --
-    --if config.settings.notify_user_on_activate == true then
-    --    utils.notify("Activated '" .. venv_python .. "'")
-    --end
-    --
-    --for _, hook in ipairs(config.settings.changed_venv_hooks) do
-    --    hook(venv_path, venv_python)
-    --end
-    --
-    --local current_system_path = vim.fn.getenv 'PATH'
-    --local prev_bin_path = M.current_bin_path
-    --
-    ---- Remove previous bin path from path
-    --if prev_bin_path ~= nil then
-    --    current_system_path = string.gsub(current_system_path, utils.escape_pattern(prev_bin_path .. sys.path_env_sep),
-    --        '')
-    --end
-    --
-    ---- Add new bin path to path
-    --local new_system_path = new_bin_path .. sys.path_env_sep .. current_system_path
-    --vim.fn.setenv('PATH', new_system_path)
-    --M.current_bin_path = new_bin_path
-    --
-    ---- Set VIRTUAL_ENV
-    ---- Set CONDA_PREFIX instead if we are on Windows and a conda environment is activated
-    --if vim.fn.has("win32") == 1 then
-    --    local venv_path_std = string.gsub(venv_path, '/', '\\')
-    --    local conda_base_path_std = string.gsub(config.settings.anaconda_base_path, '/', '\\')
-    --    local conda_envs_path_std = string.gsub(config.settings.anaconda_envs_path, '/', '\\')
-    --    local is_conda_base = string.find(venv_path_std, conda_base_path_std)
-    --    local is_conda_env = string.find(venv_path, conda_envs_path_std)
-    --    if is_conda_base == 1 or is_conda_env == 1 then
-    --        vim.fn.setenv('CONDA_PREFIX', venv_path)
-    --    else
-    --        vim.fn.setenv('VIRTUAL_ENV', venv_path)
-    --    end
-    --else
-    --    vim.fn.setenv('VIRTUAL_ENV', venv_path)
-    --end
-    --
-    --M.current_python_path = venv_python
-    --M.current_venv = venv_path
-    --dbg 'Finished setting venv and system paths.'
 end
+
+function M.activate_from_cache(settings, python_path)
+    print("Trying to activate from cache")
+    print(python_path.value)
+
+    for _, hook in pairs(settings.hooks) do
+        hook(python_path.value)
+    end
+end
+
+--dbg 'Getting local system info...'
+--local sys = system.get_info()
+--dbg(sys)
+--local venv_path = venv_row.value
+--local new_bin_path
+--local venv_python
+--
+--if sys.python_parent_path:len() == 0 then
+--    -- If we dont have a python_parent_path (user may have set it to an empty string), use just the venv_path
+--    new_bin_path = venv_path
+--    venv_python = new_bin_path .. sys.path_sep .. sys.python_name
+--else
+--    new_bin_path = venv_path .. sys.path_sep .. sys.python_parent_path
+--    venv_python = new_bin_path .. sys.path_sep .. sys.python_name
+--end
+--
+---- Make sure our python exists on disk before activating it, in case paths are wrong
+--if vim.fn.executable(venv_python) == 0 then
+--    utils.notify("The python path '" .. venv_python .. "' doesnt exist.")
+--    return
+--end
+--
+--if config.settings.dap_enabled == true then
+--    M.setup_dap_venv(venv_python)
+--end
+--
+--if config.settings.notify_user_on_activate == true then
+--    utils.notify("Activated '" .. venv_python .. "'")
+--end
+--
+--for _, hook in ipairs(config.settings.changed_venv_hooks) do
+--    hook(venv_path, venv_python)
+--end
+--
+--local current_system_path = vim.fn.getenv 'PATH'
+--local prev_bin_path = M.current_bin_path
+--
+---- Remove previous bin path from path
+--if prev_bin_path ~= nil then
+--    current_system_path = string.gsub(current_system_path, utils.escape_pattern(prev_bin_path .. sys.path_env_sep),
+--        '')
+--end
+--
+---- Add new bin path to path
+--local new_system_path = new_bin_path .. sys.path_env_sep .. current_system_path
+--vim.fn.setenv('PATH', new_system_path)
+--M.current_bin_path = new_bin_path
+--
+---- Set VIRTUAL_ENV
+---- Set CONDA_PREFIX instead if we are on Windows and a conda environment is activated
+--if vim.fn.has("win32") == 1 then
+--    local venv_path_std = string.gsub(venv_path, '/', '\\')
+--    local conda_base_path_std = string.gsub(config.settings.anaconda_base_path, '/', '\\')
+--    local conda_envs_path_std = string.gsub(config.settings.anaconda_envs_path, '/', '\\')
+--    local is_conda_base = string.find(venv_path_std, conda_base_path_std)
+--    local is_conda_env = string.find(venv_path, conda_envs_path_std)
+--    if is_conda_base == 1 or is_conda_env == 1 then
+--        vim.fn.setenv('CONDA_PREFIX', venv_path)
+--    else
+--        vim.fn.setenv('VIRTUAL_ENV', venv_path)
+--    end
+--else
+--    vim.fn.setenv('VIRTUAL_ENV', venv_path)
+--end
+--
+--M.current_python_path = venv_python
+--M.current_venv = venv_path
+--dbg 'Finished setting venv and system paths.'
+
 
 return M

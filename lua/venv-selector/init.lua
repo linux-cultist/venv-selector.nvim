@@ -60,6 +60,7 @@
 --end
 
 local search = require 'venv-selector.search'
+local hooks = require 'venv-selector.hooks'
 
 local M = {}
 
@@ -74,6 +75,7 @@ M.workspace_callback = function(filename)
 end
 
 M.user_settings = {
+    hooks = { hooks.basedpyright_hook, hooks.pyright_hook, hooks.pylance_hook, hooks.pylsp_hook },
     workspace = {
         command = "fd 'venv/bin/python$' $WORKSPACE_PATH --full-path --color never -E /proc -I",
         callback = M.workspace_callback
@@ -112,5 +114,5 @@ function M.setup(settings)
         search.New(opts, M.user_settings)
     end, { nargs = '*', desc = 'Activate venv' })
 end
-return M
 
+return M

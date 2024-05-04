@@ -1,4 +1,5 @@
 local actions_state = require 'telescope.actions.state'
+local utils = require("venv-selector.utils")
 
 --local system = require 'venv-selector.system'
 --local utils = require 'venv-selector.utils'
@@ -335,13 +336,13 @@ local actions_state = require 'telescope.actions.state'
 
 local M = {}
 
-function M.activate()
+function M.activate(settings)
     local selected_entry = actions_state.get_selected_entry()
     if selected_entry ~= nil then
-        print(selected_entry.path)
-            for _, hook in ipairs(config.settings.changed_venv_hooks) do
-                hook(venv_path, venv_python)
-            end
+        for _, hook in pairs(settings.hooks) do
+            --hook(venv_path, venv_python)
+            hook(selected_entry.path)
+        end
         --M.cache_venv(selected_venv)
     end
     --dbg 'Getting local system info...'

@@ -164,13 +164,13 @@ end
 
 
 
-function M.printTable(tbl, indent)
+function M.print_table(tbl, indent)
     if not indent then indent = 0 end
     for k, v in pairs(tbl) do
         local formatting = string.rep("  ", indent) .. k .. ": "
         if type(v) == "table" then
             print(formatting)
-            M.printTable(v, indent+1)
+            M.print_table(v, indent+1)
         else
             print(formatting .. tostring(v))
         end

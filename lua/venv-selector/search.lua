@@ -76,7 +76,7 @@ local function run_search(opts, settings)
                         --print(line)
                     end
                 end
-                gui.show(convert_for_gui(results))
+                gui.show(convert_for_gui(results), settings)
             end
         end
     end

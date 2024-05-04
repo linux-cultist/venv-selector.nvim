@@ -80,6 +80,10 @@ M.user_settings = {
         command = "fd 'venv/bin/python$' $WORKSPACE_PATH --full-path --color never -E /proc -I",
         callback = M.workspace_callback
     },
+    cwd = {
+        command = "fd 'venv/bin/python$' $CWD --full-path --color never -E /proc -I",
+        callback = M.callback
+    },
     search = {
         {
             name = "My venvs",

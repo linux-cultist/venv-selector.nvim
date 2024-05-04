@@ -82,6 +82,8 @@ local function run_search(opts, settings)
     end
 
     local function start_search_job(search, count)
+        --print("new job")
+        --utils.print_table(search)
         local job_id = vim.fn.jobstart(utils.expand_home_path(search.command), {
             stdout_buffered = true,
             stderr_buffered = true,
@@ -99,6 +101,19 @@ local function run_search(opts, settings)
     for _, search in ipairs(search_settings.search) do
         job_count = start_search_job(search, job_count)
     end
+
+    -- Start job for cwd
+    -- utils.print_table(search_settings)
+    -- TODO: Doesnt work below yet
+    for _, search in pairs(search_settings.cwd) do
+        --utils.print_table(search)
+        --local search = {}
+        --search.name = "CWD"
+        --search.command = c:gsub("$CWD", vim.fn.getcwd())
+        --search.callback = search_settings.cwd.callback
+        --job_count = start_search_job(search, job_count)
+    end
+
     -- Start job for each workspace
     if workspace_folders ~= nil then
         for i, workspace_path in pairs(workspace_folders) do

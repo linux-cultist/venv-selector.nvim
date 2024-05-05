@@ -1,10 +1,17 @@
 local M = {}
 
+local previous_dir = nil
+
 function M.add(newDir)
+    if previous_dir ~= nil then
+        M.remove(previous_dir)
+    end
     local path = vim.fn.getenv("PATH")
-    local pathSeparator = package.config:sub(1, 1) == '\\' and ';' or ':'
-    local updatedPath = M.remove_trailing_slash(M.get_base(newDir)) .. pathSeparator .. path
-    vim.fn.setenv("PATH", updatedPath)
+    local path_separator = package.config:sub(1, 1) == '\\' and ';' or ':'
+    local clean_dir = M.remove_trailing_slash(newDir)
+    local updated_path = clean_dir .. path_separator .. path
+    previous_dir = clean_dir
+    vim.fn.setenv("PATH", updated_path)
 end
 
 function M.remove_trailing_slash(path)
@@ -17,12 +24,12 @@ function M.remove_trailing_slash(path)
 end
 
 function M.remove(removalDir)
-    local removeDir = M.remove_trailing_slash(M.get_base(removalDir))
+    local clean_dir = M.remove_trailing_slash(removalDir)
     local path = vim.fn.getenv("PATH")
     local pathSeparator = package.config:sub(1, 1) == '\\' and ';' or ':'
     local paths = {}
     for p in string.gmatch(path, "[^" .. pathSeparator .. "]+") do
-        if p ~= removeDir then
+        if p ~= clean_dir then
             table.insert(paths, p)
         end
     end

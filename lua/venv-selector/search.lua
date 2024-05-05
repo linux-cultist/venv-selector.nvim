@@ -1,6 +1,7 @@
-local utils = require 'venv-selector.utils'
+
 local gui = require 'venv-selector.gui'
 local workspace = require 'venv-selector.workspace'
+local path = require("venv-selector.path")
 
 local function contains_workspace(str)
     return string.find(str, "%$WORKSPACE") ~= nil
@@ -39,7 +40,7 @@ local function set_interactive_search(args)
             search = {
                 {
                     name = "Interactive",
-                    command = args.gsub("%$CWD", vim.fn.getcwd())
+                    command = args:gsub("%$CWD", vim.fn.getcwd())
                 }
             }
         }
@@ -63,7 +64,7 @@ local function run_search(opts, settings)
         if event == 'stdout' and data then
             if not results[job_id] then results[job_id] = {} end
             for _, line in ipairs(data) do
-                line = utils.normalize_path(line)
+                line = path.normalize(line)
                 local rv = {}
                 rv.path = line
                 rv.name = line
@@ -96,7 +97,7 @@ local function run_search(opts, settings)
     end
 
     local function start_search_job(search, count)
-        local job_id = vim.fn.jobstart(utils.expand_home_path(search.command), {
+        local job_id = vim.fn.jobstart(path.expand_home(search.command), {
             stdout_buffered = true,
             stderr_buffered = true,
             on_stdout = on_event,

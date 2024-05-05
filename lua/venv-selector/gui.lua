@@ -1,5 +1,5 @@
 local venv = require 'venv-selector.venv'
-local utils = require 'venv-selector.utils'
+local path = require 'venv-selector.path'
 
 local M = {}
 
@@ -57,8 +57,8 @@ function M.show(results, settings)
             map('i', '<cr>', function()
                 local selected_entry = actions_state.get_selected_entry()
                 venv.activate(settings, selected_entry)
-                utils.add_to_path(selected_entry.path)
-                utils.remove_from_path(selected_entry.path)
+                path.add(selected_entry.path)
+                path.remove(selected_entry.path)
                 actions.close(bufnr)
             end)
 

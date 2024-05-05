@@ -22,8 +22,6 @@ function M.merge_settings(defaults, user_settings)
     return defaults
 end
 
-
-
 function M.print_table(tbl, indent)
     if not indent then indent = 0 end
     for k, v in pairs(tbl) do

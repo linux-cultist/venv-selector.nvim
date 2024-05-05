@@ -15,7 +15,6 @@ function M.create_dir()
 end
 
 function M.save(python_path)
-
     M.create_dir()
 
     local venv_cache = {

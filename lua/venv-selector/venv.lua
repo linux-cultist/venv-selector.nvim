@@ -1,4 +1,3 @@
-
 local M = {}
 
 
@@ -12,17 +11,10 @@ function M.activate(settings, selected_entry)
     end
 end
 
-
-
 function M.activate_from_cache(settings, python_path)
-    print("Trying to activate from cache")
-    print(python_path.value)
-
     for _, hook in pairs(settings.hooks) do
         hook(python_path.value)
     end
 end
-
-
 
 return M

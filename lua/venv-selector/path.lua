@@ -1,4 +1,3 @@
-
 local M = {}
 
 function M.add(newDir)
@@ -30,7 +29,6 @@ function M.remove(removalDir)
     local updatedPath = table.concat(paths, pathSeparator)
     vim.fn.setenv("PATH", updatedPath)
 end
-
 
 function M.normalize(path)
     local parts = {}

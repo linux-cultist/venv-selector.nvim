@@ -1,5 +1,3 @@
-
-
 local M = {}
 
 function M.set_python_path_for_client(client_name, venv_python)

@@ -1,4 +1,3 @@
-
 local gui = require 'venv-selector.gui'
 local workspace = require 'venv-selector.workspace'
 local path = require("venv-selector.path")

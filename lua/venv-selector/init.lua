@@ -17,17 +17,6 @@ vim.api.nvim_create_autocmd("LspAttach", {
 
 local M = {}
 
-M.callback = function(filename)
-    -- return nil or "" to not include it in search results. Alter the filename how you want before returning.
-    return filename:gsub("/bin/python", "")
-end
-
-M.workspace_callback = function(filename)
-    -- return nil or "" to not include it in search results. Alter the filename how you want before returning.
-    return filename:gsub("/bin/python", "")
-end
-
-
 function M.setup(settings)
     config.user_settings = utils.merge_settings(config.default_settings, settings or {})
 

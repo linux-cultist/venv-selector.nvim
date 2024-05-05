@@ -10,7 +10,7 @@ local function on_lsp_attach()
 end
 
 vim.api.nvim_create_autocmd("LspAttach", {
-    pattern = "*.py", -- This could be set to a specific filetype, e.g., '*.lua', if needed
+    pattern = "*.py",
     callback = on_lsp_attach,
 })
 
@@ -32,7 +32,6 @@ function M.setup(settings)
     config.user_settings = utils.merge_settings(config.default_settings, settings or {})
 
     vim.api.nvim_create_user_command('VenvSelect', function(opts)
-        utils.print_table(config.user_settings)
         search.New(opts, config.user_settings)
     end, { nargs = '*', desc = 'Activate venv' })
 

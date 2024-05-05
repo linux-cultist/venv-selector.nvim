@@ -45,34 +45,32 @@ before using this plugin. You can see example setup instructions here: https://g
 
 You configure `VenvSelect` by sending in a lua table to the setup() function.
 
-Easiest way if you use [Lazy.nvim](https://github.com/folke/lazy.nvim) is to use the opts function like this:
+Here is an example of how it can be set up with [Lazy.nvim](https://github.com/folke/lazy.nvim):
 
-```lua
-return {
-  'linux-cultist/venv-selector.nvim',
-  dependencies = { 'neovim/nvim-lspconfig', 'nvim-telescope/telescope.nvim', 'mfussenegger/nvim-dap-python' },
-  opts = {
-    
-  },
-  event = 'VeryLazy', -- Optional: needed only if you want to type `:VenvSelect` without a keymapping
-  keys = {
-    -- Keymap to open VenvSelector to pick a venv.
-    { '<leader>vs', '<cmd>VenvSelect<cr>' },
-    -- Keymap to retrieve the venv from a cache (the one previously used for the same project directory).
-    { '<leader>vc', '<cmd>VenvSelectCached<cr>' },
-  },
-}
-```
-
-But if you want, you can also manually call the setup function like this:
 
 ```lua
 return {
   'linux-cultist/venv-selector.nvim',
   dependencies = { 'neovim/nvim-lspconfig', 'nvim-telescope/telescope.nvim', 'mfussenegger/nvim-dap-python' },
   config = function()
+     -- Optional callback function if you want to alter how the results from `mycode` command look like in telescope viewer
+     local c = require "venv-selector.config"
+     local function my_callback(filename)
+        return filename 
+     end
+
     require('venv-selector').setup {
-      
+        search = {
+          -- You can add any number of searches just like the one named `mycode` below.
+          mycode = {
+            command = "fd '/bin/python$' ~/Code --full-path --color never -E /proc -L -H -I",
+            callback = my_callback -- Optional, not needed.
+          },
+          -- Another example of a search, here without the optional callback
+          search_home_for_pythons = {
+            command = "fd '/bin/python$' ~ --full-path --color never",
+          },
+        },
     }
   end,
   event = 'VeryLazy', -- Optional: needed only if you want to type `:VenvSelect` without a keymapping

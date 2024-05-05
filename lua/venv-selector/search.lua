@@ -44,7 +44,8 @@ local function run_search(opts, settings)
     local workspace_folders = workspace.list_folders()
     local job_count = 0
     local results = {}
-    local search_settings = set_interactive_search(opts.args) or settings
+    local search_settings = utils.replace_cwd_in_settings(set_interactive_search(opts.args) or settings)
+    utils.print_table(search_settings)
 
     local function on_event(job_id, data, event)
         local job_name = s[job_id].name
@@ -53,6 +54,7 @@ local function run_search(opts, settings)
         if event == 'stdout' and data then
             if not results[job_id] then results[job_id] = {} end
             for _, line in ipairs(data) do
+                line = utils.normalize_path(line)
                 local rv = {}
                 rv.path = line
                 rv.name = line
@@ -104,13 +106,7 @@ local function run_search(opts, settings)
     end
 
     -- Start job to search cwd
-    local cwd = search_settings.cwd
-    if cwd ~= nil then
-        local c = cwd
-        c.name = "CWD"
-        c.command = c.command:gsub("$CWD", vim.fn.getcwd())
-        job_count = start_search_job(c, job_count)
-    end
+    job_count = start_search_job(search_settings.cwd, job_count)
 
     -- Start jobs to search each workspace
     if workspace_folders ~= nil then

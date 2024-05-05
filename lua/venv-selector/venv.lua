@@ -2,9 +2,7 @@
 local M = {}
 
 
-function M.add_to_path(selected_entry)
-    print(selected_entry.path)
-end
+
 
 function M.activate(settings, selected_entry)
     if selected_entry ~= nil then

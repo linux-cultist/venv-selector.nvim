@@ -28,9 +28,39 @@ function M.merge_settings(defaults, user_settings)
     return defaults
 end
 
+function M.remove_trailing_slash(path)
+    -- Check if the last character is a slash
+    if path:sub(-1) == "/" or path:sub(-1) == "\\" then
+        -- Remove the last character
+        return path:sub(1, -2)
+    end
+    return path
+end
+
+function M.add_to_path(newDir)
+    local path = vim.fn.getenv("PATH")
+    local pathSeparator = package.config:sub(1, 1) == '\\' and ';' or ':'
+    local updatedPath = M.remove_trailing_slash(M.get_base_path(newDir)) .. pathSeparator .. path
+    vim.fn.setenv("PATH", updatedPath)
+end
+
+function M.remove_from_path(removalDir)
+    local removeDir = M.remove_trailing_slash(M.get_base_path(removalDir))
+    local path = vim.fn.getenv("PATH")
+    local pathSeparator = package.config:sub(1, 1) == '\\' and ';' or ':'
+    local paths = {}
+    for p in string.gmatch(path, "[^" .. pathSeparator .. "]+") do
+        if p ~= removeDir then
+            table.insert(paths, p)
+        end
+    end
+    local updatedPath = table.concat(paths, pathSeparator)
+    vim.fn.setenv("PATH", updatedPath)
+end
+
 function M.normalize_path(path)
     local parts = {}
-    local is_absolute = string.sub(path, 1, 1) == '/'  -- Check if path starts with a '/'
+    local is_absolute = string.sub(path, 1, 1) == '/' -- Check if path starts with a '/'
     local path_sep = '/'
     local result = ''
 
@@ -62,8 +92,6 @@ function M.normalize_path(path)
 
     return result
 end
-
-
 
 function M.expand_home_path(path)
     local home_dir = M.get_home_directory()

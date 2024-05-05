@@ -54,7 +54,9 @@ function M.show(results, settings)
         sorter = sorters.get_substr_matcher(),
         attach_mappings = function(bufnr, map)
             map('i', '<cr>', function()
-                venv.activate(settings)
+                local selected_entry = actions_state.get_selected_entry()
+                venv.activate(settings, selected_entry)
+                venv.add_to_path(selected_entry)
                 actions.close(bufnr)
             end)
 

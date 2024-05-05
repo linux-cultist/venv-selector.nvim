@@ -2,6 +2,15 @@ local utils = require 'venv-selector.utils'
 local gui = require 'venv-selector.gui'
 local workspace = require 'venv-selector.workspace'
 
+local function contains_workspace(str)
+    return string.find(str, "%$WORKSPACE") ~= nil
+end
+
+local function table_empty(t)
+    return next(t) == nil
+end
+
+
 local M = {}
 
 local function convert_for_gui(nested_tbl)
@@ -30,7 +39,7 @@ local function set_interactive_search(args)
             search = {
                 {
                     name = "Interactive",
-                    command = args
+                    command = args.gsub("%$CWD", vim.fn.getcwd())
                 }
             }
         }
@@ -44,8 +53,8 @@ local function run_search(opts, settings)
     local workspace_folders = workspace.list_folders()
     local job_count = 0
     local results = {}
-    local search_settings = utils.replace_cwd_in_settings(set_interactive_search(opts.args) or settings)
-    utils.print_table(search_settings)
+    local search_settings = set_interactive_search(opts.args) or settings
+    local cwd = vim.fn.getcwd()
 
     local function on_event(job_id, data, event)
         local job_name = s[job_id].name
@@ -100,24 +109,24 @@ local function run_search(opts, settings)
         return count
     end
 
+
     -- Start search jobs from config
-    for _, search in ipairs(search_settings.search) do
-        job_count = start_search_job(search, job_count)
-    end
-
-    -- Start job to search cwd
-    job_count = start_search_job(search_settings.cwd, job_count)
-
-    -- Start jobs to search each workspace
-    if workspace_folders ~= nil then
-        for i, workspace_path in pairs(workspace_folders) do
-            local search = {}
-            search.name = "Workspace Path " .. i
-            search.command = search_settings.workspace.command:gsub("$WORKSPACE_PATH", workspace_path)
-            search.callback = search_settings.workspace.callback
+    for _, search in pairs(search_settings.search) do
+        -- Dont start jobs that search $WORKSPACE folders unless the lsp has discovered workspace folders
+        if contains_workspace(search.command) == false then
+            search.command = search.command:gsub("$CWD", cwd)
             job_count = start_search_job(search, job_count)
+        else
+            if table_empty(workspace_folders) == false then
+                for _, workspace_path in pairs(workspace_folders) do
+                    search.command = search.command:gsub("$WORKSPACE_PATH", workspace_path)
+                    job_count = start_search_job(search, job_count)
+                end
+            end
         end
     end
+
+    --utils.print_table(search_settings)
 end
 
 function M.New(opts, settings)

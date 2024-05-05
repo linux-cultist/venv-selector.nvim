@@ -63,22 +63,7 @@ function M.normalize_path(path)
     return result
 end
 
-function M.replace_cwd_in_settings(settings)
-    local cwd = vim.fn.getcwd()
 
-    local function replace_cwd(value)
-        if type(value) == "string" then
-            return value:gsub("%$CWD", cwd)
-        elseif type(value) == "table" then
-            for k, v in pairs(value) do
-                value[k] = replace_cwd(v)
-            end
-        end
-        return value
-    end
-
-    return replace_cwd(settings)
-end
 
 function M.expand_home_path(path)
     local home_dir = M.get_home_directory()

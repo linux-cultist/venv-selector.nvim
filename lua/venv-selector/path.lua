@@ -86,9 +86,21 @@ function M.expand_home(path)
 end
 
 function M.get_base(path)
-    -- This pattern handles both forward slashes and backslashes
+    -- Check if the path ends with a slash and remove it, unless it's a root path
+    if (path:sub(-1) == "/" or path:sub(-1) == "\\") and #path > 1 then
+        path = path:sub(1, -2)
+    end
+
+    -- Use the pattern to find the base path
     local pattern = "(.*[/\\])"
-    return path:match(pattern)
+    local base = path:match(pattern)
+    if base then
+        -- Remove the trailing slash for the next potential call
+        return base:sub(1, -2)
+    else
+        -- Return nil if no higher directory level can be found
+        return nil
+    end
 end
 
 return M

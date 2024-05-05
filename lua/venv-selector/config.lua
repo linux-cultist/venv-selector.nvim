@@ -3,7 +3,9 @@ local hooks = require 'venv-selector.hooks'
 
 local M = {}
 
-M.user_settings = {
+M.user_settings = {}
+
+M.default_settings = {
     cache = {
         file = "~/.cache/venv-selector/venvs2.json",
     },

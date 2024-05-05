@@ -1,6 +1,6 @@
-
 local search = require 'venv-selector.search'
 local config = require 'venv-selector.config'
+local utils = require 'venv-selector.utils'
 
 
 local function on_lsp_attach()
@@ -29,7 +29,10 @@ end
 
 
 function M.setup(settings)
+    config.user_settings = utils.merge_settings(config.default_settings, settings or {})
+
     vim.api.nvim_create_user_command('VenvSelect', function(opts)
+        utils.print_table(config.user_settings)
         search.New(opts, config.user_settings)
     end, { nargs = '*', desc = 'Activate venv' })
 

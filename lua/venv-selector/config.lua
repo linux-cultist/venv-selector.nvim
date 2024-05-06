@@ -10,6 +10,9 @@ M.default_settings = {
         file = "~/.cache/venv-selector/venvs2.json",
     },
     hooks = { hooks.basedpyright_hook, hooks.pyright_hook, hooks.pylance_hook, hooks.pylsp_hook },
+    settings = {
+        enable_debug_output = false
+    },
     search = {
         virtualenvs = {
             command = "fd 'python$' ~/.virtualenvs --color never -E /proc"

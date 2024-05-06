@@ -1,5 +1,5 @@
 local path = require("venv-selector.path")
-
+local utils = require("venv-selector.utils")
 local M = {}
 
 
@@ -12,7 +12,7 @@ function M.activate(settings, python_path)
             count = count + hook(python_path)
         end
         if count == 0 then
-        	print("No python lsp servers are running. Please open a python file and then select a venv to activate.")
+            print("No python lsp servers are running. Please open a python file and then select a venv to activate.")
         end
     end
 end
@@ -21,6 +21,10 @@ function M.activate_from_cache(settings, python_path)
     for _, hook in pairs(settings.hooks) do
         hook(python_path.value)
     end
+
+    path.add(path.get_base(python_path.value))
+    local venv = require("venv-selector.venv")
+    venv.set_virtual_env(python_path.value)
 end
 
 function M.set_virtual_env(python_path)

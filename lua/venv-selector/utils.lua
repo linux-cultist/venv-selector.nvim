@@ -25,7 +25,7 @@ function M.merge_settings(defaults, user_settings)
 end
 
 function M.dbg(msg, name)
-    if config.user_settings.enable_debug_output == false or msg == nil then
+    if config.user_settings.options.debug == false or msg == nil then
         return
     end
 

@@ -10,8 +10,8 @@ M.default_settings = {
         file = "~/.cache/venv-selector/venvs2.json",
     },
     hooks = { hooks.basedpyright_hook, hooks.pyright_hook, hooks.pylance_hook, hooks.pylsp_hook },
-    settings = {
-        enable_debug_output = false
+    options = {
+        debug = false
     },
     search = {
         virtualenvs = {

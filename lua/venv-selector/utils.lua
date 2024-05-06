@@ -1,6 +1,8 @@
+local config = require("venv-selector.config")
+
 local M = {}
 
-
+local msg_prefix = "VenvSelect: "
 
 function M.merge_settings(defaults, user_settings)
     for key, value in pairs(user_settings) do
@@ -20,6 +22,27 @@ function M.merge_settings(defaults, user_settings)
         end
     end
     return defaults
+end
+
+function M.dbg(msg, name)
+    if config.user_settings.enable_debug_output == false or msg == nil then
+        return
+    end
+
+    if type(msg) == 'string' then
+        if name ~= nil then
+            print(name .. ":", msg)
+        end
+    elseif type(msg) == 'table' then
+        if name ~= nil then
+            print(name .. ":")
+        end
+        M.print_table(msg, 2)
+    elseif type(msg) == 'boolean' then
+        print(tostring(msg))
+    else
+        print('Unhandled message type to dbg: message type is ' .. type(msg))
+    end
 end
 
 function M.print_table(tbl, indent)

@@ -1,6 +1,7 @@
 local search = require 'venv-selector.search'
 local config = require 'venv-selector.config'
 local utils = require 'venv-selector.utils'
+dbg = require 'venv-selector.utils'.dbg
 
 
 local function on_lsp_attach()
@@ -18,7 +19,7 @@ vim.api.nvim_create_autocmd("LspAttach", {
 local M = {}
 
 function M.setup(settings)
-    config.user_settings = utils.merge_settings(config.default_settings, settings or {})
+    config.user_settings = utils.merge_settings(config.default_settings, settings.settings or {})
 
     vim.api.nvim_create_user_command('VenvSelect', function(opts)
         search.New(opts, config.user_settings)

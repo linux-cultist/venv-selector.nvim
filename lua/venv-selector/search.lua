@@ -33,28 +33,33 @@ local function convert_for_gui(nested_tbl)
 end
 
 
-local function set_interactive_search(args)
-    if #args > 0 then
-        return {
-            search = {
-                {
-                    name = "Interactive",
-                    command = args:gsub("%$CWD", vim.fn.getcwd())
-                }
+local function set_interactive_search(opts)
+    if opts.args ~= nil then
+        local search = {
+            interactive = {
+                command = opts.args:gsub("%$CWD", vim.fn.getcwd())
             }
         }
+        dbg(search)
+        return search
     end
 
     return nil
 end
 
-local function run_search(opts, settings)
+local function run_search(opts, user_settings)
+    dbg("Starting new search with these settings:")
+    dbg(user_settings, "user_settings")
+    dbg(opts.args, "opts.args")
+
     local s = {}
     local workspace_folders = workspace.list_folders()
     local job_count = 0
     local results = {}
-    local search_settings = set_interactive_search(opts.args) or settings
+    --local search_settings = set_interactive_search(opts) or settings
     local cwd = vim.fn.getcwd()
+    local search_settings = user_settings
+    --dbg(search_settings)
 
     local function on_event(job_id, data, event)
         local job_name = s[job_id].name
@@ -90,7 +95,7 @@ local function run_search(opts, settings)
                         --print(line)
                     end
                 end
-                gui.show(convert_for_gui(results), settings)
+                gui.show(convert_for_gui(results), user_settings)
             end
         end
     end

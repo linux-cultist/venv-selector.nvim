@@ -11,6 +11,7 @@ function M.list_folders()
         end
     end
 
+    dbg(workspace_folders, "workspace folders")
     return workspace_folders
 end
 

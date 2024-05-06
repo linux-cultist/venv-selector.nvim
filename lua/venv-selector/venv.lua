@@ -20,10 +20,9 @@ function M.activate_from_cache(settings, python_path)
 end
 
 function M.set_virtual_env(python_path)
-    print(python_path)
     local virtual_env = path.get_base(path.get_base(python_path))
-    print(virtual_env)
     vim.fn.setenv("VIRTUAL_ENV", virtual_env)
+    dbg("VIRTUAL_ENV set to" .. virtual_env)
 end
 
 return M

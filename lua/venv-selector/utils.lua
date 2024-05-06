@@ -32,6 +32,8 @@ function M.dbg(msg, name)
     if type(msg) == 'string' then
         if name ~= nil then
             print(name .. ":", msg)
+        else
+            print(msg)
         end
     elseif type(msg) == 'table' then
         if name ~= nil then

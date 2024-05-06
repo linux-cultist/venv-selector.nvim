@@ -82,7 +82,8 @@ end
 
 function M.expand_home(path)
     local home_dir = M.get_home_directory()
-    return path:gsub("~", home_dir)
+    local r = path:gsub("~", home_dir)
+    return r
 end
 
 function M.get_base(path)

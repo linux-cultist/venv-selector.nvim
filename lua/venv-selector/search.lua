@@ -78,6 +78,7 @@ local function run_search(opts, user_settings)
                     rv.name = callback(line)
                 end
                 if line ~= "" and line ~= nil then
+                    dbg("Result: " .. rv.path)
                     table.insert(results[job_id], rv)
                 end
             end
@@ -85,25 +86,23 @@ local function run_search(opts, user_settings)
             if data and #data > 0 then
                 for _, line in ipairs(data) do
                     if line ~= "" then
-                        print("Error from job " .. job_name .. " : " .. vim.inspect(line))
+                        dbg("Error from job " .. job_name .. " : " .. vim.inspect(line))
                     end
                 end
             end
         elseif event == 'exit' then
             job_count = job_count - 1
             if job_count == 0 then
-                for id, lines in pairs(results) do
-                    for _, line in ipairs(lines) do
-                        --print(line)
-                    end
-                end
                 gui.show(convert_for_gui(results), user_settings)
             end
         end
     end
 
     local function start_search_job(search, count)
-        local job_id = vim.fn.jobstart(path.expand_home(search.command), {
+        local job = path.expand_home(search.command)
+        dbg(job, "Starting job")
+
+        local job_id = vim.fn.jobstart(job, {
             stdout_buffered = true,
             stderr_buffered = true,
             on_stdout = on_event,

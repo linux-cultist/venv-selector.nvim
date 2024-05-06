@@ -86,7 +86,7 @@ local function run_search(opts, user_settings)
             if data and #data > 0 then
                 for _, line in ipairs(data) do
                     if line ~= "" then
-                        dbg("Error from job " .. job_name .. " : " .. vim.inspect(line))
+                        dbg(vim.inspect(line))
                     end
                 end
             end

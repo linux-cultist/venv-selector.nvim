@@ -29,7 +29,7 @@ function M.dbg(msg, name)
         return
     end
 
-    if type(msg) == 'string' then
+    if type(msg) == 'string' or type(msg) == 'number' then
         if name ~= nil then
             print(name .. ":", msg)
         else

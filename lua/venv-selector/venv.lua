@@ -7,8 +7,12 @@ local M = {}
 
 function M.activate(settings, python_path)
     if python_path ~= nil then
+        local count = 0
         for _, hook in pairs(settings.hooks) do
-            hook(python_path)
+            count = count + hook(python_path)
+        end
+        if count == 0 then
+        	print("No python lsp servers are running. Please open a python file and then select a venv to activate.")
         end
     end
 end

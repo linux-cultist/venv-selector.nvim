@@ -16,15 +16,15 @@ function M.set_python_path_for_client(client_name, venv_python)
 end
 
 function M.basedpyright_hook(venv_python)
-    M.set_python_path_for_client("basedpyright", venv_python)
+    return M.set_python_path_for_client("basedpyright", venv_python)
 end
 
 function M.pyright_hook(venv_python)
-    M.set_python_path_for_client("pyright", venv_python)
+    return M.set_python_path_for_client("pyright", venv_python)
 end
 
 function M.pylance_hook(venv_python)
-    M.set_python_path_for_client("pylance", venv_python)
+    return M.set_python_path_for_client("pylance", venv_python)
 end
 
 function M.pylsp_hook(venv_python)
@@ -51,8 +51,10 @@ function M.execute_for_client(name, callback)
 
     if not client then
         --print('No client named: ' .. name .. ' found')
+        return 0
     else
         callback(client)
+        return 1
     end
 end
 

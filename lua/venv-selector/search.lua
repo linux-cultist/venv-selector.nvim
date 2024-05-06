@@ -34,14 +34,16 @@ end
 
 
 local function set_interactive_search(opts)
-    if opts.args ~= nil then
-        local search = {
-            interactive = {
-                command = opts.args:gsub("%$CWD", vim.fn.getcwd())
+    if #opts.args > 0 then
+        local settings = {
+            search = {
+                interactive = {
+                    command = opts.args:gsub("%$CWD", vim.fn.getcwd())
+                }
             }
         }
-        dbg(search)
-        return search
+        dbg(settings)
+        return settings
     end
 
     return nil
@@ -49,17 +51,17 @@ end
 
 local function run_search(opts, user_settings)
     dbg("Starting new search with these settings:")
-    dbg(user_settings, "user_settings")
-    dbg(opts.args, "opts.args")
+    --dbg(user_settings, "user_settings")
+    --dbg(opts.args, "opts.args")
 
     local s = {}
     local workspace_folders = workspace.list_folders()
     local job_count = 0
     local results = {}
-    --local search_settings = set_interactive_search(opts) or settings
+    local search_settings = set_interactive_search(opts) or user_settings
     local cwd = vim.fn.getcwd()
-    local search_settings = user_settings
-    --dbg(search_settings)
+    --local search_settings = user_settings
+    dbg(search_settings, "merged search settings")
 
     local function on_event(job_id, data, event)
         local job_name = s[job_id].name

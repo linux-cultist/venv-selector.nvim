@@ -73,7 +73,9 @@ function M.normalize(path)
 end
 
 function M.get_home_directory()
-    if vim.loop.os_uname().sysname == "Windows" then
+    local sysname = vim.loop.os_uname().sysname
+    dbg(sysname, "sysname")
+    if sysname == "Windows" then
         return os.getenv("USERPROFILE") -- Windows
     else
         return os.getenv("HOME")        -- Unix-like (Linux, macOS)
@@ -83,6 +85,7 @@ end
 function M.expand_home(path)
     local home_dir = M.get_home_directory()
     local r = path:gsub("~", home_dir)
+    dbg(r, "path after home expansion")
     return r
 end
 

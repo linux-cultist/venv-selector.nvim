@@ -30,7 +30,7 @@ end
 function M.set_virtual_env(python_path)
     local virtual_env = path.get_base(path.get_base(python_path))
     vim.fn.setenv("VIRTUAL_ENV", virtual_env)
-    dbg("VIRTUAL_ENV set to" .. virtual_env)
+    dbg("$VIRTUAL_ENV set to" .. virtual_env)
 end
 
 return M

@@ -45,9 +45,11 @@ The new configuration looks like this:
 
 ```
       require("venv-selector").setup {
-        search = {
-          name_for_your_search_here = {
-            command = "fd '/bin/python$' ~/Code --full-path",
+        settings = {
+          search = {
+            my_venvs = {
+              command = "fd 'python$' ~/.venv",
+            },
           },
         },
       }
@@ -72,12 +74,14 @@ Naturally you want to use your own paths and your own flags to `fd` to make it p
 
 ```
       require("venv-selector").setup {
-        search = {
-          name_for_your_search_here = {
-            command = "fd '/bin/python$' ~/Code --full-path",
-          },
-          name_for_your_other_search_here = {
-            command = "fd '/bin/python$' ~/Programming/Python --full-path -IHL -E /proc",
+        settings = {
+          search = {
+            name_for_your_search_here = {
+              command = "fd '/bin/python$' ~/Code --full-path",
+            },
+            name_for_your_other_search_here = {
+              command = "fd '/bin/python$' ~/Programming/Python --full-path -IHL -E /proc",
+            },
           },
         },
       }

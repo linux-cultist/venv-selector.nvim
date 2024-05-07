@@ -34,27 +34,27 @@ function M.get_default_searches()
         end,
         ['Windows_NT'] = function()
             return {
-                virtualenvs = {
-                    command = "fd 'python$' ~\\.virtualenvs --color never"
-                },
-                hatch = {
-                    command = "fd 'python$' ~\\.local\\share\\hatch --color never"
-                },
-                pypoetry = {
-                    command = "fd 'versions\\([0-9.]+)\\bin\\python.exe$' ~\\.pyenv\\versions --full-path --color never"
-                },
-                anaconda_envs = {
-                    command = "fd 'Scripts\\python.exe$' ~\\.conda\\envs --full-path --color never"
-                },
-                anaconda_base = {
-                    command = "fd '\\python$' \\opt\\anaconda\\bin --full-path --color never",
-                },
-                cwd = {
-                    command = "fd '\\Scripts\\python.exe$' $CWD --full-path --color never",
-                },
-                workspace = {
-                    command = "fd '\\Scripts\\python.exe$' $WORKSPACE_PATH --full-path --color never -I",
-                }
+                --virtualenvs = {
+                --    command = "fd 'python$' ~\\.virtualenvs --color never"
+                --},
+                --hatch = {
+                --    command = "fd 'python$' ~\\.local\\share\\hatch --color never"
+                --},
+                --pypoetry = {
+                --    command = "fd 'versions\\([0-9.]+)\\bin\\python.exe$' ~\\.pyenv\\versions --full-path --color never"
+                --},
+                --anaconda_envs = {
+                --    command = "fd 'Scripts\\python.exe$' ~\\.conda\\envs --full-path --color never"
+                --},
+                --anaconda_base = {
+                --    command = "fd '\\python$' \\opt\\anaconda\\bin --full-path --color never",
+                --},
+                --cwd = {
+                --    command = "fd '\\Scripts\\python.exe$' $CWD --full-path --color never",
+                --},
+                --workspace = {
+                --    command = "fd '\\Scripts\\python.exe$' $WORKSPACE_PATH --full-path --color never -I",
+                --}
             }
         end,
         ['default'] = function()

@@ -100,7 +100,7 @@ local function run_search(opts, user_settings)
     end
 
     local function start_search_job(search, count)
-        local job = path.expand_home(search.command)
+        local job = path.expand(search.command)
         dbg(job, "Starting job")
 
         local job_id = vim.fn.jobstart(job, {

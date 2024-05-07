@@ -84,12 +84,10 @@ function M.get_home_directory()
     end
 end
 
-function M.expand_home(path)
-    dbg(path, "path before home expansion")
-    local home_dir = M.get_home_directory()
-    local r = path:gsub("~", home_dir)
-    dbg(r, "path after home expansion")
-    return r
+function M.expand(path)
+    local expanded_path = vim.fn.expand(path)
+    dbg(expanded_path, "path after expansion")
+    return expanded_path
 end
 
 function M.get_base(path)

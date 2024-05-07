@@ -75,7 +75,7 @@ end
 function M.get_home_directory()
     local sysname = vim.loop.os_uname().sysname
     dbg(sysname, "sysname")
-    if sysname == "Windows" then
+    if sysname == "Windows_NT" then
         return os.getenv("USERPROFILE") -- Windows
     else
         return os.getenv("HOME")        -- Unix-like (Linux, macOS)

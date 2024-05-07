@@ -2,28 +2,6 @@ local config = require("venv-selector.config")
 
 local M = {}
 
-local msg_prefix = "VenvSelect: "
-
-function M.merge_settings(defaults, user_settings)
-    for key, value in pairs(user_settings) do
-        if type(value) == "table" and type(defaults[key]) == "table" then
-            -- Check if the table is an array
-            if #value > 0 then
-                -- Assume it's an array and append items
-                for _, item in ipairs(value) do
-                    table.insert(defaults[key], item)
-                end
-            else
-                -- It's a dictionary, so merge recursively
-                M.merge_settings(defaults[key], value)
-            end
-        else
-            defaults[key] = value
-        end
-    end
-    return defaults
-end
-
 function M.dbg(msg, name)
     if config.user_settings.options.debug == false or msg == nil then
         return

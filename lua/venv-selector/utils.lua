@@ -25,6 +25,18 @@ function M.dbg(msg, name)
     end
 end
 
+function M.try(table, ...)
+    local result = table
+    for _, key in ipairs({...}) do
+        if result then
+            result = result[key]
+        else
+            return nil
+        end
+    end
+    return result
+end
+
 function M.print_table(tbl, indent)
     if not indent then indent = 0 end
     for k, v in pairs(tbl) do

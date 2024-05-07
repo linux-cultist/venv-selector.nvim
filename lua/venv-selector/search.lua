@@ -1,6 +1,7 @@
 local gui = require 'venv-selector.gui'
 local workspace = require 'venv-selector.workspace'
 local path = require("venv-selector.path")
+local utils = require("venv-selector.utils")
 
 local function contains_workspace(str)
     return string.find(str, "%$WORKSPACE") ~= nil
@@ -65,7 +66,7 @@ local function run_search(opts, user_settings)
 
     local function on_event(job_id, data, event)
         local job_name = s[job_id].name
-        local callback = s[job_id].on_result_callback or search_settings.options.on_result_callback
+        local callback = s[job_id].on_result_callback or utils.try(search_settings, "options", "on_result_callback")
 
         if event == 'stdout' and data then
             if not results[job_id] then results[job_id] = {} end

@@ -171,7 +171,7 @@ Maybe you dont want to see the entire full path to python in the telescope viewe
             my_venvs = {
               command = "fd 'python$' ~/Code", -- Sample command, need to be changed for your own venvs
               
-              -- If you put the callback here, its only called for your "my_venvs" search only
+              -- If you put the callback here, its only called for your "my_venvs" search
               on_result_callback = remove_last_part 
             },
           },

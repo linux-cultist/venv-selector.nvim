@@ -64,6 +64,8 @@ The example command above launches a search for any path ending with `/bin/pytho
 /home/cado/Code/Personal/helix/venv/bin/python
 ```
 
+NOTE: When you create your own `fd` command, make sure the output is the full paths to the python interpreters.
+
 These results will be shown in the telescope viewer and if they are a python virtual environment, they can be activated by pressing enter.
 
 ## Adding your own searches

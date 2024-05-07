@@ -33,7 +33,7 @@ M.default_settings = {
             command = "fd '/bin/python$' $CWD --full-path --color never -E /proc",
         },
         workspace = {
-            command = "fd '/bin/python$' $WORKSPACE_PATH --full-path --color never -E /proc -I",
+            command = "fd '/bin/python$' $WORKSPACE_PATH --full-path --color never -E /proc --unrestricted",
         }
     }
 }

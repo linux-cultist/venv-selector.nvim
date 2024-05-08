@@ -92,7 +92,7 @@ The new configuration looks like this:
       }
 
 ```
-The example command above launches a search for any path ending with `python` in the `~/Code` folder. Its using a regular expression where `python$` means the path must end with the word python. Here are the results:
+The example command above launches a search for any path ending with `python` in the `~/Code` folder. Its using a regular expression where `python$` means the path must end with the word python. For windows we would need to use `python.exe$` instead. Here are the results:
 
 ```
 /home/cado/Code/Personal/databricks-cli/venv/bin/python

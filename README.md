@@ -85,14 +85,14 @@ The new configuration looks like this:
         settings = {
           search = {
             my_venvs = {
-              command = "fd 'python$' ~/.venv",
+              command = "fd python$ ~/.venv",
             },
           },
         },
       }
 
 ```
-The example command above launches a search for any path ending with `/bin/python` in the `~/Code` folder. Here are the results:
+The example command above launches a search for any path ending with `python` in the `~/Code` folder. Its using a regular expression where `python$` means the path must end with the word python. Here are the results:
 
 ```
 /home/cado/Code/Personal/databricks-cli/venv/bin/python
@@ -117,17 +117,17 @@ Each search needs a name you choose. Below they are poorly named `name_for_your_
         settings = {
           search = {
             name_for_your_search_here = {
-              command = "fd '/bin/python$' ~/Code --full-path",
+              command = "fd /bin/python$ ~/Code --full-path",
             },
             name_for_your_other_search_here = {
-              command = "fd '/bin/python$' ~/Programming/Python --full-path -IHL -E /proc",
+              command = "fd /bin/python$ ~/Programming/Python --full-path -IHL -E /proc",
             },
           },
         },
       }
 ```
 
-## Some commmon flags to fd
+## Common flags to fd
 
 
 | Fd option             | Description |
@@ -171,7 +171,7 @@ If you want to **override** one of the default searches, create a search with th
 `settings = {
   search = {
     workspace = {
-      command = "fd '/bin/python$' $WORKSPACE_PATH --full-path --color never -E /proc -unrestricted",
+      command = "fd /bin/python$ $WORKSPACE_PATH --full-path --color never -E /proc -unrestricted",
     }
   }
 }`
@@ -215,7 +215,7 @@ Maybe you dont want to see the entire full path to python in the telescope viewe
 
           search = {
             my_venvs = {
-              command = "fd 'python$' ~/Code", -- Sample command, need to be changed for your own venvs
+              command = "fd python$ ~/Code", -- Sample command, need to be changed for your own venvs
               
               -- If you put the callback here, its only called for your "my_venvs" search
               on_result_callback = remove_last_part 
@@ -233,7 +233,4 @@ Maybe you dont want to see the entire full path to python in the telescope viewe
 
 
 More docs coming up soon!
-
-
-
 

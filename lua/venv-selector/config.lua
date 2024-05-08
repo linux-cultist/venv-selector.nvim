@@ -15,7 +15,7 @@ function M.get_default_searches()
                 hatch = {
                     command = "fd 'python$' ~/.local/share/hatch --color never -E /proc"
                 },
-                pypoetry = {
+                pyenv = {
                     command = "fd 'versions/([0-9.]+)/bin/python$' ~/.pyenv/versions --full-path --color never -E /proc"
                 },
                 anaconda_envs = {
@@ -37,7 +37,7 @@ function M.get_default_searches()
                 hatch = {
                     command = "fd python.exe $HOME/AppData/Local/hatch/env/virtual --full-path --color never"
                 },
-                pypoetry = {
+                poetry = {
                     command = "fd python.exe$ $HOME/AppData/Local/pypoetry/Cache/virtualenvs --full-path --color never"
                 },
                 anaconda_envs = {
@@ -62,7 +62,7 @@ function M.get_default_searches()
                 hatch = {
                     command = "fd 'python$' ~/.local/share/hatch --color never -E /proc"
                 },
-                pypoetry = {
+                pyenv = {
                     command = "fd 'versions/([0-9.]+)/bin/python$' ~/.pyenv/versions --full-path --color never -E /proc"
                 },
                 anaconda_envs = {

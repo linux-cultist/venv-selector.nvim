@@ -35,7 +35,7 @@ function M.get_default_searches()
         ['Windows_NT'] = function()
             return {
                 hatch = {
-                    command = "fd python.exe $HOME/Local/hatch/env/virtual --full-path --color never"
+                    command = "fd python.exe $HOME/AppData/Local/hatch/env/virtual --full-path --color never"
                 },
                 pypoetry = {
                     command = "fd python.exe$ $HOME/AppData/Local/pypoetry/Cache/virtualenvs --full-path --color never"

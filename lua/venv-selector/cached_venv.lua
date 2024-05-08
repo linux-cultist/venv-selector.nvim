@@ -3,7 +3,7 @@ local utils = require("venv-selector.utils")
 local path = require("venv-selector.path")
 
 
-local cache_file = path.expand_home(config.user_settings.cache.file)
+local cache_file = path.expand(config.user_settings.cache.file)
 local base_dir = path.get_base(cache_file)
 
 local M = {}

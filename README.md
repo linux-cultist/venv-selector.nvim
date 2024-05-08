@@ -37,9 +37,35 @@
 
 #### **NOTE:** This regexp branch of the plugin is a rewrite that works differently under the hood to support more advanced features. Its under development and not ready for public use yet.
 
+## Configuration snippet for [lazy.nvim](https://github.com/folke/lazy.nvim)
+
+```
+{
+  "linux-cultist/venv-selector.nvim",
+  dependencies = { "neovim/nvim-lspconfig", "nvim-telescope/telescope.nvim", "mfussenegger/nvim-dap-python" },
+  lazy = false,
+  branch = "regexp", -- This is the regexp branch, use this until its merged with the main branch later
+  config = function()
+      require("venv-selector").setup {
+        settings = {
+          search = {
+            my_venvs = {
+              command = "fd 'python$' ~/Code", -- Sample command, need to be changed for your own venvs
+            },
+          },
+        },
+      }
+    end,
+    keys = {
+      { ",v", "<cmd>VenvSelect<cr>" },
+    },
+},
+```
+
+
 ## Quick introduction and example
 
-Your old configuration should be removed since its not used anymore.
+Your old `VenvSelect` configuration should be removed since its not used anymore in this version.
 
 The new configuration looks like this:
 
@@ -87,7 +113,6 @@ Naturally you want to use your own paths and your own flags to `fd` to make it p
           },
         },
       }
-
 ```
 
 This example above has added a secondary search where some extra fd flags are used. They are important to add sometimes, depending on how your file system looks like.
@@ -116,7 +141,50 @@ The `workspace` search is using the `$WORKSPACE_PATH` variable. This variable ge
 
 If these searches dont work for you, you can write your own as shown above.
 
-## More docs
+## Changing the output in the telescope viewer
+
+Maybe you dont want to see the entire full path to python in the telescope viewer. You can change whats being displayed by using a callback function.
+
+```
+{
+  "linux-cultist/venv-selector.nvim",
+  dependencies = { "neovim/nvim-lspconfig", "nvim-telescope/telescope.nvim", "mfussenegger/nvim-dap-python" },
+  lazy = false,
+  branch = "regexp", -- This is the regexp branch, use this until its merged with the main branch later
+  config = function()
+  
+      -- This function gets called by the plugin when a new result from fd is received
+      -- You can change the filename displayed here to what you like. Here in the example we remove the /bin/python part.
+      local function remove_last_part(filename)
+        return filename:gsub("/bin/python", "")
+      end
+
+
+      require("venv-selector").setup {
+        settings = {
+          options = {
+            -- If you put the callback here as a global option, its used for all searches (including the default ones by the plugin)
+            on_result_callback = remove_last_part 
+          },
+
+          search = {
+            my_venvs = {
+              command = "fd 'python$' ~/Code", -- Sample command, need to be changed for your own venvs
+              
+              -- If you put the callback here, its only called for your "my_venvs" search
+              on_result_callback = remove_last_part 
+            },
+          },
+        },
+      }
+    end,
+    keys = {
+      { ",v", "<cmd>VenvSelect<cr>" },
+    },
+},
+```
+
+
 
 More docs coming up soon!
 

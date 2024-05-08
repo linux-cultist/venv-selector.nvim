@@ -56,9 +56,11 @@ function M.show(results, settings)
         attach_mappings = function(bufnr, map)
             map('i', '<cr>', function()
                 local selected_entry = actions_state.get_selected_entry()
-                venv.activate(settings, selected_entry.path)
-                path.add(path.get_base(selected_entry.path))
-                venv.set_virtual_env(selected_entry.path)
+                if selected_entry ~= nil then
+                    venv.activate(settings, selected_entry.path)
+                    path.add(path.get_base(selected_entry.path))
+                    venv.set_virtual_env(selected_entry.path)
+                end
                 actions.close(bufnr)
             end)
 

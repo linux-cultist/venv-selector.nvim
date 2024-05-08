@@ -3,15 +3,17 @@ local M = {}
 local previous_dir = nil
 
 function M.add(newDir)
-    if previous_dir ~= nil then
-        M.remove(previous_dir)
+    if newDir ~= nil then
+        if previous_dir ~= nil then
+            M.remove(previous_dir)
+        end
+        local path = vim.fn.getenv("PATH")
+        local path_separator = package.config:sub(1, 1) == '\\' and ';' or ':'
+        local clean_dir = M.remove_trailing_slash(newDir)
+        local updated_path = clean_dir .. path_separator .. path
+        previous_dir = clean_dir
+        vim.fn.setenv("PATH", updated_path)
     end
-    local path = vim.fn.getenv("PATH")
-    local path_separator = package.config:sub(1, 1) == '\\' and ';' or ':'
-    local clean_dir = M.remove_trailing_slash(newDir)
-    local updated_path = clean_dir .. path_separator .. path
-    previous_dir = clean_dir
-    vim.fn.setenv("PATH", updated_path)
 end
 
 function M.remove_trailing_slash(path)
@@ -73,34 +75,38 @@ function M.normalize(path)
 end
 
 function M.get_home_directory()
-    if vim.loop.os_uname().sysname == "Windows" then
+    local sysname = vim.loop.os_uname().sysname
+    dbg(sysname, "sysname")
+    if sysname == "Windows_NT" then
         return os.getenv("USERPROFILE") -- Windows
     else
         return os.getenv("HOME")        -- Unix-like (Linux, macOS)
     end
 end
 
-function M.expand_home(path)
-    local home_dir = M.get_home_directory()
-    local r = path:gsub("~", home_dir)
-    return r
+function M.expand(path)
+    local expanded_path = vim.fn.expand(path)
+    dbg(expanded_path, "path after expansion")
+    return expanded_path
 end
 
 function M.get_base(path)
-    -- Check if the path ends with a slash and remove it, unless it's a root path
-    if (path:sub(-1) == "/" or path:sub(-1) == "\\") and #path > 1 then
-        path = path:sub(1, -2)
-    end
+    if path ~= nil then
+        -- Check if the path ends with a slash and remove it, unless it's a root path
+        if (path:sub(-1) == "/" or path:sub(-1) == "\\") and #path > 1 then
+            path = path:sub(1, -2)
+        end
 
-    -- Use the pattern to find the base path
-    local pattern = "(.*[/\\])"
-    local base = path:match(pattern)
-    if base then
-        -- Remove the trailing slash for the next potential call
-        return base:sub(1, -2)
-    else
-        -- Return nil if no higher directory level can be found
-        return nil
+        -- Use the pattern to find the base path
+        local pattern = "(.*[/\\])"
+        local base = path:match(pattern)
+        if base then
+            -- Remove the trailing slash for the next potential call
+            return base:sub(1, -2)
+        else
+            -- Return nil if no higher directory level can be found
+            return nil
+        end
     end
 end
 

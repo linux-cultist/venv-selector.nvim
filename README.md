@@ -150,7 +150,7 @@ These are designed to find venvs from different venv managers in their default p
 
 Some of them use the special variables `$CWD` and `$WORKSPACE_PATH`. You can also use these in your own searches. They will contain the value of your neovim current working directory and the neovim workspace directories when the LSP is active.
 
-### The current default searches are:
+### The current default searches are for:
 
 - Venvs created by [Virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest)
 - Venvs created by [Poetry](https://python-poetry.org)

@@ -68,7 +68,11 @@ Because the current code has grown from supporting only simple venvs to lots of 
 
 This rewrite is about giving you as a user the power to add your own searches, and have anything you want show up in the telescope viewer. If its the path to a python executable, the plugin will attempt to activate it. Note that your LSP server must be running for this to happen, so you need to have a python file opened in the editor. 
 
-You create a search for python venvs with `fd` and you put that into the plugin config.
+### How do I make it find my virtual environments?
+
+You create a search for python venvs with `fd` and you put that into the plugin config. You dont have to use `fd` though. If you prefer something else, go for it. But `fd` is really fast and has good support for regular expressions so thats why its used by default.
+
+It has some default searches where it looks in default paths for popular venv managers, but you probably want to add your own searches.
 
 ## Quick introduction and example
 

@@ -141,6 +141,31 @@ The `workspace` search is using the `$WORKSPACE_PATH` variable. This variable ge
 
 If these searches dont work for you, you can write your own as shown above.
 
+### Override or disable a default search
+
+A default search is one that the plugin does automatically. You can see them here under the search key for each operating system: https://github.com/linux-cultist/venv-selector.nvim/blob/regexp/lua/venv-selector/config.lua:
+
+If you want to **override** one of the default searches, create a search with the same name: 
+
+`settings = {
+  search = {
+    workspace = {
+      command = "fd '/bin/python$' $WORKSPACE_PATH --full-path --color never -E /proc -unrestricted",
+    }
+  }
+}`
+
+The above search adds the unrestriced flag to fd. See `fd` docs for what it does!
+
+If you want to **disable** one of the default searches, you can simply set it to false:
+
+`settings = {
+  search = {
+    workspace = false
+  }
+}`
+
+
 ## Changing the output in the telescope viewer
 
 Maybe you dont want to see the entire full path to python in the telescope viewer. You can change whats being displayed by using a callback function.

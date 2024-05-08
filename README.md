@@ -162,11 +162,11 @@ Some of them use the special variables `$CWD` and `$WORKSPACE_PATH`. You can als
 
 They are defined here: https://github.com/linux-cultist/venv-selector.nvim/blob/regexp/lua/venv-selector/config.lua
 
-**You are expected to add you own searches to your config.** :) These are just default ones to find venvs in default locations.
+**You are expected to add your own searches to your config.** :) These are just default ones to find venvs in the default locations.
 
 ### Override or disable a default search
 
-If you want to **override** one of the default searches, create a search with the same name: 
+If you want to **override** one of the default searches, create a search with the same name. This changes the default workspace search. 
 
 `settings = {
   search = {
@@ -178,7 +178,7 @@ If you want to **override** one of the default searches, create a search with th
 
 The above search adds the unrestriced flag to fd. See `fd` docs for what it does!
 
-If you want to **disable** one of the default searches, you can simply set it to false:
+If you want to **disable** one of the default searches, you can simply set it to false. This disables the workspace search.
 
 `settings = {
   search = {

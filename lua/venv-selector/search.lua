@@ -99,9 +99,9 @@ local function run_search(opts, user_settings)
         end
     end
 
-    local function start_search_job(search, count)
+    local function start_search_job(job_name, search, count)
         local job = path.expand(search.command)
-        dbg(job, "Starting job")
+        dbg(job, "Starting job '" .. job_name .. "'")
 
         local job_id = vim.fn.jobstart(job, {
             stdout_buffered = true,
@@ -118,11 +118,12 @@ local function run_search(opts, user_settings)
 
 
     -- Start search jobs from config
-    for _, search in pairs(search_settings.search) do
+    for job_name, search in pairs(search_settings.search) do
+
         -- Dont start jobs that search $WORKSPACE folders unless the lsp has discovered workspace folders
         if contains_workspace(search.command) == false then
             search.command = search.command:gsub("$CWD", cwd)
-            job_count = start_search_job(search, job_count)
+            job_count = start_search_job(job_name, search, job_count)
         else
             if table_empty(workspace_folders) == false then
                 for _, workspace_path in pairs(workspace_folders) do

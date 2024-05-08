@@ -86,7 +86,6 @@ end
 
 function M.expand(path)
     local expanded_path = vim.fn.expand(path)
-    dbg(expanded_path, "path after expansion")
     return expanded_path
 end
 

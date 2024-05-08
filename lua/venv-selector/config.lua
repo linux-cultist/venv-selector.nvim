@@ -34,24 +34,21 @@ function M.get_default_searches()
         end,
         ['Windows_NT'] = function()
             return {
-                --virtualenvs = {
-                --    command = "fd 'python$' ~\\.virtualenvs --color never"
-                --},
-                --hatch = {
-                --    command = "fd 'python$' ~\\.local\\share\\hatch --color never"
-                --},
-                --pypoetry = {
-                --    command = "fd 'versions\\([0-9.]+)\\bin\\python.exe$' ~\\.pyenv\\versions --full-path --color never"
-                --},
-                --anaconda_envs = {
-                --    command = "fd 'Scripts\\python.exe$' ~\\.conda\\envs --full-path --color never"
-                --},
-                --anaconda_base = {
-                --    command = "fd '\\python$' \\opt\\anaconda\\bin --full-path --color never",
-                --},
-                --cwd = {
-                --    command = "fd '\\Scripts\\python.exe$' $CWD --full-path --color never",
-                --},
+                hatch = {
+                    command = "fd python.exe $HOME/Local/hatch/env/virtual --full-path --color never"
+                },
+                pypoetry = {
+                    command = "fd python.exe$ $HOME/AppData/Local/pypoetry/Cache/virtualenvs --full-path --color never"
+                },
+                anaconda_envs = {
+                    command = "fd python.exe$ $HOME/anaconda3/envs --full-path -a -E Lib"
+                },
+                anaconda_base = {
+                    command = "fd --fixed-strings anaconda3\\python.exe $HOME\\anaconda3 --full-path -a --color never",
+                },
+                cwd = {
+                    command = "fd python.exe$ $CWD --full-path --color never",
+                },
                 --workspace = {
                 --    command = "fd '\\Scripts\\python.exe$' $WORKSPACE_PATH --full-path --color never -I",
                 --}

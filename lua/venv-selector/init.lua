@@ -19,6 +19,7 @@ vim.api.nvim_create_autocmd("LspAttach", {
 local M = {}
 
 function M.setup(settings)
+    settings = settings or {}
     config.user_settings = vim.tbl_deep_extend('force', config.default_settings, settings.settings or {})
 
     vim.api.nvim_create_user_command('VenvSelect', function(opts)

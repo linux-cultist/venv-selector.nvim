@@ -7,28 +7,59 @@ M.user_settings = {}
 
 function M.get_default_searches()
     local systems = {
+        ['Linux'] = function()
+            return {
+                virtualenvs = {
+                    command = "fd python$ ~/.virtualenvs --color never -E /proc"
+                },
+                hatch = {
+                    command = "fd python$ ~/.local/share/hatch --color never -E /proc"
+                },
+                poetry = {
+                    command = "fd /bin/python3$ ~/.cache/pypoetry/virtualenvs --full-path"
+                },
+                pyenv = {
+                    command = "fd versions/([0-9.]+)/bin/python$ ~/.pyenv/versions --full-path --color never -E /proc"
+                },
+                anaconda_envs = {
+                    command = "fd bin/python$ ~/.conda/envs --full-path --color never -E /proc"
+                },
+                anaconda_base = {
+                    command = "fd /python$ /opt/anaconda/bin --full-path --color never -E /proc",
+                },
+                cwd = {
+                    command = "fd /bin/python$ $CWD --full-path --color never -E /proc -HI",
+                },
+                workspace = {
+                    command = "fd /bin/python$ $WORKSPACE_PATH --full-path --color never -E /proc -HI",
+                }
+            }
+        end,
         ['Darwin'] = function()
             return {
                 virtualenvs = {
-                    command = "fd 'python$' ~/.virtualenvs --color never -E /proc"
+                    command = "fd python$ ~/.virtualenvs --color never -E /proc"
                 },
                 hatch = {
-                    command = "fd 'python$' ~/.local/share/hatch --color never -E /proc"
+                    command = "fd python$ ~/.local/share/hatch --color never -E /proc"
+                },
+                poetry = {
+                    command = "fd /bin/python3$ ~/.cache/pypoetry/virtualenvs --full-path"
                 },
                 pyenv = {
-                    command = "fd 'versions/([0-9.]+)/bin/python$' ~/.pyenv/versions --full-path --color never -E /proc"
+                    command = "fd versions/([0-9.]+)/bin/python$ ~/.pyenv/versions --full-path --color never -E /proc"
                 },
                 anaconda_envs = {
-                    command = "fd 'bin/python$' ~/.conda/envs --full-path --color never -E /proc"
+                    command = "fd bin/python$ ~/.conda/envs --full-path --color never -E /proc"
                 },
                 anaconda_base = {
-                    command = "fd '/python$' /opt/anaconda/bin --full-path --color never -E /proc",
+                    command = "fd /python$ /opt/anaconda/bin --full-path --color never -E /proc",
                 },
                 cwd = {
-                    command = "fd '/bin/python$' $CWD --full-path --color never -E /proc",
+                    command = "fd /bin/python$ $CWD --full-path --color never -E /proc -HI",
                 },
                 workspace = {
-                    command = "fd '/bin/python$' $WORKSPACE_PATH --full-path --color never -E /proc -I",
+                    command = "fd /bin/python$ $WORKSPACE_PATH --full-path --color never -E /proc -HI",
                 }
             }
         end,
@@ -47,42 +78,17 @@ function M.get_default_searches()
                     command = "fd --fixed-strings anaconda3\\python.exe $HOME\\anaconda3 --full-path -a --color never",
                 },
                 cwd = {
-                    command = "fd python.exe$ $CWD --full-path --color never",
-                },
-                --workspace = {
-                --    command = "fd '\\Scripts\\python.exe$' $WORKSPACE_PATH --full-path --color never -I",
-                --}
-            }
-        end,
-        ['default'] = function()
-            return {
-                virtualenvs = {
-                    command = "fd 'python$' ~/.virtualenvs --color never -E /proc"
-                },
-                hatch = {
-                    command = "fd 'python$' ~/.local/share/hatch --color never -E /proc"
-                },
-                pyenv = {
-                    command = "fd 'versions/([0-9.]+)/bin/python$' ~/.pyenv/versions --full-path --color never -E /proc"
-                },
-                anaconda_envs = {
-                    command = "fd 'bin/python$' ~/.conda/envs --full-path --color never -E /proc"
-                },
-                anaconda_base = {
-                    command = "fd '/python$' /opt/anaconda/bin --full-path --color never -E /proc",
-                },
-                cwd = {
-                    command = "fd '/bin/python$' $CWD --full-path --color never -E /proc",
+                    command = "fd python.exe$ $CWD --full-path --color never -HI",
                 },
                 workspace = {
-                    command = "fd '/bin/python$' $WORKSPACE_PATH --full-path --color never -E /proc -I",
+                    command = "fd /bin/python.exe$ $WORKSPACE_PATH --full-path --color never -E /proc -HI",
                 }
             }
         end
     }
 
     local name = vim.loop.os_uname().sysname
-    return systems[name] or systems['default']
+    return systems[name] or systems['Linux']
 end
 
 M.default_settings = {

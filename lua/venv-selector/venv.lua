@@ -8,7 +8,6 @@ local M = {}
 function M.activate(hooks, selected_entry)
     local python_path = selected_entry.path
     local venv_type = selected_entry.type
-    dbg(selected_entry, "selected entry in activate")
 
     if python_path ~= nil then
         local count = 0

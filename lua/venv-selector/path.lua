@@ -13,6 +13,7 @@ function M.add(newDir)
         local updated_path = clean_dir .. path_separator .. path
         previous_dir = clean_dir
         vim.fn.setenv("PATH", updated_path)
+        dbg(updated_path, "set new path")
     end
 end
 

@@ -27,7 +27,7 @@
 - Supports callbacks to further filter or rename telescope results as they are found.
 - Supports using any program to find virtual environments (`fd`, `find`, `ls`, `dir` etc)
 - Supports running any interactive command to populate the telescope viewer:
-  - `:VenvSelect fd 'venv/bin/python$' . --full-path -I`
+  - `:VenvSelect fd 'python$' . --full-path -IH -a`
 
 - Support [Pyright](https://github.com/microsoft/pyright), [Pylance](https://github.com/microsoft/pylance-release) and [Pylsp](https://github.com/python-lsp/python-lsp-server) lsp servers with ability to config hooks for others.
 - Cached virtual environment that ties to your current working directory for quick activation
@@ -46,15 +46,7 @@
   lazy = false,
   branch = "regexp", -- This is the regexp branch, use this until its merged with the main branch later
   config = function()
-      require("venv-selector").setup {
-        settings = {
-          search = {
-            my_venvs = {
-              command = "fd 'python$' ~/Code", -- Sample command, need to be changed for your own venvs
-            },
-          },
-        },
-      }
+      require("venv-selector").setup()
     end,
     keys = {
       { ",v", "<cmd>VenvSelect<cr>" },
@@ -68,24 +60,42 @@ Because the current code has grown from supporting only simple venvs to lots of 
 
 This rewrite is about giving you as a user the power to add your own searches, and have anything you want show up in the telescope viewer. If its the path to a python executable, the plugin will attempt to activate it. Note that your LSP server must be running for this to happen, so you need to have a python file opened in the editor. 
 
-### How do I make it find my virtual environments?
+## Default searches
 
-You create a search for python venvs with `fd` and you put that into the plugin config. You dont have to use `fd` though. If you prefer something else, go for it. But `fd` is really fast and has good support for regular expressions so thats why its used by default.
+A default search is one that the plugin does automatically.
 
-It has some default searches where it looks in default paths for popular venv managers, but you probably want to add your own searches.
+These are designed to find venvs in your current working directory and from different venv managers in their default paths.
 
-## Quick introduction and example
+Some of them use the special variables `$CWD` and `$WORKSPACE_PATH`. You can also use these in your own searches. They will contain the value of your neovim current working directory and the neovim workspace directories when the LSP is active.
 
-Your old `VenvSelect` configuration should be removed since its not used anymore in this version.
+### The current default searches are for:
 
-The new configuration looks like this:
+- Venvs created by [Virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest)
+- Venvs created by [Poetry](https://python-poetry.org)
+- Venvs created by [Hatch](https://hatch.pypa.io/latest)
+- Venvs created by [Pyenv](https://github.com/pyenv/pyenv)
+- Venvs created by [Anaconda](https://www.anaconda.com)
+- Venvs in the current working directory
+- Venvs in the lsp workspace directories
+
+The search patterns are defined here: https://github.com/linux-cultist/venv-selector.nvim/blob/regexp/lua/venv-selector/config.lua
+
+If your venvs are not being found because they are in a custom location, you can easily add your own searches to your configuration.
+
+## My venvs dont show up - how can i create my own search?
+
+You create a search for python venvs with `fd` and you put that into the plugin config. You can also use `find` or any other command as long as its output lists your venvs. 
+
+The best way to craft a search is to run `fd` with your desired parameters on the command line before you put it into the plugin config.
+
+The configuration looks like this:
 
 ```
       require("venv-selector").setup {
         settings = {
           search = {
             my_venvs = {
-              command = "fd python$ ~/.venv",
+              command = "fd python$ ~/Code",
             },
           },
         },
@@ -102,24 +112,18 @@ The example command above launches a search for any path ending with `python` in
 ```
 
 
-These results will be shown in the telescope viewer and if they are a python virtual environment, they can be activated by pressing enter.
+These results will be shown in the telescope viewer and if they are a python virtual environment, they can be activated by pressing enter. 
 
-## Adding your own searches
-
-The best way to craft a search is to run `fd` with your desired parameters on the command line before you put it into the plugin config.
-
-When you create your own `fd` command, make sure the output is the full, absolute paths to the python interpreters. You can do this by adding the `-a` switch to your `fd` command.
-
-Each search needs a name you choose. Below they are poorly named `name_for_your_search_here` and `name_for_your_other_search_here`. Try to come up with better names. :)
+You can add multiple searches as well:
 
 ```
       require("venv-selector").setup {
         settings = {
           search = {
-            name_for_your_search_here = {
+            find_code_venvs = {
               command = "fd /bin/python$ ~/Code --full-path",
             },
-            name_for_your_other_search_here = {
+            find_programming_venvs = {
               command = "fd /bin/python$ ~/Programming/Python --full-path -IHL -E /proc",
             },
           },
@@ -142,27 +146,7 @@ So if you dont add `-I`, paths that are in a `.gitignore` file will be ignored. 
 However, some flags slows down the search significantly and should not be used if not needed (like `-H` to look for hidden files). If your venvs are not starting with a dot in their name, you dont need to use this flag.
 
 
-## Default searches
 
-A default search is one that the plugin does automatically.
-
-These are designed to find venvs from different venv managers in their default paths.
-
-Some of them use the special variables `$CWD` and `$WORKSPACE_PATH`. You can also use these in your own searches. They will contain the value of your neovim current working directory and the neovim workspace directories when the LSP is active.
-
-### The current default searches are for:
-
-- Venvs created by [Virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest)
-- Venvs created by [Poetry](https://python-poetry.org)
-- Venvs created by [Hatch](https://hatch.pypa.io/latest)
-- Venvs created by [Pyenv](https://github.com/pyenv/pyenv)
-- Venvs created by [Anaconda](https://www.anaconda.com)
-- Venvs in the current working directory
-- Venvs in the lsp workspace directories
-
-They are defined here: https://github.com/linux-cultist/venv-selector.nvim/blob/regexp/lua/venv-selector/config.lua
-
-**You are expected to add your own searches to your config.** :) These are just default ones to find venvs in the default locations.
 
 ### Override or disable a default search
 
@@ -231,6 +215,19 @@ Maybe you dont want to see the entire full path to python in the telescope viewe
 ```
 
 
+## Global options to the plugin
+
+```
+search = {
+  settings = {
+    options = {
+      debug = false             -- switches on/off debug output
+      on_result_callback = nil  -- callback function for all searches
+      fd_binary_name = fd       -- plugin looks for `fd` or `fdfind` but you can set something else here
+    }
+  }
+}
+```
 
 More docs coming up soon!
 

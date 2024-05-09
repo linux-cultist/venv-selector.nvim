@@ -1,6 +1,5 @@
 local hooks = require 'venv-selector.hooks'
 
-
 local M = {}
 
 M.user_settings = {}
@@ -10,78 +9,81 @@ function M.get_default_searches()
         ['Linux'] = function()
             return {
                 virtualenvs = {
-                    command = "fd python$ ~/.virtualenvs --color never -E /proc"
+                    command = "$FD python$ ~/.virtualenvs --color never -E /proc"
                 },
                 hatch = {
-                    command = "fd python$ ~/.local/share/hatch --color never -E /proc"
+                    command = "$FD python$ ~/.local/share/hatch --color never -E /proc"
                 },
                 poetry = {
-                    command = "fd /bin/python3$ ~/.cache/pypoetry/virtualenvs --full-path"
+                    command = "$FD /bin/python3$ ~/.cache/pypoetry/virtualenvs --full-path"
                 },
                 pyenv = {
-                    command = "fd versions/([0-9.]+)/bin/python$ ~/.pyenv/versions --full-path --color never -E /proc"
+                    command = "$FD versions/([0-9.]+)/bin/python$ ~/.pyenv/versions --full-path --color never -E /proc"
                 },
                 anaconda_envs = {
-                    command = "fd bin/python$ ~/.conda/envs --full-path --color never -E /proc"
+                    command = "$FD bin/python$ ~/.conda/envs --full-path --color never -E /proc"
                 },
                 anaconda_base = {
-                    command = "fd /python$ /opt/anaconda/bin --full-path --color never -E /proc",
+                    command = "$FD /python$ /opt/anaconda/bin --full-path --color never -E /proc",
                 },
                 cwd = {
-                    command = "fd /bin/python$ $CWD --full-path --color never -E /proc -HI",
+                    command = "$FD /bin/python$ $CWD --full-path --color never -E /proc -HI",
                 },
                 workspace = {
-                    command = "fd /bin/python$ $WORKSPACE_PATH --full-path --color never -E /proc -HI",
+                    command = "$FD /bin/python$ $WORKSPACE_PATH --full-path --color never -E /proc -HI",
                 }
             }
         end,
         ['Darwin'] = function()
             return {
                 virtualenvs = {
-                    command = "fd python$ ~/.virtualenvs --color never -E /proc"
+                    command = "$FD python$ ~/.virtualenvs --color never -E /proc"
                 },
                 hatch = {
-                    command = "fd python$ ~/.local/share/hatch --color never -E /proc"
+                    command = "$FD python$ ~/.local/share/hatch --color never -E /proc"
                 },
                 poetry = {
-                    command = "fd /bin/python3$ ~/.cache/pypoetry/virtualenvs --full-path"
+                    command = "$FD /bin/python3$ ~/.cache/pypoetry/virtualenvs --full-path"
                 },
                 pyenv = {
-                    command = "fd versions/([0-9.]+)/bin/python$ ~/.pyenv/versions --full-path --color never -E /proc"
+                    command = "$FD versions/([0-9.]+)/bin/python$ ~/.pyenv/versions --full-path --color never -E /proc"
                 },
                 anaconda_envs = {
-                    command = "fd bin/python$ ~/.conda/envs --full-path --color never -E /proc"
+                    command = "$FD bin/python$ ~/.conda/envs --full-path --color never -E /proc"
                 },
                 anaconda_base = {
-                    command = "fd /python$ /opt/anaconda/bin --full-path --color never -E /proc",
+                    command = "$FD /python$ /opt/anaconda/bin --full-path --color never -E /proc",
                 },
                 cwd = {
-                    command = "fd /bin/python$ $CWD --full-path --color never -E /proc -HI",
+                    command = "$FD /bin/python$ $CWD --full-path --color never -E /proc -HI",
                 },
                 workspace = {
-                    command = "fd /bin/python$ $WORKSPACE_PATH --full-path --color never -E /proc -HI",
+                    command = "$FD /bin/python$ $WORKSPACE_PATH --full-path --color never -E /proc -HI",
                 }
             }
         end,
         ['Windows_NT'] = function()
             return {
                 hatch = {
-                    command = "fd python.exe $HOME/AppData/Local/hatch/env/virtual --full-path --color never"
+                    command = "$FD python.exe $HOME/AppData/Local/hatch/env/virtual --full-path --color never"
                 },
                 poetry = {
-                    command = "fd python.exe$ $HOME/AppData/Local/pypoetry/Cache/virtualenvs --full-path --color never"
+                    command = "$FD python.exe$ $HOME/AppData/Local/pypoetry/Cache/virtualenvs --full-path --color never"
+                },
+                pyenv = {
+                    command = "$FD python.exe$ $HOME/.pyenv/pyenv-win/versions -E Lib"
                 },
                 anaconda_envs = {
-                    command = "fd python.exe$ $HOME/anaconda3/envs --full-path -a -E Lib"
+                    command = "$FD python.exe$ $HOME/anaconda3/envs --full-path -a -E Lib"
                 },
                 anaconda_base = {
-                    command = "fd --fixed-strings anaconda3\\python.exe $HOME\\anaconda3 --full-path -a --color never",
+                    command = "$FD --fixed-strings anaconda3\\python.exe $HOME\\anaconda3 --full-path -a --color never",
                 },
                 cwd = {
-                    command = "fd python.exe$ $CWD --full-path --color never -HI",
+                    command = "$FD python.exe$ $CWD --full-path --color never -HI",
                 },
                 workspace = {
-                    command = "fd /bin/python.exe$ $WORKSPACE_PATH --full-path --color never -E /proc -HI",
+                    command = "$FD /bin/python.exe$ $WORKSPACE_PATH --full-path --color never -E /proc -HI",
                 }
             }
         end
@@ -91,16 +93,27 @@ function M.get_default_searches()
     return systems[name] or systems['Linux']
 end
 
+function M.find_fd_command_name()
+    local look_for = { "fd", "fdfind", "fd_find" }
+    for _, cmd in ipairs(look_for) do
+        if vim.fn.executable(cmd) == 1 then
+            return cmd
+        end
+    end
+end
+
 M.default_settings = {
     cache = {
         file = "~/.cache/venv-selector/venvs2.json",
     },
     hooks = { hooks.basedpyright_hook, hooks.pyright_hook, hooks.pylance_hook, hooks.pylsp_hook },
     options = {
-        debug = false
+        debug = false,
+        fd_binary_name = M.find_fd_command_name()
     },
     search = M.get_default_searches()()
 }
+
 
 
 return M

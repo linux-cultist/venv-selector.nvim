@@ -37,6 +37,7 @@ function M.try(table, ...)
     return result
 end
 
+
 function M.print_table(tbl, indent)
     if not indent then indent = 0 end
     for k, v in pairs(tbl) do

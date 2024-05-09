@@ -221,9 +221,10 @@ Maybe you dont want to see the entire full path to python in the telescope viewe
 search = {
   settings = {
     options = {
-      debug = false             -- switches on/off debug output
-      on_result_callback = nil  -- callback function for all searches
-      fd_binary_name = fd       -- plugin looks for `fd` or `fdfind` but you can set something else here
+      debug = false                     -- switches on/off debug output
+      on_result_callback = nil          -- callback function for all searches
+      fd_binary_name = fd               -- plugin looks for `fd` or `fdfind` but you can set something else here
+      enable_default_searches = true    -- switches all default searches on/off
     }
   }
 }

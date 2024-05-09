@@ -14,6 +14,17 @@ end
 
 local M = {}
 
+local function disable_default_searches(search_settings)
+    -- TODO: Set all default searches to false if options.default_searches_enabled is false.
+    local default_searches = require("venv-selector.config").default_settings.search
+    for search_name, _ in pairs(search_settings.search) do
+        if default_searches[search_name] ~= nil then
+            dbg(search_name, "disabling default search")
+            search_settings.search[search_name] = nil
+        end
+    end
+end
+
 local function convert_for_gui(nested_tbl)
     local transformed_table = {}
     local seen = {} -- Table to keep track of items already added
@@ -116,6 +127,9 @@ local function run_search(opts, user_settings)
         return count
     end
 
+    if user_settings.options.enable_default_searches == false then
+        disable_default_searches(search_settings)
+    end
 
     -- Start search jobs from config
     for job_name, search in pairs(search_settings.search) do

@@ -108,8 +108,10 @@ M.default_settings = {
     },
     hooks = { hooks.basedpyright_hook, hooks.pyright_hook, hooks.pylance_hook, hooks.pylsp_hook },
     options = {
-        debug = false,
-        fd_binary_name = M.find_fd_command_name()
+        debug = false,                             -- switches on/off debug output
+        on_result_callback = nil,                  -- callback function for all searches
+        fd_binary_name = M.find_fd_command_name(), -- plugin looks for `fd` or `fdfind` but you can set something else here
+        enable_default_searches = true             -- switches all default searches on/off
     },
     search = M.get_default_searches()()
 }

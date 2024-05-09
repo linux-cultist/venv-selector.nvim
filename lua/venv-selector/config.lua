@@ -18,13 +18,15 @@ function M.get_default_searches()
                     command = "$FD /bin/python3$ ~/.cache/pypoetry/virtualenvs --full-path"
                 },
                 pyenv = {
-                    command = "$FD versions/([0-9.]+)/bin/python$ ~/.pyenv/versions --full-path --color never -E /proc"
+                    command = "$FD 'versions/([0-9.]+)/bin/python$' ~/.pyenv/versions --full-path --color never -E /proc"
                 },
                 anaconda_envs = {
-                    command = "$FD bin/python$ ~/.conda/envs --full-path --color never -E /proc"
+                    command = "$FD bin/python$ ~/.conda/envs --full-path --color never -E /proc",
+                    type = "anaconda"
                 },
                 anaconda_base = {
                     command = "$FD /python$ /opt/anaconda/bin --full-path --color never -E /proc",
+                    type = "anaconda"
                 },
                 cwd = {
                     command = "$FD /bin/python$ $CWD --full-path --color never -E /proc -HI",
@@ -46,7 +48,7 @@ function M.get_default_searches()
                     command = "$FD /bin/python3$ ~/.cache/pypoetry/virtualenvs --full-path"
                 },
                 pyenv = {
-                    command = "$FD versions/([0-9.]+)/bin/python$ ~/.pyenv/versions --full-path --color never -E /proc"
+                    command = "$FD 'versions/([0-9.]+)/bin/python$' ~/.pyenv/versions --full-path --color never -E /proc"
                 },
                 anaconda_envs = {
                     command = "$FD bin/python$ ~/.conda/envs --full-path --color never -E /proc"
@@ -109,7 +111,8 @@ M.default_settings = {
     hooks = { hooks.basedpyright_hook, hooks.pyright_hook, hooks.pylance_hook, hooks.pylsp_hook },
     options = {
         debug = false,                             -- switches on/off debug output
-        on_result_callback = nil,                  -- callback function for all searches
+        on_telescope_result_callback = nil,        -- callback function for all searches
+        on_venv_activate_callback = nil,           -- callback function for after a venv activates
         fd_binary_name = M.find_fd_command_name(), -- plugin looks for `fd` or `fdfind` but you can set something else here
         enable_default_searches = true             -- switches all default searches on/off
     },

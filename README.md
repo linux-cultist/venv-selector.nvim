@@ -162,13 +162,15 @@ If you want to **override** one of the default searches, create a search with th
 
 The above search adds the unrestriced flag to fd. See `fd` docs for what it does!
 
-If you want to **disable** one of the default searches, you can simply set it to false. This disables the workspace search.
+If you want to **disable one** of the default searches, you can simply set it to false. This disables the workspace search.
 
 `settings = {
   search = {
     workspace = false
   }
 }`
+
+If you want to **disable all** built in searches, set the global option `enable_default_searches` to false (see separate section about global options)
 
 
 ## Changing the output in the telescope viewer
@@ -194,7 +196,7 @@ Maybe you dont want to see the entire full path to python in the telescope viewe
         settings = {
           options = {
             -- If you put the callback here as a global option, its used for all searches (including the default ones by the plugin)
-            on_result_callback = remove_last_part 
+            on_telescope_result_callback = remove_last_part 
           },
 
           search = {
@@ -202,7 +204,7 @@ Maybe you dont want to see the entire full path to python in the telescope viewe
               command = "fd python$ ~/Code", -- Sample command, need to be changed for your own venvs
               
               -- If you put the callback here, its only called for your "my_venvs" search
-              on_result_callback = remove_last_part 
+              on_telescope_result_callback = remove_last_part 
             },
           },
         },
@@ -221,10 +223,10 @@ Maybe you dont want to see the entire full path to python in the telescope viewe
 search = {
   settings = {
     options = {
-      debug = false                     -- switches on/off debug output
-      on_result_callback = nil          -- callback function for all searches
-      fd_binary_name = fd               -- plugin looks for `fd` or `fdfind` but you can set something else here
-      enable_default_searches = true    -- switches all default searches on/off
+      debug = false                       -- switches on/off debug output
+      on_telescope_result_callback = nil  -- callback function for all searches
+      fd_binary_name = fd                 -- plugin looks for `fd` or `fdfind` but you can set something else here
+      enable_default_searches = true      -- switches all default searches on/off
     }
   }
 }

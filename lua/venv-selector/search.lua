@@ -36,7 +36,8 @@ local function convert_for_gui(nested_tbl)
                 table.insert(transformed_table, {
                     icon = "",
                     name = rv.name,
-                    path = rv.path
+                    path = rv.path,
+                    type = rv.type
                 })
             end
         end
@@ -66,7 +67,7 @@ local function run_search(opts, user_settings)
     --dbg(user_settings, "user_settings")
     --dbg(opts.args, "opts.args")
 
-    local s = {}
+    local jobs = {}
     local workspace_folders = workspace.list_folders()
     local job_count = 0
     local results = {}
@@ -76,16 +77,19 @@ local function run_search(opts, user_settings)
     dbg(search_settings, "merged search settings")
 
     local function on_event(job_id, data, event)
-        local job_name = s[job_id].name
-        local callback = s[job_id].on_result_callback or utils.try(search_settings, "options", "on_result_callback")
+        local callback = jobs[job_id].on_telescope_result_callback or
+            utils.try(search_settings, "options", "on_telescope_result_callback")
 
         if event == 'stdout' and data then
+            local search = jobs[job_id]
+
             if not results[job_id] then results[job_id] = {} end
             for _, line in ipairs(data) do
                 line = path.normalize(line)
                 local rv = {}
                 rv.path = line
                 rv.name = line
+                rv.type = search.type or "venv"
                 if callback then
                     rv.name = callback(line)
                 end
@@ -122,7 +126,7 @@ local function run_search(opts, user_settings)
             on_exit = on_event,
         })
 
-        s[job_id] = search
+        jobs[job_id] = search
         count = count + 1
         return count
     end
@@ -143,7 +147,7 @@ local function run_search(opts, user_settings)
                     for _, workspace_path in pairs(workspace_folders) do
                         search.command = search.command:gsub("$WORKSPACE_PATH", workspace_path):gsub("$FD",
                             user_settings.options.fd_binary_name)
-                        job_count = start_search_job(search, job_count)
+                        job_count = start_search_job(job_name, search, job_count)
                     end
                 end
             end

@@ -5,33 +5,61 @@ local M = {}
 
 
 
-function M.activate(settings, python_path)
+function M.activate(hooks, selected_entry)
+    local python_path = selected_entry.path
+    local venv_type = selected_entry.type
+    dbg(selected_entry, "selected entry in activate")
+
     if python_path ~= nil then
         local count = 0
-        for _, hook in pairs(settings.hooks) do
+        for _, hook in pairs(hooks) do
             count = count + hook(python_path)
         end
+
         if count == 0 then
             print("No python lsp servers are running. Please open a python file and then select a venv to activate.")
+            return false
+        else
+            local cache = require("venv-selector.cached_venv")
+            cache.save(python_path, venv_type)
+            return true
         end
     end
 end
 
-function M.activate_from_cache(settings, python_path)
+function M.activate_from_cache(settings, venv_info)
+    dbg("activate venv from cache")
+    local venv = require("venv-selector.venv")
+    local python_path = venv_info.value
+    local venv_type = venv_info.type
+
     for _, hook in pairs(settings.hooks) do
-        hook(python_path.value)
+        hook(python_path)
     end
 
     path.add(path.get_base(python_path.value))
-    local venv = require("venv-selector.venv")
-    venv.set_virtual_env(python_path.value)
+
+    if venv_type ~= nil and venv_type == "anaconda" then
+        venv.unset_env("VIRTUAL_ENV")
+        venv.set_env(python_path, "CONDA_PREFIX")
+    else
+        venv.unset_env("CONDA_PREFIX")
+        venv.set_env(python_path, "VIRTUAL_ENV")
+    end
 end
 
-function M.set_virtual_env(python_path)
-    local virtual_env = path.get_base(path.get_base(python_path))
-    if virtual_env ~= nil then
-        vim.fn.setenv("VIRTUAL_ENV", virtual_env)
-        dbg("$VIRTUAL_ENV set to " .. virtual_env)
+function M.set_env(python_path, env_variable_name)
+    local env_path = path.get_base(path.get_base(python_path))
+    if env_path ~= nil then
+        vim.fn.setenv(env_variable_name, env_path)
+        dbg("$" .. env_variable_name .. " set to " .. env_path)
+    end
+end
+
+function M.unset_env(env_variable_name)
+    if vim.fn.getenv(env_variable_name) ~= nil then
+        vim.fn.setenv(env_variable_name, nil)
+        dbg("$" .. env_variable_name .. " has been unset.")
     end
 end
 

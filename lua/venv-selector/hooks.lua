@@ -10,8 +10,7 @@ function M.set_python_path_for_client(client_name, venv_python)
         end
         client.notify('workspace/didChangeConfiguration', { settings = nil })
         print("Registered '" .. venv_python .. "' with " .. client_name .. " LSP.")
-        local cache = require("venv-selector.cached_venv")
-        cache.save(venv_python)
+
     end)
 end
 

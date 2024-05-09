@@ -26,7 +26,7 @@ function M.show(results, settings)
     local finder = finders.new_table {
         results = results,
         entry_maker = function(entry)
-            entry.value = entry.path
+            entry.value = entry.name
             entry.ordinal = entry.name
             entry.display = function(e)
                 return displayer {
@@ -56,10 +56,26 @@ function M.show(results, settings)
         attach_mappings = function(bufnr, map)
             map('i', '<cr>', function()
                 local selected_entry = actions_state.get_selected_entry()
+                local activated = false
+                dbg(selected_entry, "selected_entry")
                 if selected_entry ~= nil then
-                    venv.activate(settings, selected_entry.path)
-                    path.add(path.get_base(selected_entry.path))
-                    venv.set_virtual_env(selected_entry.path)
+                    if selected_entry.type == "anaconda" then
+                        activated = venv.activate(settings.hooks, selected_entry)
+                        if activated == true then
+                            dbg("Anaconda venv activated")
+                            path.add(path.get_base(selected_entry.path))
+                            venv.unset_env("VIRTUAL_ENV")
+                            venv.set_env(selected_entry.path, "CONDA_PREFIX")
+                        end
+                    else
+                        activated = venv.activate(settings.hooks, selected_entry)
+                        if activated == true then
+                            dbg("Ordinary venv activated")
+                            path.add(path.get_base(selected_entry.path))
+                            venv.unset_env("CONDA_PREFIX")
+                            venv.set_env(selected_entry.path, "VIRTUAL_ENV")
+                        end
+                    end
                 end
                 actions.close(bufnr)
             end)

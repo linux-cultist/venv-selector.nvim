@@ -46,7 +46,7 @@
   lazy = false,
   branch = "regexp", -- This is the regexp branch, use this until its merged with the main branch later
   config = function()
-      require("venv-selector").setup()
+      require("venv-selector").setup({})
     end,
     keys = {
       { ",v", "<cmd>VenvSelect<cr>" },

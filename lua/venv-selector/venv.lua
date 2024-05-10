@@ -1,5 +1,7 @@
 local path = require("venv-selector.path")
 local utils = require("venv-selector.utils")
+local config = require("venv-selector.config")
+
 local M = {}
 
 
@@ -50,17 +52,21 @@ function M.activate_from_cache(settings, venv_info)
 end
 
 function M.set_env(python_path, env_variable_name)
-    local env_path = path.get_base(path.get_base(python_path))
-    if env_path ~= nil then
-        vim.fn.setenv(env_variable_name, env_path)
-        dbg("$" .. env_variable_name .. " set to " .. env_path)
+    if config.user_settings.options.set_environment_variables == true then
+        local env_path = path.get_base(path.get_base(python_path))
+        if env_path ~= nil then
+            vim.fn.setenv(env_variable_name, env_path)
+            dbg("$" .. env_variable_name .. " set to " .. env_path)
+        end
     end
 end
 
 function M.unset_env(env_variable_name)
-    if vim.fn.getenv(env_variable_name) ~= nil then
-        vim.fn.setenv(env_variable_name, nil)
-        dbg("$" .. env_variable_name .. " has been unset.")
+    if config.user_settings.options.set_environment_variables == true then
+        if vim.fn.getenv(env_variable_name) ~= nil then
+            vim.fn.setenv(env_variable_name, nil)
+            dbg("$" .. env_variable_name .. " has been unset.")
+        end
     end
 end
 

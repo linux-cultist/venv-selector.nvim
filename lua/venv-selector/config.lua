@@ -114,7 +114,9 @@ M.default_settings = {
         on_telescope_result_callback = nil,        -- callback function for all searches
         on_venv_activate_callback = nil,           -- callback function for after a venv activates
         fd_binary_name = M.find_fd_command_name(), -- plugin looks for `fd` or `fdfind` but you can set something else here
-        enable_default_searches = true             -- switches all default searches on/off
+        enable_default_searches = true,            -- switches all default searches on/off
+        activate_venv_in_terminal = true,          -- activate the selected python interpreter in terminal windows opened from neovim
+        set_environment_variables = true,          -- sets VIRTUAL_ENV or CONDA_PREFIX environment variables
     },
     search = M.get_default_searches()()
 }

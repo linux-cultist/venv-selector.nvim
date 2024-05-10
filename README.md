@@ -45,7 +45,7 @@
     dependencies = {
       "neovim/nvim-lspconfig", 
       "mfussenegger/nvim-dap", "mfussenegger/nvim-dap-python", --optional
-      { "nvim-telescope/telescope.nvim", tag = "0.1.6", dependencies = { "nvim-lua/plenary.nvim" } },
+      { "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } },
     },
   lazy = false,
   branch = "regexp", -- This is the regexp branch, use this until its merged with the main branch later
@@ -187,7 +187,7 @@ Maybe you dont want to see the entire full path to python in the telescope viewe
     dependencies = {
       "neovim/nvim-lspconfig", 
       "mfussenegger/nvim-dap", "mfussenegger/nvim-dap-python", --both are optionals for debugging
-      { "nvim-telescope/telescope.nvim", tag = "0.1.6", dependencies = { "nvim-lua/plenary.nvim" } },
+      { "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } },
     },
   lazy = false,
   branch = "regexp", -- This is the regexp branch, use this until its merged with the main branch later

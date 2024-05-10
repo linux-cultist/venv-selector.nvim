@@ -1,19 +1,23 @@
+local config = require("venv-selector.config")
+
 local M = {}
 
 local previous_dir = nil
 
 function M.add(newDir)
-    if newDir ~= nil then
-        if previous_dir ~= nil then
-            M.remove(previous_dir)
+    if config.user_settings.options.activate_venv_in_terminal == true then
+        if newDir ~= nil then
+            if previous_dir ~= nil then
+                M.remove(previous_dir)
+            end
+            local path = vim.fn.getenv("PATH")
+            local path_separator = package.config:sub(1, 1) == '\\' and ';' or ':'
+            local clean_dir = M.remove_trailing_slash(newDir)
+            local updated_path = clean_dir .. path_separator .. path
+            previous_dir = clean_dir
+            vim.fn.setenv("PATH", updated_path)
+            dbg("Setting new path to: " .. updated_path)
         end
-        local path = vim.fn.getenv("PATH")
-        local path_separator = package.config:sub(1, 1) == '\\' and ';' or ':'
-        local clean_dir = M.remove_trailing_slash(newDir)
-        local updated_path = clean_dir .. path_separator .. path
-        previous_dir = clean_dir
-        vim.fn.setenv("PATH", updated_path)
-        dbg("Setting new path to: " .. updated_path)
     end
 end
 

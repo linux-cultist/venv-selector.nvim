@@ -29,10 +29,10 @@ function M.setup(settings)
         search.New(opts, config.user_settings)
     end, { nargs = '*', desc = 'Activate venv' })
 
-    vim.api.nvim_create_user_command('VenvSelectCached', function(opts)
-        local cache = require("venv-selector.cached_venv")
-        cache.retrieve()
-    end, { nargs = '*', desc = 'Activate venv from cache' })
+    --vim.api.nvim_create_user_command('VenvSelectCached', function(opts)
+    --    local cache = require("venv-selector.cached_venv")
+    --    cache.retrieve()
+    --end, { nargs = '*', desc = 'Activate venv from cache' })
 end
 
 return M

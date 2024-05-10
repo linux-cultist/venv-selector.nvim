@@ -59,19 +59,16 @@ function M.show(results, settings)
                 local activated = false
                 dbg(selected_entry, "selected_entry")
                 if selected_entry ~= nil then
-                    if selected_entry.type == "anaconda" then
-                        activated = venv.activate(settings.hooks, selected_entry)
-                        if activated == true then
-                            dbg("Anaconda venv activated")
-                            path.add(path.get_base(selected_entry.path))
+                    activated = venv.activate(settings.hooks, selected_entry)
+                    if activated == true then
+                        dbg("Venv type '" .. selected_entry.type .. "' activated.")
+                        path.add(path.get_base(selected_entry.path))
+                        path.update_python_dap(selected_entry.path)
+
+                        if selected_entry.type == "anaconda" then
                             venv.unset_env("VIRTUAL_ENV")
                             venv.set_env(selected_entry.path, "CONDA_PREFIX")
-                        end
-                    else
-                        activated = venv.activate(settings.hooks, selected_entry)
-                        if activated == true then
-                            dbg("Ordinary venv activated")
-                            path.add(path.get_base(selected_entry.path))
+                        else
                             venv.unset_env("CONDA_PREFIX")
                             venv.set_env(selected_entry.path, "VIRTUAL_ENV")
                         end

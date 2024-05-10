@@ -27,7 +27,7 @@ end
 
 function M.try(table, ...)
     local result = table
-    for _, key in ipairs({...}) do
+    for _, key in ipairs({ ... }) do
         if result then
             result = result[key]
         else
@@ -37,6 +37,15 @@ function M.try(table, ...)
     return result
 end
 
+function M.check_dependencies_installed()
+    local installed, telescope = pcall(require, 'telescope')
+    if installed == false then
+        print("VenvSelect requires telescope to be installed.")
+        return false
+    end
+
+    return true
+end
 
 function M.print_table(tbl, indent)
     if not indent then indent = 0 end

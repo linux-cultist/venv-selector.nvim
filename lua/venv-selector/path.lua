@@ -13,7 +13,17 @@ function M.add(newDir)
         local updated_path = clean_dir .. path_separator .. path
         previous_dir = clean_dir
         vim.fn.setenv("PATH", updated_path)
-        dbg(updated_path, "set new path")
+        dbg("Setting new path to: " .. updated_path)
+    end
+end
+
+function M.update_python_dap(python_path)
+    local installed, dap = pcall(require, 'dap-python')
+    if installed then
+        dbg("Updating dap python interpreter to '" .. python_path .. "'")
+        dap.resolve_python = function()
+            return python_path
+        end
     end
 end
 

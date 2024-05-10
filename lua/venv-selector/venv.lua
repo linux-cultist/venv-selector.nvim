@@ -27,7 +27,7 @@ function M.activate(hooks, selected_entry)
 end
 
 function M.activate_from_cache(settings, venv_info)
-    dbg("activate venv from cache")
+    dbg("Activating venv from cache")
     local venv = require("venv-selector.venv")
     local python_path = venv_info.value
     local venv_type = venv_info.type
@@ -45,6 +45,8 @@ function M.activate_from_cache(settings, venv_info)
         venv.unset_env("CONDA_PREFIX")
         venv.set_env(python_path, "VIRTUAL_ENV")
     end
+
+    path.update_python_dap(python_path)
 end
 
 function M.set_env(python_path, env_variable_name)

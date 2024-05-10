@@ -223,10 +223,11 @@ Maybe you dont want to see the entire full path to python in the telescope viewe
     },
 },
 ```
-## Python debugger support with 
+## Python debugger support with dap and dap-python
 
+If `mfussenegger/nvim-dap` and `mfussenegger/nvim-dap-python` are installed as optional dependencies, the plugin will update `dap` with a new python path every time you switch venv.
 
-
+You also need `debugpy` installed in the venv you are switching to.
 
 ## Global options to the plugin
 

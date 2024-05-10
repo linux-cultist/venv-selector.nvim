@@ -1,6 +1,7 @@
 local search = require 'venv-selector.search'
 local config = require 'venv-selector.config'
 local utils = require 'venv-selector.utils'
+local path = require 'venv-selector.path'
 dbg = require 'venv-selector.utils'.dbg
 
 
@@ -19,7 +20,14 @@ vim.api.nvim_create_autocmd("LspAttach", {
 
 local M = {}
 
+function M.python()
+    return path.current_python_path
+end
 
+-- Gets the system path to the current active venv (or nil if its not activated)
+function M.venv()
+    return path.current_venv_path
+end
 
 function M.setup(settings)
     settings = settings or {}

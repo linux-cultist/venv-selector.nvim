@@ -62,8 +62,10 @@ function M.show(results, settings)
                     activated = venv.activate(settings.hooks, selected_entry)
                     if activated == true then
                         dbg("Venv type '" .. selected_entry.type .. "' activated.")
+
                         path.add(path.get_base(selected_entry.path))
                         path.update_python_dap(selected_entry.path)
+                        path.save_selected_python(selected_entry.path)
 
                         if selected_entry.type == "anaconda" then
                             venv.unset_env("VIRTUAL_ENV")

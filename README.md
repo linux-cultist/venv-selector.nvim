@@ -246,5 +246,13 @@ search = {
 }
 ```
 
+## Exposed functions
+
+These functions can be used to easily get the selected python interpreter and the active venv.
+
+`require("venv-selector").python()` -- Gives back absolute path to python or nil if none is selected
+`require("venv-selector").venv()`   -- Gives back absolute path to the venv or nil if none is selected
+
+
 More docs coming up soon!
 

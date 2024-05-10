@@ -5,8 +5,6 @@ local config = require("venv-selector.config")
 local M = {}
 
 
-
-
 function M.activate(hooks, selected_entry)
     local python_path = selected_entry.path
     local venv_type = selected_entry.type
@@ -49,6 +47,7 @@ function M.activate_from_cache(settings, venv_info)
     end
 
     path.update_python_dap(python_path)
+    path.save_selected_python(python_path)
 end
 
 function M.set_env(python_path, env_variable_name)

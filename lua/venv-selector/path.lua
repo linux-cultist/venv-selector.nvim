@@ -1,8 +1,16 @@
 local config = require("venv-selector.config")
 
-local M = {}
 
+local M = {}
+M.current_python_path = nil
+M.current_venv_path = nil
 local previous_dir = nil
+
+function M.save_selected_python(python_path)
+    local path = require("venv-selector.path")
+    M.current_python_path = python_path
+    M.current_venv_path = path.get_base(path.get_base(python_path))
+end
 
 function M.add(newDir)
     if config.user_settings.options.activate_venv_in_terminal == true then

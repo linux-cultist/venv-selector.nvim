@@ -2,6 +2,10 @@ local config = require("venv-selector.config")
 
 local M = {}
 
+function M.table_empty(t)
+    return next(t) == nil
+end
+
 function M.dbg(msg, name)
     if config.user_settings.options.debug == false or msg == nil then
         return

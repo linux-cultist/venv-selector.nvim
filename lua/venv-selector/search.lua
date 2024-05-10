@@ -7,10 +7,6 @@ local function contains_workspace(str)
     return string.find(str, "%$WORKSPACE") ~= nil
 end
 
-local function table_empty(t)
-    return next(t) == nil
-end
-
 
 local M = {}
 
@@ -143,7 +139,7 @@ local function run_search(opts, user_settings)
                 search.command = search.command:gsub("$CWD", cwd):gsub("$FD", user_settings.options.fd_binary_name)
                 job_count = start_search_job(job_name, search, job_count)
             else
-                if table_empty(workspace_folders) == false then
+                if utils.table_empty(workspace_folders) == false then
                     for _, workspace_path in pairs(workspace_folders) do
                         search.command = search.command:gsub("$WORKSPACE_PATH", workspace_path):gsub("$FD",
                             user_settings.options.fd_binary_name)

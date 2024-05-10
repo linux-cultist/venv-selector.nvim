@@ -24,9 +24,12 @@ function M.python()
     return path.current_python_path
 end
 
--- Gets the system path to the current active venv (or nil if its not activated)
 function M.venv()
     return path.current_venv_path
+end
+
+function M.deactivate()
+    -- TODO: Find a way to deactivate lsp to what it was before the plugin
 end
 
 function M.setup(settings)

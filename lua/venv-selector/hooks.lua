@@ -1,5 +1,7 @@
 local M = {}
 
+
+
 function M.set_python_path_for_client(client_name, venv_python)
     return M.execute_for_client(client_name, function(client)
         if client.settings then
@@ -10,7 +12,6 @@ function M.set_python_path_for_client(client_name, venv_python)
         end
         client.notify('workspace/didChangeConfiguration', { settings = nil })
         print("Registered '" .. venv_python .. "' with " .. client_name .. " LSP.")
-
     end)
 end
 
@@ -27,7 +28,8 @@ function M.pylance_hook(venv_python)
 end
 
 function M.pylsp_hook(venv_python)
-    return M.execute_for_client('pylsp', function(client)
+    local client_name = "pylsp"
+    return M.execute_for_client(client_name, function(client)
         local settings = vim.tbl_deep_extend('force', (client.settings or client.config.settings), {
             pylsp = {
                 plugins = {
@@ -38,9 +40,7 @@ function M.pylsp_hook(venv_python)
             },
         })
         client.notify('workspace/didChangeConfiguration', { settings = settings })
-        print("Registered '" .. venv_python .. "' with pylsp LSP.")
-        local cache = require("venv-selector.cached_venv")
-        cache.save(venv_python)
+        print("Registered '" .. venv_python .. "' with " .. client_name .. " LSP.")
     end)
 end
 

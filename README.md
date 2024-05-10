@@ -239,6 +239,8 @@ search = {
       on_telescope_result_callback = nil  -- callback function for all searches
       fd_binary_name = fd                 -- plugin looks for `fd` or `fdfind` but you can set something else here
       enable_default_searches = true      -- switches all default searches on/off
+      activate_venv_in_terminal = true,   -- activate the selected python interpreter in terminal windows opened from neovim
+      set_environment_variables = true,   -- sets VIRTUAL_ENV or CONDA_PREFIX environment variables
     }
   }
 }

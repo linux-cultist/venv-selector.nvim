@@ -44,7 +44,7 @@
   "linux-cultist/venv-selector.nvim",
     dependencies = {
       "neovim/nvim-lspconfig", 
-      "mfussenegger/nvim-dap-python", --optional
+      "mfussenegger/nvim-dap", "mfussenegger/nvim-dap-python", --optional
       { "nvim-telescope/telescope.nvim", tag = "0.1.6", dependencies = { "nvim-lua/plenary.nvim" } },
     },
   lazy = false,
@@ -186,7 +186,7 @@ Maybe you dont want to see the entire full path to python in the telescope viewe
   "linux-cultist/venv-selector.nvim",
     dependencies = {
       "neovim/nvim-lspconfig", 
-      "mfussenegger/nvim-dap-python", --optional
+      "mfussenegger/nvim-dap", "mfussenegger/nvim-dap-python", --both are optionals for debugging
       { "nvim-telescope/telescope.nvim", tag = "0.1.6", dependencies = { "nvim-lua/plenary.nvim" } },
     },
   lazy = false,
@@ -223,6 +223,9 @@ Maybe you dont want to see the entire full path to python in the telescope viewe
     },
 },
 ```
+## Python debugger support with 
+
+
 
 
 ## Global options to the plugin

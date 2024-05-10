@@ -18,12 +18,15 @@ function M.add(newDir)
 end
 
 function M.update_python_dap(python_path)
-    local installed, dap = pcall(require, 'dap-python')
-    if installed then
-        dbg("Updating dap python interpreter to '" .. python_path .. "'")
-        dap.resolve_python = function()
+    local dap_python_installed, dap_python = pcall(require, 'dap-python')
+    local dap_installed, dap = pcall(require, 'dap')
+    if dap_python_installed and dap_installed then
+        dbg("Setting dap python interpreter to '" .. python_path .. "'")
+        dap_python.resolve_python = function()
             return python_path
         end
+    else
+        dbg("Debugger not enabled: dap or dap-python not installed.")
     end
 end
 

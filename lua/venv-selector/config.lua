@@ -15,7 +15,7 @@ function M.get_default_searches()
                     command = "$FD python$ ~/.local/share/hatch --color never -E '*-build*' -E /proc"
                 },
                 poetry = {
-                    command = "$FD /bin/python3$ ~/.cache/pypoetry/virtualenvs --full-path"
+                    command = "$FD /bin/python$ ~/.cache/pypoetry/virtualenvs --full-path"
                 },
                 pyenv = {
                     command = "$FD 'versions/([0-9.]+)/bin/python$' ~/.pyenv/versions --full-path --color never -E /proc"
@@ -48,7 +48,7 @@ function M.get_default_searches()
                     command = "$FD python$ ~/Library/Application/Support/hatch/env/virtual --color never -E '*-build*' -E /proc"
                 },
                 poetry = {
-                    command = "$FD /bin/python3$ ~/Library/Caches/pypoetry/virtualenvs --full-path"
+                    command = "$FD /bin/python$ ~/Library/Caches/pypoetry/virtualenvs --full-path"
                 },
                 pyenv = {
                     command = "$FD 'versions/([0-9.]+)/bin/python$' ~/.pyenv/versions --full-path --color never -E /proc"

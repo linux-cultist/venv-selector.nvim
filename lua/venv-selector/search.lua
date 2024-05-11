@@ -73,7 +73,7 @@ local function run_search(opts, user_settings)
     --dbg(opts.args, "opts.args")
 
     local jobs = {}
-    local jobnames = {}
+    --local jobnames = {}
     local workspace_folders = workspace.list_folders()
     local job_count = 0
     local results = {}
@@ -96,7 +96,7 @@ local function run_search(opts, user_settings)
                 rv.path = line
                 rv.name = line
                 rv.type = search.type or "venv"
-                rv.source = jobnames[job_id]
+                rv.source = search.name
                 if callback then
                     rv.name = callback(line, rv.source)
                 end
@@ -133,9 +133,8 @@ local function run_search(opts, user_settings)
             on_stderr = on_event,
             on_exit = on_event,
         })
-
+        search.name = job_name
         jobs[job_id] = search
-        jobnames[job_id] = job_name
         count = count + 1
         return count
     end
@@ -162,18 +161,17 @@ local function run_search(opts, user_settings)
                 job_count = start_search_job(job_name, search, job_count)
                 -- search has $FILE_PATH inside
             elseif is_filepath_search(search.command) then
-                dbg("found filepath search")
-                search.execute_command = search.execute_command:gsub("$FILE_PATH", current_dir)
-                job_count = start_search_job(job_name, search, job_count)
-                -- TODO: Bug: File type search shows up in telescope even when no file is opened.
+                if current_dir ~= nil then
+                    dbg("found filepath search, current dir is " .. current_dir)
+                    search.execute_command = search.execute_command:gsub("$FILE_PATH", current_dir)
+                    job_count = start_search_job(job_name, search, job_count)
+                end
             else
                 -- search has no keywords inside
                 job_count = start_search_job(job_name, search, job_count)
             end
         end
     end
-
-    dbg(jobnames)
 end
 
 --utils.print_table(search_settings)

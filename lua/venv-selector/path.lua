@@ -1,5 +1,5 @@
 local config = require("venv-selector.config")
-
+local utils = require("venv-selector.utils")
 
 local M = {}
 M.current_python_path = nil
@@ -101,9 +101,9 @@ function M.normalize(path)
 end
 
 function M.get_current_file_directory()
-    local opened_filepath = vim.fn.expand('%:p:h')
+    local opened_filepath = vim.fn.expand('%:p')
     if opened_filepath ~= nil then
-        return opened_filepath
+        return M.get_base(opened_filepath)
     end
 end
 

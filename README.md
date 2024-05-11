@@ -15,7 +15,7 @@
 - Switch back and forth between virtual environments without restarting neovim
 - New and much more flexible configuration to support finding the exact venvs you want.
 - Browse existing python virtual environments on your computer and select one to activate inside neovim.
-- Supports **all** virtual environments using configurable **regular expressions expressions**, such as:
+- Supports **all** virtual environments using configurable **regular expressions**. The default ones are:
   - [Python](https://www.python.org/) (`python3 -m venv venv`)
   - [Poetry](https://python-poetry.org)
   - [PDM](https://github.com/pdm-project/pdm)
@@ -30,7 +30,7 @@
   - `:VenvSelect fd 'python$' . --full-path -IH -a`
 
 - Support [Pyright](https://github.com/microsoft/pyright), [Pylance](https://github.com/microsoft/pylance-release) and [Pylsp](https://github.com/python-lsp/python-lsp-server) lsp servers with ability to config hooks for others.
-- Cached virtual environment that ties to your current working directory for quick activation
+- Virtual environments are remembered for each specific working directory and automatically activated the next time.
 - Requires [fd](https://github.com/sharkdp/fd) and [Telescope](https://github.com/nvim-telescope/telescope.nvim) for fast searches, and visual pickers.
 - Requires [nvim-dap-python](https://github.com/mfussenegger/nvim-dap-python), [debugpy](https://github.com/microsoft/debugpy) and [nvim-dap](https://github.com/mfussenegger/nvim-dap) for debugger support
 
@@ -70,7 +70,13 @@ A default search is one that the plugin does automatically.
 
 These are designed to find venvs in your current working directory and from different venv managers in their default paths.
 
-Some of them use the special variables `$CWD` and `$WORKSPACE_PATH`. You can also use these in your own searches. They will contain the value of your neovim current working directory and the neovim workspace directories when the LSP is active.
+Some of them use special variables in the `fd` search query:
+
+- `$CWD` - Current working directory. The directory where you start neovim.
+- `$WORKSPACE_PATH` - The workspace directories found by your LSP when you have an opened python file.
+- `$FILE_PATH` - The directory of the file in the neovim buffer. 
+
+You can use these in your own queries as well. Maybe you want to search the parent directories of your opened file for example.
 
 ### The current default searches are for:
 

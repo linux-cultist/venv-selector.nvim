@@ -64,6 +64,9 @@ function M.get_default_searches()
                 },
                 workspace = {
                     command = "$FD /bin/python$ $WORKSPACE_PATH --full-path --color never -E /proc -HI -a",
+                },
+                file = {
+                    command = "$FD /bin/python$ $FILE_PATH --full-path --color never -E /proc -HI",
                 }
             }
         end,
@@ -89,7 +92,11 @@ function M.get_default_searches()
                 },
                 workspace = {
                     command = "$FD /bin/python.exe$ $WORKSPACE_PATH --full-path --color never -E /proc -HI -a",
+                },
+                file = {
+                    command = "$FD /bin/python.exe$ $FILE_PATH --full-path --color never -E /proc -HI",
                 }
+
             }
         end
     }

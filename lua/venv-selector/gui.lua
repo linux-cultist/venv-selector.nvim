@@ -33,11 +33,18 @@ function M.show(results, settings)
             entry.value = entry.name
             entry.ordinal = entry.name
             entry.display = function(e)
-                return displayer {
-                    { e.icon },
-                    { e.name },
-                    { e.source },
-                }
+                if settings.options.enable_telescope_search_type == true then
+                    return displayer {
+                        { e.icon },
+                        { e.name },
+                        { e.source },
+                    }
+                else
+                    return displayer {
+                        { e.icon },
+                        { e.name },
+                    }
+                end
             end
 
             return entry

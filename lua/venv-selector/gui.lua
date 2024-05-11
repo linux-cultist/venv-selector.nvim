@@ -1,6 +1,8 @@
 local venv = require 'venv-selector.venv'
 local path = require 'venv-selector.path'
 
+
+
 local M = {}
 
 -- Shows the results from the search in a Telescope picker.
@@ -23,7 +25,7 @@ function M.show(results, settings)
         },
     }
 
-    local title = 'Virtual environments'
+    local title = 'Virtual environments (ctrl-r to refresh)'
 
     local finder = finders.new_table {
         results = results,
@@ -83,12 +85,13 @@ function M.show(results, settings)
             end)
 
             map('i', '<C-r>', function()
-                local picker = actions_state.get_current_picker(bufnr)
+                --local picker = actions_state.get_current_picker(bufnr)
                 -- Delay by 10ms to achieve the refresh animation.
-                picker:refresh(finder, { reset_prompt = true })
+                --picker:refresh(finder, { reset_prompt = true })
                 vim.defer_fn(function()
-                    --search.New({}, search.user_settings)
-                    --venv.load { force_refresh = true }
+                    local search = require 'venv-selector.search'
+                    local config = require 'venv-selector.config'
+                    search.New(nil, config.user_settings)
                 end, 10)
             end)
 

@@ -29,13 +29,13 @@ function M.get_default_searches()
                     type = "anaconda"
                 },
                 cwd = {
-                    command = "$FD /bin/python$ $CWD --full-path --color never -E /proc -I -a",
+                    command = "$FD /bin/python$ $CWD --full-path --color never -E /proc -I -a -L",
                 },
                 workspace = {
-                    command = "$FD /bin/python$ $WORKSPACE_PATH --full-path --color never -E /proc -HI -a",
+                    command = "$FD /bin/python$ $WORKSPACE_PATH --full-path --color never -E /proc -HI -a -L",
                 },
                 file = {
-                    command = "$FD /bin/python$ $FILE_PATH --full-path --color never -E /proc -HI -a",
+                    command = "$FD /bin/python$ $FILE_PATH --full-path --color never -E /proc -HI -a -L",
                 }
             }
         end,
@@ -63,13 +63,13 @@ function M.get_default_searches()
                     type = "anaconda"
                 },
                 cwd = {
-                    command = "$FD /bin/python$ $CWD --full-path --color never -E /proc -I -a",
+                    command = "$FD /bin/python$ $CWD --full-path --color never -E /proc -I -a -L",
                 },
                 workspace = {
-                    command = "$FD /bin/python$ $WORKSPACE_PATH --full-path --color never -E /proc -HI -a",
+                    command = "$FD /bin/python$ $WORKSPACE_PATH --full-path --color never -E /proc -HI -a -L",
                 },
                 file = {
-                    command = "$FD /bin/python$ $FILE_PATH --full-path --color never -E /proc -HI -a",
+                    command = "$FD /bin/python$ $FILE_PATH --full-path --color never -E /proc -HI -a -L",
                 }
             }
         end,
@@ -94,13 +94,13 @@ function M.get_default_searches()
                     type = "anaconda"
                 },
                 cwd = {
-                    command = "$FD Scripts\\\\python.exe$ $CWD --full-path --color never -I -a",
+                    command = "$FD Scripts\\\\python.exe$ $CWD --full-path --color never -I -a -L",
                 },
                 workspace = {
-                    command = "$FD Scripts\\\\python.exe$ $WORKSPACE_PATH --full-path --color never -HI -a",
+                    command = "$FD Scripts\\\\python.exe$ $WORKSPACE_PATH --full-path --color never -HI -a -L",
                 },
                 file = {
-                    command = "$FD Scripts\\\\python.exe$ $FILE_PATH --full-path --color never -HI -a",
+                    command = "$FD Scripts\\\\python.exe$ $FILE_PATH --full-path --color never -HI -a -L",
                 }
             }
         end

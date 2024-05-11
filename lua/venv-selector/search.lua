@@ -19,7 +19,6 @@ end
 local M = {}
 
 local function disable_default_searches(search_settings)
-    -- TODO: Set all default searches to false if options.default_searches_enabled is false.
     local default_searches = require("venv-selector.config").default_settings.search
     for search_name, _ in pairs(search_settings.search) do
         if default_searches[search_name] ~= nil then
@@ -52,7 +51,7 @@ end
 
 
 local function set_interactive_search(opts)
-    if #opts.args > 0 then
+    if opts ~= nil and #opts.args > 0 then
         local settings = {
             search = {
                 interactive = {
@@ -72,6 +71,12 @@ local function run_search(opts, user_settings)
     --dbg(user_settings, "user_settings")
     --dbg(opts.args, "opts.args")
 
+    if M.search_in_progress == true then
+        dbg("Search already in progress")
+        return
+    end
+
+    M.search_in_progress = true
     local jobs = {}
     --local jobnames = {}
     local workspace_folders = workspace.list_folders()
@@ -117,12 +122,12 @@ local function run_search(opts, user_settings)
             job_count = job_count - 1
             if job_count == 0 then
                 gui.show(convert_for_gui(results), user_settings)
+                M.search_in_progress = false
             end
         end
     end
 
     local function start_search_job(job_name, search, count)
-        dbg("Before expand " .. search.execute_command)
         local job = path.expand(search.execute_command)
         dbg(job, "Starting job '" .. job_name .. "'")
 
@@ -144,6 +149,7 @@ local function run_search(opts, user_settings)
     end
 
     local current_dir = path.get_current_file_directory()
+
     -- Start search jobs from config
     for job_name, search in pairs(search_settings.search) do
         if search ~= false then -- Can be set to false by user to not search path
@@ -162,7 +168,6 @@ local function run_search(opts, user_settings)
                 -- search has $FILE_PATH inside
             elseif is_filepath_search(search.command) then
                 if current_dir ~= nil then
-                    dbg("found filepath search, current dir is " .. current_dir)
                     search.execute_command = search.execute_command:gsub("$FILE_PATH", current_dir)
                     job_count = start_search_job(job_name, search, job_count)
                 end

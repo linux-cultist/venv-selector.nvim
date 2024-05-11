@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-    <img src="venv-selector.png" />
+    <img src="venvselect-2024.png" />
 </p>
 
 # ⚡️ Features

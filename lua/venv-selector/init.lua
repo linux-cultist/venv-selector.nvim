@@ -35,6 +35,9 @@ end
 function M.setup(settings)
     settings = settings or {}
     config.user_settings = vim.tbl_deep_extend('force', config.default_settings, settings.settings or {})
+    config.user_settings.detected = {
+        system = vim.loop.os_uname().sysname
+    }
 
     vim.api.nvim_create_user_command('VenvSelect', function(opts)
         search.New(opts, config.user_settings)

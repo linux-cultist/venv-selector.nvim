@@ -119,9 +119,13 @@ function M.find_fd_command_name()
     end
 end
 
-function M.test()
-    print("called")
-end
+-- on_venv_activate_callback
+--
+--function M.test(python_path, source)
+--    if source == "poetry" then
+--        print("poetry venv activated")
+--    end
+--end
 
 M.default_settings = {
     cache = {

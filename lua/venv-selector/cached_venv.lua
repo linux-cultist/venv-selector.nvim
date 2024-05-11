@@ -14,11 +14,11 @@ function M.create_dir()
     end
 end
 
-function M.save(python_path, venv_type)
+function M.save(python_path, venv_type, venv_source)
     M.create_dir()
 
     local venv_cache = {
-        [vim.fn.getcwd()] = { value = python_path, type = venv_type },
+        [vim.fn.getcwd()] = { value = python_path, type = venv_type, source = venv_source },
     }
 
     local venv_cache_json = nil

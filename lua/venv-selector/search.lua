@@ -41,7 +41,8 @@ local function convert_for_gui(nested_tbl)
                     icon = "",
                     name = rv.name,
                     path = rv.path,
-                    type = rv.type
+                    type = rv.type,
+                    source = rv.source
                 })
             end
         end
@@ -72,6 +73,7 @@ local function run_search(opts, user_settings)
     --dbg(opts.args, "opts.args")
 
     local jobs = {}
+    local jobnames = {}
     local workspace_folders = workspace.list_folders()
     local job_count = 0
     local results = {}
@@ -94,6 +96,7 @@ local function run_search(opts, user_settings)
                 rv.path = line
                 rv.name = line
                 rv.type = search.type or "venv"
+                rv.source = jobnames[job_id]
                 if callback then
                     rv.name = callback(line)
                 end
@@ -132,6 +135,7 @@ local function run_search(opts, user_settings)
         })
 
         jobs[job_id] = search
+        jobnames[job_id] = job_name
         count = count + 1
         return count
     end

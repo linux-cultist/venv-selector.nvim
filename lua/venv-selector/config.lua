@@ -12,7 +12,7 @@ function M.get_default_searches()
                     command = "$FD python$ ~/.virtualenvs --color never -E /proc"
                 },
                 hatch = {
-                    command = "$FD python$ ~/.local/share/hatch --color never -E /proc"
+                    command = "$FD python$ ~/.local/share/hatch --color never -E '*-build*' -E /proc"
                 },
                 poetry = {
                     command = "$FD /bin/python3$ ~/.cache/pypoetry/virtualenvs --full-path"
@@ -29,13 +29,13 @@ function M.get_default_searches()
                     type = "anaconda"
                 },
                 cwd = {
-                    command = "$FD /bin/python$ $CWD --full-path --color never -E /proc -HI",
+                    command = "$FD /bin/python$ $CWD --full-path --color never -E /proc -HI -a",
                 },
                 workspace = {
                     command = "$FD /bin/python$ $WORKSPACE_PATH --full-path --color never -E /proc -HI -a",
                 },
                 file = {
-                    command = "$FD /bin/python$ $FILE_PATH --full-path --color never -E /proc -HI",
+                    command = "$FD /bin/python$ $FILE_PATH --full-path --color never -E /proc -HI -a",
                 }
             }
         end,
@@ -45,10 +45,10 @@ function M.get_default_searches()
                     command = "$FD python$ ~/.virtualenvs --color never -E /proc"
                 },
                 hatch = {
-                    command = "$FD python$ ~/.local/share/hatch --color never -E /proc"
+                    command = "$FD python$ ~/Library/Application/Support/hatch/env/virtual --color never -E '*-build*' -E /proc"
                 },
                 poetry = {
-                    command = "$FD /bin/python3$ ~/.cache/pypoetry/virtualenvs --full-path"
+                    command = "$FD /bin/python3$ ~/Library/Caches/pypoetry/virtualenvs --full-path"
                 },
                 pyenv = {
                     command = "$FD 'versions/([0-9.]+)/bin/python$' ~/.pyenv/versions --full-path --color never -E /proc"
@@ -62,13 +62,13 @@ function M.get_default_searches()
                     type = "anaconda"
                 },
                 cwd = {
-                    command = "$FD /bin/python$ $CWD --full-path --color never -E /proc -HI",
+                    command = "$FD /bin/python$ $CWD --full-path --color never -E /proc -HI -a",
                 },
                 workspace = {
                     command = "$FD /bin/python$ $WORKSPACE_PATH --full-path --color never -E /proc -HI -a",
                 },
                 file = {
-                    command = "$FD /bin/python$ $FILE_PATH --full-path --color never -E /proc -HI",
+                    command = "$FD /bin/python$ $FILE_PATH --full-path --color never -E /proc -HI -a",
                 }
             }
         end,
@@ -76,7 +76,7 @@ function M.get_default_searches()
             -- NOTE: In lua, '\' is an escape character. So in windows paths, we need 4 slashes where there normally would be 2 slashes on the command line.
             return {
                 hatch = {
-                    command = "$FD python.exe $HOME/AppData/Local/hatch/env/virtual --full-path --color never"
+                    command = "$FD python.exe $HOME/AppData/Local/hatch/env/virtual --full-path --color never -E '*-build*'"
                 },
                 poetry = {
                     command = "$FD python.exe$ $HOME/AppData/Local/pypoetry/Cache/virtualenvs --full-path --color never"

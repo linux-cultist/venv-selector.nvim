@@ -29,7 +29,7 @@ function M.get_default_searches()
                     type = "anaconda"
                 },
                 cwd = {
-                    command = "$FD /bin/python$ $CWD --full-path --color never -E /proc -HI -a",
+                    command = "$FD /bin/python$ $CWD --full-path --color never -E /proc -I -a",
                 },
                 workspace = {
                     command = "$FD /bin/python$ $WORKSPACE_PATH --full-path --color never -E /proc -HI -a",
@@ -62,7 +62,7 @@ function M.get_default_searches()
                     type = "anaconda"
                 },
                 cwd = {
-                    command = "$FD /bin/python$ $CWD --full-path --color never -E /proc -HI -a",
+                    command = "$FD /bin/python$ $CWD --full-path --color never -E /proc -I -a",
                 },
                 workspace = {
                     command = "$FD /bin/python$ $WORKSPACE_PATH --full-path --color never -E /proc -HI -a",
@@ -93,7 +93,7 @@ function M.get_default_searches()
                     type = "anaconda"
                 },
                 cwd = {
-                    command = "$FD Scripts\\\\python.exe$ $CWD --full-path --color never -HI -a",
+                    command = "$FD Scripts\\\\python.exe$ $CWD --full-path --color never -I -a",
                 },
                 workspace = {
                     command = "$FD Scripts\\\\python.exe$ $WORKSPACE_PATH --full-path --color never -HI -a",
@@ -101,7 +101,6 @@ function M.get_default_searches()
                 file = {
                     command = "$FD Scripts\\\\python.exe$ $FILE_PATH --full-path --color never -HI -a",
                 }
-
             }
         end
     }

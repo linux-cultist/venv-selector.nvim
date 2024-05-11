@@ -119,6 +119,7 @@ local function run_search(opts, user_settings)
     end
 
     local function start_search_job(job_name, search, count)
+        dbg("Before expand " .. search.execute_command)
         local job = path.expand(search.execute_command)
         dbg(job, "Starting job '" .. job_name .. "'")
 

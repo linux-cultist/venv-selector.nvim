@@ -76,7 +76,7 @@ function M.get_default_searches()
             -- NOTE: In lua, '\' is an escape character. So in windows paths, we need 4 slashes where there normally would be 2 slashes on the command line.
             return {
                 hatch = {
-                    command = "$FD python.exe $HOME/AppData/Local/hatch/env/virtual --full-path --color never -E '*-build*'"
+                    command = "$FD python.exe $HOME/AppData/Local/hatch/env/virtual --full-path --color never"
                 },
                 poetry = {
                     command = "$FD python.exe$ $HOME/AppData/Local/pypoetry/Cache/virtualenvs --full-path --color never"

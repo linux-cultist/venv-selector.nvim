@@ -88,7 +88,7 @@ function M.get_default_searches()
                     command = "$FD --fixed-strings anaconda3\\python.exe $HOME\\anaconda3 --full-path -a --color never",
                 },
                 cwd = {
-                    command = "$FD python.exe$ $CWD --full-path --color never -HI",
+                    command = "$FD /bin/python.exe$ $CWD --full-path --color never -HI",
                 },
                 workspace = {
                     command = "$FD /bin/python.exe$ $WORKSPACE_PATH --full-path --color never -E /proc -HI -a",

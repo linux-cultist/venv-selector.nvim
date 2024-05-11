@@ -140,7 +140,6 @@ local function run_search(opts, user_settings)
     end
 
     local current_dir = path.get_current_file_directory()
-    dbg("current is " .. current_dir)
     -- Start search jobs from config
     for job_name, search in pairs(search_settings.search) do
         if search ~= false then -- Can be set to false by user to not search path
@@ -158,40 +157,12 @@ local function run_search(opts, user_settings)
                 job_count = start_search_job(job_name, search, job_count)
                 -- search has $FILE_PATH inside
             elseif is_filepath_search(search.command) then
-                dbg("its filepath search")
                 search.execute_command = search.execute_command:gsub("$FILE_PATH", current_dir)
                 job_count = start_search_job(job_name, search, job_count)
             else
                 -- search has no keywords inside
                 job_count = start_search_job(job_name, search, job_count)
             end
-
-            --if is_workspace_search(search.command) == false then
-            --    if search.command:find("$FILE_PATH") ~= nil then
-            --        dbg("found file path")
-            --        -- TODO: Check if we have $FILE_PATH in the search.command. If we do and current_dir is not nil, then do the search.
-            --        -- TODO: Otherwise we dont do the search, since there is no dir to search.
-            --        if current_dir ~= nil then
-            --            dbg("current dir is not nil: " .. current_dir)
-            --            --dbg("current is not nil, its " .. current_dir)
-            --            dbg("search command before replacement " .. search.command)
-            --            search.command = search.command:gsub("$FILE_PATH", current_dir)
-            --            dbg("search command after replacement " .. search.command)
-            --            job_count = start_search_job(job_name, search, job_count)
-            --        else
-            --            dbg("current dir is nil")
-            --        end
-            --    else
-            --        job_count = start_search_job(job_name, search, job_count)
-            --    end
-            --else
-            --    if utils.table_empty(workspace_folders) == false then
-            --        for _, workspace_path in pairs(workspace_folders) do
-            --            search.command = search.command:gsub("$WORKSPACE_PATH", workspace_path):gsub("$FD",
-            --                user_settings.options.fd_binary_name)
-            --            job_count = start_search_job(job_name, search, job_count)
-            --        end
-            --    end
         end
     end
 end

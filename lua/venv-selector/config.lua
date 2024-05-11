@@ -88,13 +88,13 @@ function M.get_default_searches()
                     command = "$FD --fixed-strings anaconda3\\python.exe $HOME\\anaconda3 --full-path -a --color never",
                 },
                 cwd = {
-                    command = "$FD Scripts\\python.exe$ $CWD --full-path --color never -HI -a",
+                    command = "$FD Scripts\\\\python.exe$ $CWD --full-path --color never -HI -a",
                 },
                 workspace = {
-                    command = "$FD Scripts\\python.exe$ $WORKSPACE_PATH --full-path --color never -HI -a",
+                    command = "$FD Scripts\\\\python.exe$ $WORKSPACE_PATH --full-path --color never -HI -a",
                 },
                 file = {
-                    command = "$FD Scripts\\python.exe$ $FILE_PATH --full-path --color never -HI -a",
+                    command = "$FD Scripts\\\\python.exe$ $FILE_PATH --full-path --color never -HI -a",
                 }
 
             }

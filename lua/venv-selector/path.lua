@@ -100,6 +100,13 @@ function M.normalize(path)
     return result
 end
 
+function M.get_current_file_directory()
+    local opened_filepath = vim.fn.expand('%:p:h')
+    if opened_filepath ~= nil then
+        return opened_filepath
+    end
+end
+
 function M.get_home_directory()
     local sysname = vim.loop.os_uname().sysname
     dbg(sysname, "sysname")

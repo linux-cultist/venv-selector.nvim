@@ -2,16 +2,16 @@ local config = require("venv-selector.config")
 
 local M = {}
 
-function M.table_empty(t)
-    return next(t) == nil
+function M.table_has_content(t)
+    return next(t) ~= nil
 end
 
 function M.dbg(msg, name)
-    if config.user_settings.options.debug == false or msg == nil then
+    if config.user_settings.options.debug == false then
         return
     end
 
-    if type(msg) == 'string' or type(msg) == 'number' then
+    if type(msg) == 'string' or type(msg) == 'number' or type(msg) == 'nil' then
         if name ~= nil then
             print(name .. ":", msg)
         else

@@ -124,7 +124,7 @@ M.on_telescope_result_callback = function(filename)
     if system == "Linux" or system == "Darwin" then
         return filename:gsub("/bin/python", "")
     else
-        return filename:gsub("\\\\Scripts\\\\python.exe", "")
+        return filename:gsub("\\Scripts\\python.exe", "")
     end
 end
 

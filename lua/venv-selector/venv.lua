@@ -23,6 +23,8 @@ function M.activate(hooks, selected_entry)
             cache.save(python_path, venv_type)
             return true
         end
+
+        config.user_settings.options.on_venv_activate_callback()
     end
 end
 

@@ -119,13 +119,8 @@ function M.find_fd_command_name()
     end
 end
 
-M.on_telescope_result_callback = function(filename)
-    local system = M.user_settings.detected.system
-    if system == "Linux" or system == "Darwin" then
-        return filename:gsub("/bin/python", "")
-    else
-        return filename:gsub("\\Scripts\\python.exe", "")
-    end
+function M.test()
+    print("called")
 end
 
 M.default_settings = {
@@ -134,13 +129,13 @@ M.default_settings = {
     },
     hooks = { hooks.basedpyright_hook, hooks.pyright_hook, hooks.pylance_hook, hooks.pylsp_hook },
     options = {
-        debug = false,                                                 -- switches on/off debug output
-        on_telescope_result_callback = M.on_telescope_result_callback, -- callback function for all searches
-        on_venv_activate_callback = nil,                               -- callback function for after a venv activates
-        fd_binary_name = M.find_fd_command_name(),                     -- plugin looks for `fd` or `fdfind` but you can set something else here
-        enable_default_searches = true,                                -- switches all default searches on/off
-        activate_venv_in_terminal = true,                              -- activate the selected python interpreter in terminal windows opened from neovim
-        set_environment_variables = true,                              -- sets VIRTUAL_ENV or CONDA_PREFIX environment variables
+        debug = false,                             -- switches on/off debug output
+        on_telescope_result_callback = nil,        -- callback function for all searches
+        on_venv_activate_callback = nil,           -- callback function for after a venv activates
+        fd_binary_name = M.find_fd_command_name(), -- plugin looks for `fd` or `fdfind` but you can set something else here
+        enable_default_searches = true,            -- switches all default searches on/off
+        activate_venv_in_terminal = true,          -- activate the selected python interpreter in terminal windows opened from neovim
+        set_environment_variables = true,          -- sets VIRTUAL_ENV or CONDA_PREFIX environment variables
     },
     search = M.get_default_searches()()
 }

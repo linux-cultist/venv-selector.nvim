@@ -54,10 +54,12 @@ function M.get_default_searches()
                     command = "$FD 'versions/([0-9.]+)/bin/python$' ~/.pyenv/versions --full-path --color never -E /proc"
                 },
                 anaconda_envs = {
-                    command = "$FD bin/python$ ~/.conda/envs --full-path --color never -E /proc"
+                    command = "$FD bin/python$ ~/.conda/envs --full-path --color never -E /proc",
+                    type = "anaconda"
                 },
                 anaconda_base = {
                     command = "$FD /python$ /opt/anaconda/bin --full-path --color never -E /proc",
+                    type = "anaconda"
                 },
                 cwd = {
                     command = "$FD /bin/python$ $CWD --full-path --color never -E /proc -HI",
@@ -83,10 +85,12 @@ function M.get_default_searches()
                     command = "$FD python.exe$ $HOME/.pyenv/pyenv-win/versions -E Lib"
                 },
                 anaconda_envs = {
-                    command = "$FD python.exe$ $HOME/anaconda3/envs --full-path -a -E Lib"
+                    command = "$FD python.exe$ $HOME/anaconda3/envs --full-path -a -E Lib",
+                    type = "anaconda"
                 },
                 anaconda_base = {
                     command = "$FD anaconda3\\\\python.exe $HOME/anaconda3 --full-path -a --color never",
+                    type = "anaconda"
                 },
                 cwd = {
                     command = "$FD Scripts\\\\python.exe$ $CWD --full-path --color never -HI -a",

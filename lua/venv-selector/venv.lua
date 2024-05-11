@@ -9,6 +9,7 @@ function M.activate(hooks, selected_entry)
     local python_path = selected_entry.path
     local venv_type = selected_entry.type
     local source = selected_entry.source
+    local on_venv_activate_callback = config.user_settings.options.on_venv_activate_callback
 
     if python_path ~= nil then
         local count = 0
@@ -22,7 +23,9 @@ function M.activate(hooks, selected_entry)
         else
             local cache = require("venv-selector.cached_venv")
             cache.save(python_path, venv_type, source)
-            config.user_settings.options.on_venv_activate_callback(python_path, source)
+            if on_venv_activate_callback ~= nil then
+                on_venv_activate_callback(python_path, source)
+            end
             return true
         end
     end
@@ -34,6 +37,7 @@ function M.activate_from_cache(settings, venv_info)
     local python_path = venv_info.value
     local venv_type = venv_info.type
     local venv_source = venv_info.source
+    local on_venv_activate_callback = config.user_settings.options.on_venv_activate_callback
 
     for _, hook in pairs(settings.hooks) do
         hook(python_path)
@@ -51,7 +55,9 @@ function M.activate_from_cache(settings, venv_info)
 
     path.update_python_dap(python_path)
     path.save_selected_python(python_path)
-    config.user_settings.options.on_venv_activate_callback(python_path, venv_source)
+    if on_venv_activate_callback ~= nil then
+        on_venv_activate_callback(python_path, venv_source)
+    end
 end
 
 function M.set_env(python_path, env_variable_name)

@@ -17,6 +17,8 @@ function M.show(results, settings)
         separator = ' ',
         items = {
             { width = 2 },
+            { width = 110 },
+            { width = 20 },
             { width = 0.95 },
         },
     }
@@ -32,6 +34,7 @@ function M.show(results, settings)
                 return displayer {
                     { e.icon },
                     { e.name },
+                    { e.source },
                 }
             end
 

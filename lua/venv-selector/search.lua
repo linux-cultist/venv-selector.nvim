@@ -89,7 +89,7 @@ local function run_search(opts, user_settings)
 
             if not results[job_id] then results[job_id] = {} end
             for _, line in ipairs(data) do
-                line = path.normalize(line)
+                --line = path.normalize(line)
                 local rv = {}
                 rv.path = line
                 rv.name = line

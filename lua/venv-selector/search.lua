@@ -52,6 +52,7 @@ end
 
 local function set_interactive_search(opts)
     if opts ~= nil and #opts.args > 0 then
+        log.debug("Interactive search started.")
         local settings = {
             search = {
                 interactive = {
@@ -59,7 +60,7 @@ local function set_interactive_search(opts)
                 }
             }
         }
-        dbg(settings)
+        log.debug(settings)
         return settings
     end
 
@@ -67,12 +68,12 @@ local function set_interactive_search(opts)
 end
 
 local function run_search(opts, user_settings)
-    dbg("Starting new search with these settings:")
+    log.debug("Starting new search.")
     --dbg(user_settings, "user_settings")
     --dbg(opts.args, "opts.args")
 
     if M.search_in_progress == true then
-        dbg("Search already in progress")
+        log.debug("Search already in progress.")
         return
     end
 

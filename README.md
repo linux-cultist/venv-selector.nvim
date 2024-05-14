@@ -10,6 +10,18 @@
     <img src="venv-selector.png" />
 </p>
 
+# 2024-05-14 - New version of VenvSelect
+
+There is a rewrite of the plugin in the [regexp branch](https://github.com/linux-cultist/venv-selector.nvim/tree/regexp).
+
+Use that version if you are a new user `VenvSelect`.
+
+It has eliminated many bugs and allows users to easily add their own searches, if the plugin doesnt find them automatically.
+
+All future development will happen in this branch as well, since the rewrite allows for much easier development of new features.
+
+
+
 # ⚡️ Features
 
 Browse existing python virtual environments on your computer and select one to activate inside neovim.

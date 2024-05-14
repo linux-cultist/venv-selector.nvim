@@ -35,8 +35,6 @@
 - Requires [nvim-dap-python](https://github.com/mfussenegger/nvim-dap-python), [debugpy](https://github.com/microsoft/debugpy) and [nvim-dap](https://github.com/mfussenegger/nvim-dap) for debugger support
 
 
-#### **NOTE:** This regexp branch of the plugin is a rewrite that works differently under the hood to support more advanced features. Its under development and not ready for public use yet.
-
 ## Configuration snippet for [lazy.nvim](https://github.com/folke/lazy.nvim)
 
 ```

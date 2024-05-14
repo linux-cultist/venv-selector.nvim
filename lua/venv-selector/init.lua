@@ -3,7 +3,7 @@ local config = require 'venv-selector.config'
 local utils = require 'venv-selector.utils'
 local path = require 'venv-selector.path'
 dbg = require 'venv-selector.utils'.dbg
-log = require 'venv-selector.logger'
+--log = require 'venv-selector.logger'
 
 local function on_lsp_attach()
     --print("LSP client has successfully attached to the current buffer.")
@@ -33,7 +33,7 @@ function M.deactivate()
 end
 
 function M.setup(settings)
-    log.set_level("DEBUG")
+    --log.set_level("DEBUG")
     settings = settings or {}
     config.user_settings = vim.tbl_deep_extend('force', config.default_settings, settings.settings or {})
     config.user_settings.detected = {
@@ -43,9 +43,9 @@ function M.setup(settings)
     vim.api.nvim_create_user_command('VenvSelect', function(opts)
         search.New(opts, config.user_settings)
     end, { nargs = '*', desc = 'Activate venv' })
-    vim.api.nvim_create_user_command('VenvSelectLog', function()
-        log.toggle()
-    end, { desc = "Show the plugin log" })
+    --vim.api.nvim_create_user_command('VenvSelectLog', function()
+    --    log.toggle()
+    --end, { desc = "Show the plugin log" })
 end
 
 return M

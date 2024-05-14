@@ -46,7 +46,7 @@
       { "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } },
     },
   lazy = false,
-  branch = "regexp", -- This is the regexp branch, use this until its merged with the main branch later
+  branch = "regexp", -- This is the regexp branch, use this for the new version
   config = function()
       require("venv-selector").setup()
     end,
@@ -194,7 +194,7 @@ Maybe you dont want to see the entire full path to python in the telescope viewe
       { "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } },
     },
   lazy = false,
-  branch = "regexp", -- This is the regexp branch, use this until its merged with the main branch later
+  branch = "regexp", -- This is the regexp branch, use this for the new version
   config = function()
   
       -- This function gets called by the plugin when a new result from fd is received
@@ -245,7 +245,7 @@ search = {
       enable_default_searches = true       -- switches all default searches on/off
       activate_venv_in_terminal = true,    -- activate the selected python interpreter in terminal windows opened from neovim
       set_environment_variables = true,    -- sets VIRTUAL_ENV or CONDA_PREFIX environment variables
-      enable_telescope_search_type = true, -- shows the name of the search in telescope
+      show_telescope_search_type = true,   -- shows the name of the search in telescope
     }
   }
 }

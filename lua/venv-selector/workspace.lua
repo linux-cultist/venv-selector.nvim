@@ -1,3 +1,5 @@
+local log = require("venv-selector.logger")
+
 M = {}
 
 function M.list_folders()

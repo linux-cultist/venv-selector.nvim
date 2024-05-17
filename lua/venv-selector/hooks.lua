@@ -1,9 +1,12 @@
+
+
 local M = {}
 
 
 
 function M.set_python_path_for_client(client_name, venv_python)
     return M.execute_for_client(client_name, function(client)
+        local config = require("venv-selector.config")
         if client.settings then
             client.settings = vim.tbl_deep_extend('force', client.settings, { python = { pythonPath = venv_python } })
         else
@@ -11,7 +14,7 @@ function M.set_python_path_for_client(client_name, venv_python)
                 vim.tbl_deep_extend('force', client.config.settings, { python = { pythonPath = venv_python } })
         end
         client.notify('workspace/didChangeConfiguration', { settings = nil })
-        if M.notify_user_on_venv_activation == true then
+        if config.user_settings.options.notify_user_on_venv_activation == true then
             print("Registered '" .. venv_python .. "' with " .. client_name .. " LSP.")
         end
     end)
@@ -32,6 +35,7 @@ end
 function M.pylsp_hook(venv_python)
     local client_name = "pylsp"
     return M.execute_for_client(client_name, function(client)
+    local config = require("venv-selector.config")
         local settings = vim.tbl_deep_extend('force', (client.settings or client.config.settings), {
             pylsp = {
                 plugins = {
@@ -42,7 +46,7 @@ function M.pylsp_hook(venv_python)
             },
         })
         client.notify('workspace/didChangeConfiguration', { settings = settings })
-        if M.notify_user_on_venv_activation == true then
+        if config.user_settings.options.notify_user_on_venv_activation == true then
             print("Registered '" .. venv_python .. "' with " .. client_name .. " LSP.")
         end
     end)

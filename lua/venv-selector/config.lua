@@ -140,7 +140,8 @@ M.default_settings = {
         enable_default_searches = true,            -- switches all default searches on/off
         activate_venv_in_terminal = true,          -- activate the selected python interpreter in terminal windows opened from neovim
         set_environment_variables = true,          -- sets VIRTUAL_ENV or CONDA_PREFIX environment variables
-        show_telescope_search_type = true,       -- shows the name of the search in telescope
+        show_telescope_search_type = true,         -- shows the name of the search in telescope
+        notify_user_on_venv_activation = true      -- notifies user on activation of the virtual env
     },
     search = M.get_default_searches()()
 }

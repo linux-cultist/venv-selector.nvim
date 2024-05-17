@@ -11,7 +11,9 @@ function M.set_python_path_for_client(client_name, venv_python)
                 vim.tbl_deep_extend('force', client.config.settings, { python = { pythonPath = venv_python } })
         end
         client.notify('workspace/didChangeConfiguration', { settings = nil })
-        print("Registered '" .. venv_python .. "' with " .. client_name .. " LSP.")
+        if M.notify_user_on_venv_activation == true then
+            print("Registered '" .. venv_python .. "' with " .. client_name .. " LSP.")
+        end
     end)
 end
 
@@ -40,7 +42,9 @@ function M.pylsp_hook(venv_python)
             },
         })
         client.notify('workspace/didChangeConfiguration', { settings = settings })
-        print("Registered '" .. venv_python .. "' with " .. client_name .. " LSP.")
+        if M.notify_user_on_venv_activation == true then
+            print("Registered '" .. venv_python .. "' with " .. client_name .. " LSP.")
+        end
     end)
 end
 

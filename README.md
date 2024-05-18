@@ -352,6 +352,6 @@ These functions can be used to easily get the selected python interpreter and th
 
 `require("venv-selector").python()` -- Gives back absolute path to python or nil if none is selected
 `require("venv-selector").venv()`   -- Gives back absolute path to the venv or nil if none is selected
-`require("venv-selector").source()` -- Gives back the name of the search that found the venv (examples: `poetry`, `pipx`, `your_own_search_name`)
+`require("venv-selector").source()` -- Gives back the name of the search that found the venv
 
 

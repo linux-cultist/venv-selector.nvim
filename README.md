@@ -18,7 +18,6 @@
 - Supports **all** virtual environments using configurable **regular expressions**. The default ones are:
   - [Python](https://www.python.org/) (`python3 -m venv venv`)
   - [Poetry](https://python-poetry.org)
-  - [PDM](https://github.com/pdm-project/pdm)
   - [Pipenv](https://pipenv.pypa.io/en/latest/)
   - [Anaconda](https://www.anaconda.com)
   - [Pyenv](https://github.com/pyenv/pyenv)

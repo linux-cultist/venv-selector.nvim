@@ -24,6 +24,7 @@
   - [Pyenv](https://github.com/pyenv/pyenv)
   - [Virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/)
   - [Hatch](https://hatch.pypa.io/latest/)
+  - [Pipx](https://github.com/pypa/pipx)
 - Supports callbacks to further filter or rename telescope results as they are found.
 - Supports using any program to find virtual environments (`fd`, `find`, `ls`, `dir` etc)
 - Supports running any interactive command to populate the telescope viewer:
@@ -83,8 +84,10 @@ You can use these in your own queries as well. Maybe you want to search the pare
 - Venvs created by [Hatch](https://hatch.pypa.io/latest)
 - Venvs created by [Pyenv](https://github.com/pyenv/pyenv)
 - Venvs created by [Anaconda](https://www.anaconda.com)
-- Venvs in the current working directory
-- Venvs in the lsp workspace directories
+- Venvs created by [Pipx](https://github.com/pypa/pipx)
+- Venvs in the current working directory (uses the `cwd` search pattern)
+- Venvs in the lsp workspace directories (uses the `workspace` search pattern)
+- Venvs in the directory of your opened file (uses the `file` search pattern)
 
 The search patterns are defined here: https://github.com/linux-cultist/venv-selector.nvim/blob/regexp/lua/venv-selector/config.lua
 

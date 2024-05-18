@@ -38,7 +38,7 @@ function M.get_default_searches()
                     command = "$FD /bin/python$ $WORKSPACE_PATH --full-path --color never -E /proc -HI -a -L",
                 },
                 file = {
-                    command = "$FD /bin/python$ $FILE_PATH --full-path --color never -E /proc -HI -a -L",
+                    command = "$FD /bin/python$ $FILE_DIR --full-path --color never -E /proc -HI -a -L",
                 }
             }
         end,
@@ -75,7 +75,7 @@ function M.get_default_searches()
                     command = "$FD /bin/python$ $WORKSPACE_PATH --full-path --color never -E /proc -HI -a -L",
                 },
                 file = {
-                    command = "$FD /bin/python$ $FILE_PATH --full-path --color never -E /proc -HI -a -L",
+                    command = "$FD /bin/python$ $FILE_DIR --full-path --color never -E /proc -HI -a -L",
                 }
             }
         end,
@@ -109,7 +109,7 @@ function M.get_default_searches()
                     command = "$FD Scripts\\\\python.exe$ $WORKSPACE_PATH --full-path --color never -HI -a -L",
                 },
                 file = {
-                    command = "$FD Scripts\\\\python.exe$ $FILE_PATH --full-path --color never -HI -a -L",
+                    command = "$FD Scripts\\\\python.exe$ $FILE_DIR --full-path --color never -HI -a -L",
                 }
             }
         end

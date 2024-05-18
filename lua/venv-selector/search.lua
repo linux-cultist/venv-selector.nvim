@@ -12,7 +12,7 @@ local function is_cwd_search(str)
 end
 
 local function is_filepath_search(str)
-    return string.find(str, "$FILE_PATH") ~= nil
+    return string.find(str, "$FILE_DIR") ~= nil
 end
 
 
@@ -167,10 +167,10 @@ local function run_search(opts, user_settings)
             elseif is_cwd_search(search.command) then
                 search.execute_command = search.execute_command:gsub("$CWD", cwd)
                 job_count = start_search_job(job_name, search, job_count)
-                -- search has $FILE_PATH inside
+                -- search has $FILE_DIR inside
             elseif is_filepath_search(search.command) then
                 if current_dir ~= nil then
-                    search.execute_command = search.execute_command:gsub("$FILE_PATH", current_dir)
+                    search.execute_command = search.execute_command:gsub("$FILE_DIR", current_dir)
                     job_count = start_search_job(job_name, search, job_count)
                 end
             else
@@ -180,8 +180,6 @@ local function run_search(opts, user_settings)
         end
     end
 end
-
---utils.print_table(search_settings)
 
 
 function M.New(opts, settings)

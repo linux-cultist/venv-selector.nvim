@@ -2,11 +2,11 @@ local search = require 'venv-selector.search'
 local config = require 'venv-selector.config'
 local venv = require 'venv-selector.venv'
 local path = require 'venv-selector.path'
+local ws = require 'venv-selector.workspace'
 dbg = require 'venv-selector.utils'.dbg
 --log = require 'venv-selector.logger'
 
 local function on_lsp_attach()
-    --print("LSP client has successfully attached to the current buffer.")
     local cache = require("venv-selector.cached_venv")
     cache.retrieve()
 end
@@ -31,6 +31,19 @@ end
 function M.source()
     return venv.current_source
 end
+
+function M.workspace_paths()
+    return ws.list_folders()
+end
+
+function M.cwd()
+    return vim.fn.getcwd()
+end
+
+function M.file_dir()
+    return path.get_current_file_directory()
+end
+
 
 function M.deactivate()
     -- TODO: Find a way to deactivate lsp to what it was before the plugin

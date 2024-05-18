@@ -72,9 +72,17 @@ Some of them use special variables in the `fd` search query (these are not envir
 
 - `$CWD` - Current working directory. The directory where you start neovim.
 - `$WORKSPACE_PATH` - The workspace directories found by your LSP when you have an opened python file.
-- `$FILE_PATH` - The directory of the file in the neovim buffer. 
+- `$FILE_DIR` - The directory of the file in the neovim buffer. 
 
 You can use these in your own queries as well. Maybe you want to search the parent directories of your opened file for example.
+
+If you want to see the values that the plugin will insert in place of these special variables, you can use these functions:
+
+- `require("venv-selector").workspace_paths()`
+- `require("venv-selector").cwd()`             
+- `require("venv-selector").file_dir()`         
+
+There wont be any workspace paths before your LSP has detected a workspace (normally happens when you open a python project).
 
 ### The current default searches are for:
 
@@ -350,8 +358,10 @@ settings = {
 
 These functions can be used to easily get the selected python interpreter and the active venv.
 
-`require("venv-selector").python()` -- Gives back absolute path to python or nil if none is selected
-`require("venv-selector").venv()`   -- Gives back absolute path to the venv or nil if none is selected
-`require("venv-selector").source()` -- Gives back the name of the search that found the venv
-
+`require("venv-selector").python()`           -- Gives back absolute path to python or nil if none is selected
+`require("venv-selector").venv()`             -- Gives back absolute path to the venv or nil if none is selected
+`require("venv-selector").source()`           -- Gives back the name of the search that found the venv
+`require("venv-selector").workspace_paths()`  -- Gives back the workspace paths your LSP is using
+`require("venv-selector").cwd()`              -- Gives back the current working directory
+`require("venv-selector").file_dir()`         -- Gives back the directory of the currently opened file
 

@@ -68,7 +68,7 @@ A default search is one that the plugin does automatically.
 
 These are designed to find venvs in your current working directory and from different venv managers in their default paths.
 
-Some of them use special variables in the `fd` search query:
+Some of them use special variables in the `fd` search query (these are not environment variables but look like they are):
 
 - `$CWD` - Current working directory. The directory where you start neovim.
 - `$WORKSPACE_PATH` - The workspace directories found by your LSP when you have an opened python file.

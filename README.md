@@ -141,6 +141,27 @@ You can add multiple searches as well:
       }
 ```
 
+### Your own anaconda search
+
+If you need to create your own anaconda search, you have to remember to set the type to "anaconda".
+
+```
+      require("venv-selector").setup {
+        settings = {
+          search = {
+            anaconda_base = {
+                command = "fd /python$ /opt/anaconda/bin --full-path --color never -E /proc",
+                type = "anaconda"
+            },
+          },
+        },
+      }
+
+```
+
+This is because the plugin needs to know that you want the `CONDA_PREFIX` to be set, amongst other things.
+
+
 ## Common flags to fd
 
 
@@ -183,7 +204,7 @@ If you want to **disable one** of the default searches, you can simply set it to
 If you want to **disable all** built in searches, set the global option `enable_default_searches` to false (see separate section about global options)
 
 
-## Changing the output in the telescope viewer
+## Changing the output in the telescope viewer (on_telescope_result_callback)
 
 Maybe you dont want to see the entire full path to python in the telescope viewer. You can change whats being displayed by using a callback function.
 
@@ -229,6 +250,77 @@ Maybe you dont want to see the entire full path to python in the telescope viewe
     },
 },
 ```
+
+## Run your own code on venv activation (on_venv_activate_callback)
+
+The following is an example of how to run your own code when a venv activates.
+
+In this case, we want to run `poetry env use <path to selected python>` when these conditions are met:
+
+  1) A virtual environment found by the `poetry` search was activated by the user (its source is `poetry`)
+  2) A terminal was opened afterwards.
+
+
+The function `on_venv_activate` sets up a neovim autocommand to run the function `run_shell_command` when the terminal opens. 
+
+We only want to run the function once, which is why we have the `command_run` flag.
+
+
+
+```
+  {
+    "linux-cultist/venv-selector.nvim",
+    dependencies = {
+      "neovim/nvim-lspconfig",
+      { "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } },
+      "mfussenegger/nvim-dap",
+      "mfussenegger/nvim-dap-python",
+    },
+    lazy = false,
+    dev = true,
+    branch = "regexp",
+    config = function()
+      local function on_venv_activate()
+        local command_run = false
+
+        local function run_shell_command()
+          local source = require("venv-selector").source()
+          local python = require("venv-selector").python()
+          
+          if source == "poetry" and command_run == false then
+            local command = "poetry env use " .. python
+            vim.api.nvim_feedkeys(command .. "\n", "n", false)
+            command_run = true
+          end
+          
+        end
+
+        vim.api.nvim_create_augroup("TerminalCommands", { clear = true })
+
+        vim.api.nvim_create_autocmd("TermEnter", {
+          group = "TerminalCommands",
+          pattern = "*",
+          callback = run_shell_command,
+        })
+      end
+
+      
+      require("venv-selector").setup {
+        settings = {
+          options = {
+            on_venv_activate_callback = on_venv_activate,
+          },
+        },
+      }
+    end,
+    keys = {
+      { ",v", "<cmd>VenvSelect<cr>" },
+    },
+  },
+
+```
+
+
 ## Python debugger support with dap and dap-python
 
 If `mfussenegger/nvim-dap` and `mfussenegger/nvim-dap-python` are installed as optional dependencies, the plugin will update `dap` with a new python path every time you switch venv.
@@ -238,20 +330,20 @@ You also need `debugpy` installed in the venv you are switching to.
 ## Global options to the plugin
 
 ```
-search = {
-  settings = {
-    options = {
-      debug = false                           -- switches on/off debug output
-      on_telescope_result_callback = nil      -- callback function for all searches
-      fd_binary_name = nil                    -- plugin looks for `fd` or `fdfind` but you can set something else here
-      enable_default_searches = true          -- switches all default searches on/off
-      activate_venv_in_terminal = true,       -- activate the selected python interpreter in terminal windows opened from neovim
-      set_environment_variables = true,       -- sets VIRTUAL_ENV or CONDA_PREFIX environment variables
-      show_telescope_search_type = true,      -- shows the name of the search in telescope
-      notify_user_on_venv_activation = true   -- notifies user on activation of the virtual env
-    }
+settings = {
+  options = {
+    debug = false                           -- switches on/off debug output
+    on_telescope_result_callback = nil      -- callback function for when a search result shows up in telescope
+    on_venv_activate_callback = nil         -- callback function for when a venv is activated
+    fd_binary_name = nil                    -- plugin looks for `fd` or `fdfind` but you can set something else here
+    enable_default_searches = true          -- switches all default searches on/off
+    activate_venv_in_terminal = true,       -- activate the selected python interpreter in terminal windows opened from neovim
+    set_environment_variables = true,       -- sets VIRTUAL_ENV or CONDA_PREFIX environment variables
+    show_telescope_search_type = true,      -- shows the name of the search in telescope
+    notify_user_on_venv_activation = true   -- notifies user on activation of the virtual env
   }
 }
+
 ```
 
 ## Exposed functions
@@ -260,7 +352,6 @@ These functions can be used to easily get the selected python interpreter and th
 
 `require("venv-selector").python()` -- Gives back absolute path to python or nil if none is selected
 `require("venv-selector").venv()`   -- Gives back absolute path to the venv or nil if none is selected
+`require("venv-selector").source()` -- Gives back the name of the search that found the venv (examples: `poetry`, `pipx`, `your_own_search_name`)
 
-
-More docs coming up soon!
 

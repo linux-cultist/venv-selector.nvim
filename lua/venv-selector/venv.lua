@@ -4,6 +4,7 @@ local config = require("venv-selector.config")
 
 local M = {}
 
+M.current_source = nil -- contains the name of the search, like anaconda, pipx etc.
 
 function M.activate(hooks, selected_entry)
     local python_path = selected_entry.path
@@ -24,7 +25,8 @@ function M.activate(hooks, selected_entry)
             local cache = require("venv-selector.cached_venv")
             cache.save(python_path, venv_type, source)
             if on_venv_activate_callback ~= nil then
-                on_venv_activate_callback(python_path, source)
+                M.current_source = source
+                on_venv_activate_callback()
             end
             return true
         end
@@ -56,7 +58,8 @@ function M.activate_from_cache(settings, venv_info)
     path.update_python_dap(python_path)
     path.save_selected_python(python_path)
     if on_venv_activate_callback ~= nil then
-        on_venv_activate_callback(python_path, venv_source)
+        M.current_source = venv_source
+        on_venv_activate_callback()
     end
 end
 

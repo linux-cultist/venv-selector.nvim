@@ -128,13 +128,6 @@ function M.find_fd_command_name()
     end
 end
 
--- on_venv_activate_callback
---
---function M.test(python_path, source)
---    if source == "poetry" then
---        print("poetry venv activated")
---    end
---end
 
 M.default_settings = {
     cache = {
@@ -144,7 +137,7 @@ M.default_settings = {
     options = {
         debug = false,                             -- switches on/off debug output
         on_telescope_result_callback = nil,        -- callback function for all searches
-        on_venv_activate_callback = nil,           -- callback function for after a venv activates
+        on_venv_activate_callback = nil,        -- callback function for after a venv activates
         fd_binary_name = M.find_fd_command_name(), -- plugin looks for `fd` or `fdfind` but you can set something else here
         enable_default_searches = true,            -- switches all default searches on/off
         activate_venv_in_terminal = true,          -- activate the selected python interpreter in terminal windows opened from neovim

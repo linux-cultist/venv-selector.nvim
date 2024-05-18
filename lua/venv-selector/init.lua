@@ -1,6 +1,6 @@
 local search = require 'venv-selector.search'
 local config = require 'venv-selector.config'
-local utils = require 'venv-selector.utils'
+local venv = require 'venv-selector.venv'
 local path = require 'venv-selector.path'
 dbg = require 'venv-selector.utils'.dbg
 --log = require 'venv-selector.logger'
@@ -28,12 +28,15 @@ function M.venv()
     return path.current_venv_path
 end
 
+function M.source()
+    return venv.current_source
+end
+
 function M.deactivate()
     -- TODO: Find a way to deactivate lsp to what it was before the plugin
 end
 
 function M.setup(settings)
-    --log.set_level("DEBUG")
     settings = settings or {}
     config.user_settings = vim.tbl_deep_extend('force', config.default_settings, settings.settings or {})
     config.user_settings.detected = {

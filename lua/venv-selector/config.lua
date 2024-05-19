@@ -33,7 +33,9 @@ function M.get_default_searches()
                     command = "$FD '/bin/python$' ~/.local/share/pipx/venvs --full-path --color never -E /proc",
                 },
                 cwd = {
+
                     command = "$FD '/bin/python$' $CWD --full-path --color never -E /proc -HI -a -L",
+
                 },
                 workspace = {
                     command = "$FD '/bin/python$' $WORKSPACE_PATH --full-path --color never -E /proc -HI -a -L",
@@ -144,15 +146,16 @@ M.default_settings = {
     },
     hooks = { hooks.basedpyright_hook, hooks.pyright_hook, hooks.pylance_hook, hooks.pylsp_hook },
     options = {
-        debug = false,                                 -- enables you to run the VenvSelectLog command to view debug logs
-        on_telescope_result_callback = nil,            -- callback function for all searches
-        on_venv_activate_callback = nil,               -- callback function for after a venv activates
-        fd_binary_name = M.find_fd_command_name(),     -- plugin looks for `fd` or `fdfind` but you can set something else here
-        enable_default_searches = true,                -- switches all default searches on/off
-        activate_venv_in_terminal = true,              -- activate the selected python interpreter in terminal windows opened from neovim
-        set_environment_variables = true,              -- sets VIRTUAL_ENV or CONDA_PREFIX environment variables
-        show_telescope_search_type = true,             -- shows the name of the search in telescope
-        notify_user_on_venv_activation = true          -- notifies user on activation of the virtual env
+        debug = false,                             -- enables you to run the VenvSelectLog command to view debug logs
+        on_telescope_result_callback = nil,        -- callback function for all searches
+        on_venv_activate_callback = nil,           -- callback function for after a venv activates
+        fd_binary_name = M.find_fd_command_name(), -- plugin looks for `fd` or `fdfind` but you can set something else here
+        enable_default_searches = true,            -- switches all default searches on/off
+        activate_venv_in_terminal = true,          -- activate the selected python interpreter in terminal windows opened from neovim
+        set_environment_variables = true,          -- sets VIRTUAL_ENV or CONDA_PREFIX environment variables
+        show_telescope_search_type = true,         -- shows the name of the search in telescope
+        notify_user_on_venv_activation = true,     -- notifies user on activation of the virtual env
+        search_timeout = 5                         -- if a search takes longer than this many seconds, stop it and alert the user
     },
     search = M.get_default_searches()()
 }

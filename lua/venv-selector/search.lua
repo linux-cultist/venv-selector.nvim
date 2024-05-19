@@ -80,6 +80,7 @@ local function run_search(opts, user_settings)
     local results = {}
     local search_settings = set_interactive_search(opts) or user_settings
     local cwd = vim.fn.getcwd()
+    local search_timeout = user_settings.options.search_timeout
 
     local function on_event(job_id, data, event)
         local callback = jobs[job_id].on_telescope_result_callback or
@@ -124,6 +125,7 @@ local function run_search(opts, user_settings)
         end
     end
 
+    local uv = vim.loop
     local function start_search_job(job_name, search, count)
         local job = path.expand(search.execute_command)
         log.debug("Starting '" .. job_name .. "': '" .. job .. "'")
@@ -138,6 +140,26 @@ local function run_search(opts, user_settings)
         search.name = job_name
         jobs[job_id] = search
         count = count + 1
+
+        local function stop_job()
+            local running = vim.fn.jobwait({ job_id }, 0)[1] == -1
+            if running then
+                vim.fn.jobstop(job_id)
+                local message = "Search with name '" ..
+                    jobs[job_id].name .. "' took more than " .. search_timeout .. " seconds and was stopped. Avoid using VenvSelect in your $HOME directory since it searches all hidden files by default."
+                log.warning(message)
+                vim.notify(message, vim.log.levels.ERROR)
+            end
+        end
+
+        -- Start a timer to terminate the job after 5 seconds
+        local timer = uv.new_timer()
+        timer:start(search_timeout * 1000, 0, vim.schedule_wrap(function()
+            stop_job()
+            timer:stop()
+            timer:close()
+        end))
+
         return count
     end
 

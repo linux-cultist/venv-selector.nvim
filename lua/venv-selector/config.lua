@@ -33,7 +33,7 @@ function M.get_default_searches()
                     command = "$FD /bin/python$ ~/.local/share/pipx/venvs --full-path --color never -E /proc",
                 },
                 cwd = {
-                    command = "$FD /bin/python$ $CWD --full-path --color never -E /proc -I -a -L",
+                    command = "$FD /bin/python$ $CWD --full-path --color never -E /proc -HI -a -L",
                 },
                 workspace = {
                     command = "$FD /bin/python$ $WORKSPACE_PATH --full-path --color never -E /proc -HI -a -L",
@@ -70,7 +70,7 @@ function M.get_default_searches()
                     command = "$FD /bin/python$ ~/.local/share/pipx/venvs --full-path --color never -E /proc",
                 },
                 cwd = {
-                    command = "$FD /bin/python$ $CWD --full-path --color never -E /proc -I -a -L",
+                    command = "$FD /bin/python$ $CWD --full-path --color never -E /proc -HI -a -L",
                 },
                 workspace = {
                     command = "$FD /bin/python$ $WORKSPACE_PATH --full-path --color never -E /proc -HI -a -L",
@@ -104,7 +104,7 @@ function M.get_default_searches()
                     command = "fd Scripts\\\\python.exe $HOME/pipx/venvs --full-path -a --color never"
                 },
                 cwd = {
-                    command = "$FD Scripts\\\\python.exe$ $CWD --full-path --color never -I -a -L",
+                    command = "$FD Scripts\\\\python.exe$ $CWD --full-path --color never -HI -a -L",
                 },
                 workspace = {
                     command = "$FD Scripts\\\\python.exe$ $WORKSPACE_PATH --full-path --color never -HI -a -L",

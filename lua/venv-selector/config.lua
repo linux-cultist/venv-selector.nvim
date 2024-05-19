@@ -10,73 +10,75 @@ function M.get_default_searches()
         ['Linux'] = function()
             return {
                 virtualenvs = {
-                    command = "$FD python$ ~/.virtualenvs --color never -E /proc"
+                    command = "$FD 'python$' ~/.virtualenvs --color never -E /proc"
                 },
                 hatch = {
-                    command = "$FD python$ ~/.local/share/hatch --color never -E '*-build*' -E /proc"
+                    command = "$FD 'python$' ~/.local/share/hatch --color never -E '*-build*' -E /proc"
                 },
                 poetry = {
-                    command = "$FD /bin/python$ ~/.cache/pypoetry/virtualenvs --full-path"
+                    command = "$FD '/bin/python$' ~/.cache/pypoetry/virtualenvs --full-path"
                 },
                 pyenv = {
                     command = "$FD 'versions/([0-9.]+)/bin/python$' ~/.pyenv/versions --full-path --color never -E /proc"
                 },
                 anaconda_envs = {
-                    command = "$FD bin/python$ ~/.conda/envs --full-path --color never -E /proc",
+                    command = "$FD 'bin/python$' ~/.conda/envs --full-path --color never -E /proc",
                     type = "anaconda"
                 },
                 anaconda_base = {
-                    command = "$FD /python$ /opt/anaconda/bin --full-path --color never -E /proc",
+                    command = "$FD '/python$' /opt/anaconda/bin --full-path --color never -E /proc",
                     type = "anaconda"
                 },
                 pipx = {
-                    command = "$FD /bin/python$ ~/.local/share/pipx/venvs --full-path --color never -E /proc",
+                    command = "$FD '/bin/python$' ~/.local/share/pipx/venvs --full-path --color never -E /proc",
                 },
                 cwd = {
-                    command = "$FD /bin/python$ $CWD --full-path --color never -E /proc -HI -a -L",
+
+                    command = "$FD '/bin/python$' $CWD --full-path --color never -E /proc -HI -a -L",
+
                 },
                 workspace = {
-                    command = "$FD /bin/python$ $WORKSPACE_PATH --full-path --color never -E /proc -HI -a -L",
+                    command = "$FD '/bin/python$' $WORKSPACE_PATH --full-path --color never -E /proc -HI -a -L",
                 },
                 file = {
-                    command = "$FD /bin/python$ $FILE_DIR --full-path --color never -E /proc -HI -a -L",
+                    command = "$FD '/bin/python$' $FILE_DIR --full-path --color never -E /proc -HI -a -L",
                 }
             }
         end,
         ['Darwin'] = function()
             return {
                 virtualenvs = {
-                    command = "$FD python$ ~/.virtualenvs --color never -E /proc"
+                    command = "$FD 'python$' ~/.virtualenvs --color never -E /proc"
                 },
                 hatch = {
                     command =
-                    "$FD python$ ~/Library/Application/Support/hatch/env/virtual --color never -E '*-build*' -E /proc"
+                    "$FD 'python$' ~/Library/Application/Support/hatch/env/virtual --color never -E '*-build*' -E /proc"
                 },
                 poetry = {
-                    command = "$FD /bin/python$ ~/Library/Caches/pypoetry/virtualenvs --full-path"
+                    command = "$FD '/bin/python$' ~/Library/Caches/pypoetry/virtualenvs --full-path"
                 },
                 pyenv = {
                     command = "$FD 'versions/([0-9.]+)/bin/python$' ~/.pyenv/versions --full-path --color never -E /proc"
                 },
                 anaconda_envs = {
-                    command = "$FD bin/python$ ~/.conda/envs --full-path --color never -E /proc",
+                    command = "$FD 'bin/python$' ~/.conda/envs --full-path --color never -E /proc",
                     type = "anaconda"
                 },
                 anaconda_base = {
-                    command = "$FD /python$ /opt/anaconda/bin --full-path --color never -E /proc",
+                    command = "$FD '/python$' /opt/anaconda/bin --full-path --color never -E /proc",
                     type = "anaconda"
                 },
                 pipx = {
-                    command = "$FD /bin/python$ ~/.local/share/pipx/venvs --full-path --color never -E /proc",
+                    command = "$FD '/bin/python$' ~/.local/share/pipx/venvs --full-path --color never -E /proc",
                 },
                 cwd = {
-                    command = "$FD /bin/python$ $CWD --full-path --color never -E /proc -I -a -L",
+                    command = "$FD '/bin/python$' $CWD --full-path --color never -E /proc -HI -a -L",
                 },
                 workspace = {
-                    command = "$FD /bin/python$ $WORKSPACE_PATH --full-path --color never -E /proc -HI -a -L",
+                    command = "$FD '/bin/python$' $WORKSPACE_PATH --full-path --color never -E /proc -HI -a -L",
                 },
                 file = {
-                    command = "$FD /bin/python$ $FILE_DIR --full-path --color never -E /proc -HI -a -L",
+                    command = "$FD '/bin/python$' $FILE_DIR --full-path --color never -E /proc -HI -a -L",
                 }
             }
         end,
@@ -104,7 +106,7 @@ function M.get_default_searches()
                     command = "fd Scripts\\\\python.exe $HOME/pipx/venvs --full-path -a --color never"
                 },
                 cwd = {
-                    command = "$FD Scripts\\\\python.exe$ $CWD --full-path --color never -I -a -L",
+                    command = "$FD Scripts\\\\python.exe$ $CWD --full-path --color never -HI -a -L",
                 },
                 workspace = {
                     command = "$FD Scripts\\\\python.exe$ $WORKSPACE_PATH --full-path --color never -HI -a -L",

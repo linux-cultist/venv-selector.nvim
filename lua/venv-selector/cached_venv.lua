@@ -1,5 +1,4 @@
 local config = require("venv-selector.config")
-local utils = require("venv-selector.utils")
 local path = require("venv-selector.path")
 
 
@@ -30,18 +29,23 @@ function M.save(python_path, venv_type, venv_source)
             local cached_json = vim.fn.json_decode(cached_file[1])
             local merged_cache = vim.tbl_deep_extend('force', cached_json, venv_cache)
             venv_cache_json = vim.fn.json_encode(merged_cache)
-            dbg("Saving " .. venv_cache_json .. " to cache.")
+            log.debug("Cache content: ", venv_cache_json)
         end
     else
         venv_cache_json = vim.fn.json_encode(venv_cache)
+        log.debug("Cache content: ", venv_cache_json)
     end
 
+
     vim.fn.writefile({ venv_cache_json }, cache_file)
+    log.debug("Wrote cache content to " .. cache_file)
 end
 
 function M.retrieve()
     if vim.fn.filereadable(cache_file) == 1 then
         local cache_file_content = vim.fn.readfile(cache_file)
+        log.debug("Read cache from " .. cache_file)
+        log.debug("Cache content: ", cache_file_content)
 
         if cache_file_content ~= nil and cache_file_content[1] ~= nil then
             local venv_cache = vim.fn.json_decode(cache_file_content[1])

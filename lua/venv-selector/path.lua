@@ -10,6 +10,8 @@ function M.save_selected_python(python_path)
     local path = require("venv-selector.path")
     M.current_python_path = python_path
     M.current_venv_path = path.get_base(path.get_base(python_path))
+    log.debug("Setting require(\"venv-selector\").python() to '" .. M.current_python_path .. "'")
+    log.debug("Setting require(\"venv-selector\").venv() to '" .. M.current_venv_path .. "'")
 end
 
 function M.add(newDir)
@@ -24,7 +26,7 @@ function M.add(newDir)
             local updated_path = clean_dir .. path_separator .. path
             previous_dir = clean_dir
             vim.fn.setenv("PATH", updated_path)
-            dbg("Setting new path to: " .. updated_path)
+            log.debug("Setting new terminal path to: " .. updated_path)
         end
     end
 end
@@ -33,12 +35,12 @@ function M.update_python_dap(python_path)
     local dap_python_installed, dap_python = pcall(require, 'dap-python')
     local dap_installed, dap = pcall(require, 'dap')
     if dap_python_installed and dap_installed then
-        dbg("Setting dap python interpreter to '" .. python_path .. "'")
+        log.debug("Setting dap python interpreter to '" .. python_path .. "'")
         dap_python.resolve_python = function()
             return python_path
         end
     else
-        dbg("Debugger not enabled: dap or dap-python not installed.")
+        log.debug("Debugger not enabled: dap or dap-python not installed.")
     end
 end
 
@@ -54,6 +56,7 @@ end
 function M.remove(removalDir)
     local clean_dir = M.remove_trailing_slash(removalDir)
     local path = vim.fn.getenv("PATH")
+    log.debug("Path before venv removal: ", path)
     local pathSeparator = package.config:sub(1, 1) == '\\' and ';' or ':'
     local paths = {}
     for p in string.gmatch(path, "[^" .. pathSeparator .. "]+") do
@@ -63,57 +66,13 @@ function M.remove(removalDir)
     end
     local updatedPath = table.concat(paths, pathSeparator)
     vim.fn.setenv("PATH", updatedPath)
-end
-
-function M.normalize(path)
-    local parts = {}
-    local is_absolute = string.sub(path, 1, 1) == '/' -- Check if path starts with a '/'
-    local path_sep = '/'
-    local result = ''
-
-    -- Handle multiple slashes by reducing them to one
-    path = path:gsub(path_sep .. '+', path_sep)
-
-    for part in string.gmatch(path, "[^" .. path_sep .. "]+") do
-        if part == ".." then
-            if #parts > 0 and parts[#parts] ~= ".." then
-                -- Only pop the last part if it's not another '..'
-                parts[#parts] = nil
-            else
-                -- If we're at the root or in a relative path, keep '..'
-                if not is_absolute or #parts == 0 then
-                    table.insert(parts, part)
-                end
-            end
-        elseif part ~= "." then
-            -- Skip over any '.' segments (current directory)
-            table.insert(parts, part)
-        end
-    end
-
-    result = table.concat(parts, path_sep)
-    -- Ensure we preserve the leading slash if the path was absolute
-    if is_absolute and string.sub(result, 1, 1) ~= path_sep then
-        result = path_sep .. result
-    end
-
-    return result
+    log.debug("Path after venv removal: ", updatedPath)
 end
 
 function M.get_current_file_directory()
     local opened_filepath = vim.fn.expand('%:p')
     if opened_filepath ~= nil then
         return M.get_base(opened_filepath)
-    end
-end
-
-function M.get_home_directory()
-    local sysname = vim.loop.os_uname().sysname
-    dbg(sysname, "sysname")
-    if sysname == "Windows_NT" then
-        return os.getenv("USERPROFILE") -- Windows
-    else
-        return os.getenv("HOME")        -- Unix-like (Linux, macOS)
     end
 end
 

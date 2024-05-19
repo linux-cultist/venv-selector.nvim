@@ -1,5 +1,4 @@
 local path = require("venv-selector.path")
-local utils = require("venv-selector.utils")
 local config = require("venv-selector.config")
 
 local M = {}
@@ -13,19 +12,25 @@ function M.activate(hooks, selected_entry)
     local on_venv_activate_callback = config.user_settings.options.on_venv_activate_callback
 
     if python_path ~= nil then
+        log.debug("Telescope entry selected by user: ", selected_entry)
         local count = 0
         for _, hook in pairs(hooks) do
             count = count + hook(python_path)
         end
 
         if count == 0 then
-            print("No python lsp servers are running. Please open a python file and then select a venv to activate.")
+            local message =
+            "No python lsp servers are running. Please open a python file and then select a venv to activate."
+            vim.notify(message, vim.log.levels.INFO)
+            log.info(message)
             return false
         else
             local cache = require("venv-selector.cached_venv")
             cache.save(python_path, venv_type, source)
             if on_venv_activate_callback ~= nil then
                 M.current_source = source
+                log.debug("Setting require(\"venv-selector\").source() to '" .. source .. "'")
+                log.debug("Calling on_venv_activate_callback() function")
                 on_venv_activate_callback()
             end
             return true
@@ -34,7 +39,7 @@ function M.activate(hooks, selected_entry)
 end
 
 function M.activate_from_cache(settings, venv_info)
-    dbg("Activating venv from cache")
+    log.debug("Activating venv from cache")
     local venv = require("venv-selector.venv")
     local python_path = venv_info.value
     local venv_type = venv_info.type
@@ -59,6 +64,8 @@ function M.activate_from_cache(settings, venv_info)
     path.save_selected_python(python_path)
     if on_venv_activate_callback ~= nil then
         M.current_source = venv_source
+        log.debug("Setting require(\"venv-selector\").source() to '" .. venv_source .. '"')
+        log.debug("Calling on_venv_activate_callback() function")
         on_venv_activate_callback()
     end
 end
@@ -68,7 +75,7 @@ function M.set_env(python_path, env_variable_name)
         local env_path = path.get_base(path.get_base(python_path))
         if env_path ~= nil then
             vim.fn.setenv(env_variable_name, env_path)
-            dbg("$" .. env_variable_name .. " set to " .. env_path)
+            log.debug("$" .. env_variable_name .. " set to " .. env_path)
         end
     end
 end
@@ -77,7 +84,7 @@ function M.unset_env(env_variable_name)
     if config.user_settings.options.set_environment_variables == true then
         if vim.fn.getenv(env_variable_name) ~= nil then
             vim.fn.setenv(env_variable_name, nil)
-            dbg("$" .. env_variable_name .. " has been unset.")
+            log.debug("$" .. env_variable_name .. " has been unset.")
         end
     end
 end

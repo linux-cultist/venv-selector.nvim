@@ -22,7 +22,7 @@ local function disable_default_searches(search_settings)
     local default_searches = require("venv-selector.config").default_settings.search
     for search_name, _ in pairs(search_settings.search) do
         if default_searches[search_name] ~= nil then
-            dbg(search_name, "disabling default search")
+            log.debug("Disabling default search for '" .. search_name .. '"')
             search_settings.search[search_name] = nil
         end
     end
@@ -46,14 +46,13 @@ local function convert_for_gui(nested_tbl)
             end
         end
     end
+    log.debug("GUI results:", transformed_table)
     return transformed_table
 end
 
 
 local function set_interactive_search(opts)
     if opts ~= nil and #opts.args > 0 then
-        dbg("Interactive search started.")
-
         local settings = {
             search = {
                 interactive = {
@@ -61,7 +60,7 @@ local function set_interactive_search(opts)
                 }
             }
         }
-        dbg(settings)
+        log.debug("Interactive search replaces previous search settings: ", settings)
         return settings
     end
 
@@ -69,25 +68,18 @@ local function set_interactive_search(opts)
 end
 
 local function run_search(opts, user_settings)
-    --log.debug("Starting new search.")
-    --dbg(user_settings, "user_settings")
-    --dbg(opts.args, "opts.args")
-
     if M.search_in_progress == true then
-        --log.debug("Search already in progress.")
+        log.info("Aborting search - previous search still running.")
         return
     end
 
     M.search_in_progress = true
     local jobs = {}
-    --local jobnames = {}
     local workspace_folders = workspace.list_folders()
     local job_count = 0
     local results = {}
     local search_settings = set_interactive_search(opts) or user_settings
     local cwd = vim.fn.getcwd()
-    --local search_settings = user_settings
-    dbg(search_settings, "merged search settings")
 
     local function on_event(job_id, data, event)
         local callback = jobs[job_id].on_telescope_result_callback or
@@ -98,31 +90,34 @@ local function run_search(opts, user_settings)
 
             if not results[job_id] then results[job_id] = {} end
             for _, line in ipairs(data) do
-                --line = path.normalize(line)
                 local rv = {}
                 rv.path = line
                 rv.name = line
                 rv.type = search.type or "venv"
                 rv.source = search.name
-                if callback then
-                    rv.name = callback(line, rv.source)
-                end
                 if line ~= "" and line ~= nil then
-                    dbg("Result: " .. rv.path)
+                    if callback then
+                        log.debug("Calling on_telescope_result() callback function with line '" ..
+                            line .. "' and source '" .. rv.source .. "'")
+                        rv.name = callback(line, rv.source)
+                    end
+
                     table.insert(results[job_id], rv)
+                    log.debug("Result: " .. rv.path)
                 end
             end
         elseif event == 'stderr' and data then
             if data and #data > 0 then
                 for _, line in ipairs(data) do
                     if line ~= "" then
-                        dbg(vim.inspect(line))
+                        log.error("Error: " .. line)
                     end
                 end
             end
         elseif event == 'exit' then
             job_count = job_count - 1
             if job_count == 0 then
+                log.info("Searching finished.")
                 gui.show(convert_for_gui(results), user_settings)
                 M.search_in_progress = false
             end
@@ -131,7 +126,7 @@ local function run_search(opts, user_settings)
 
     local function start_search_job(job_name, search, count)
         local job = path.expand(search.execute_command)
-        dbg(job, "Starting job '" .. job_name .. "'")
+        log.debug("Starting '" .. job_name .. "': '" .. job .. "'")
 
         local job_id = vim.fn.jobstart(job, {
             stdout_buffered = true,
@@ -184,10 +179,12 @@ end
 
 function M.New(opts, settings)
     if settings.options.fd_binary_name == nil then
-        print(
-            "Error: Cannot find any fd binary on your system. If its installed under a different name, you can set options.fd_binary_name to its name.")
+        local message =
+        "Cannot find any fd binary on your system. If its installed under a different name, you can set options.fd_binary_name to its name."
+        log.error(message)
     elseif utils.check_dependencies_installed() == false then
-        print("Error: Not all required modules are installed.")
+        local message = "Not all required modules are installed."
+        log.error(message)
     else
         run_search(opts, settings)
     end

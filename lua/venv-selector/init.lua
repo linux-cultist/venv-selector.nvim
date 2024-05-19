@@ -1,10 +1,9 @@
-local search = require 'venv-selector.search'
+local user_commands = require 'venv-selector.user_commands'
 local config = require 'venv-selector.config'
 local venv = require 'venv-selector.venv'
 local path = require 'venv-selector.path'
 local ws = require 'venv-selector.workspace'
-dbg = require 'venv-selector.utils'.dbg
---log = require 'venv-selector.logger'
+log = require 'venv-selector.logger'
 
 local function on_lsp_attach()
     local cache = require("venv-selector.cached_venv")
@@ -44,24 +43,16 @@ function M.file_dir()
     return path.get_current_file_directory()
 end
 
-
 function M.deactivate()
     -- TODO: Find a way to deactivate lsp to what it was before the plugin
 end
 
-function M.setup(settings)
-    settings = settings or {}
-    config.user_settings = vim.tbl_deep_extend('force', config.default_settings, settings.settings or {})
-    config.user_settings.detected = {
-        system = vim.loop.os_uname().sysname
-    }
-
-    vim.api.nvim_create_user_command('VenvSelect', function(opts)
-        search.New(opts, config.user_settings)
-    end, { nargs = '*', desc = 'Activate venv' })
-    --vim.api.nvim_create_user_command('VenvSelectLog', function()
-    --    log.toggle()
-    --end, { desc = "Show the plugin log" })
+function M.setup(plugin_settings)
+    config.merge_user_settings(plugin_settings or {})
+    if config.user_settings.options.debug == true then
+        log.enabled = true
+    end
+    user_commands.register()
 end
 
 return M

@@ -1,8 +1,6 @@
 local venv = require 'venv-selector.venv'
 local path = require 'venv-selector.path'
 
-
-
 local M = {}
 
 -- Shows the results from the search in a Telescope picker.
@@ -69,12 +67,9 @@ function M.show(results, settings)
             map('i', '<cr>', function()
                 local selected_entry = actions_state.get_selected_entry()
                 local activated = false
-                dbg(selected_entry, "selected_entry")
                 if selected_entry ~= nil then
                     activated = venv.activate(settings.hooks, selected_entry)
                     if activated == true then
-                        dbg("Venv type '" .. selected_entry.type .. "' activated.")
-
                         path.add(path.get_base(selected_entry.path))
                         path.update_python_dap(selected_entry.path)
                         path.save_selected_python(selected_entry.path)

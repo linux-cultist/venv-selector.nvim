@@ -3,22 +3,29 @@ local prev_buf = nil
 local buffer_name = "VenvSelectLog"
 local M = {}
 
-
 M.levels = {
     DEBUG = 1,
     INFO = 2,
     WARNING = 3,
     ERROR = 4,
-    NONE = 5 -- To effectively disable logging
+    NONE = 5
 }
 
 M.current_level = M.levels.DEBUG
+M.enabled = false
 
 function M.set_level(level)
     if M.levels[level] then
         M.current_level = M.levels[level]
     else
         error("Invalid log level: " .. level)
+    end
+end
+
+function M.iterate_args(level, ...)
+    for i = 1, select("#", ...) do
+        local msg = select(i, ...)
+        M.log(level, msg, 1)
     end
 end
 
@@ -31,97 +38,48 @@ function M.get_level()
     return nil
 end
 
--- Function to add custom syntax highlighting to the log buffer
-function M.add_syntax_highlighting()
-    -- Define a syntax group
-    vim.cmd("syntax match LogError '\\v<error>'")
-    vim.cmd("syntax match LogWarning '\\v<warning>'")
-    vim.cmd("syntax match LogInfo '\\v<info>'")
-
-    -- Link syntax group to a highlight group
-    vim.cmd("highlight link LogError ErrorMsg")
-    vim.cmd("highlight link LogWarning WarningMsg")
-    vim.cmd("highlight link LogInfo MoreMsg")
-    vim.cmd("highlight link LogDebug Todo")
+function M.debug(...)
+    M.iterate_args("DEBUG", ...)
 end
 
-function M.highlight_words(buf_id, line_number, word, color_group)
-    -- Ensure the line number is within the valid range
-    if line_number < 1 then
-        --print("Invalid line number: " .. line_number)
-        return
-    end
-
-    -- Get the lines from the buffer, safeguard against invalid range
-    local lines = vim.api.nvim_buf_get_lines(buf_id, line_number - 1, line_number, false)
-    if #lines == 0 then
-        print("No line content found at line " .. line_number)
-        return
-    end
-
-    local line_content = lines[1]
-    if not line_content then
-        print("Failed to get line content for line " .. line_number)
-        return
-    end
-
-    -- Find the start and end positions of the word within the line content
-    local start_pos, end_pos = string.find(line_content, word)
-    if start_pos and end_pos then
-        -- Add highlight to the word found at the specified positions
-        vim.api.nvim_buf_add_highlight(buf_id, -1, color_group, line_number - 1, start_pos - 1, end_pos)
-    else
-        --print("Word '" .. word .. "' not found in line " .. line_number)
-    end
+function M.info(...)
+    M.iterate_args("INFO", ...)
 end
 
-function M.debug(msg)
-    M.log("DEBUG", msg)
+function M.warning(...)
+    M.iterate_args("WARNING", ...)
 end
 
-function M.info(msg)
-    M.log("INFO", msg)
-end
-
-function M.warning(msg)
-    M.log("WARNING", msg)
-end
-
-function M.error(msg)
-    M.log("ERROR", msg)
+function M.error(...)
+    M.iterate_args("ERRRO", ...)
 end
 
 function M.get_utc_date_time()
-    -- os.time() gets the current time
-    -- os.date('!*t') gets the current date table in UTC
     local utc_time = os.date("!%Y-%m-%d %H:%M:%S", os.time())
     return utc_time
 end
 
--- TODO: When log gets a table, print it line by line in the log
-function M.print_table(tbl, indent)
+function M.log_table(tbl, indent)
+    if M.enabled == false then return end
     if not indent then indent = 0 end
+
     for k, v in pairs(tbl) do
         local formatting = string.rep("  ", indent) .. k .. ": "
         if type(v) == "table" then
-            print(formatting)
-            M.print_table(v, indent + 1)
+            M.log("DEBUG", formatting)
+            M.log_table(v, indent + 1)
         else
-            print(formatting .. tostring(v))
+            M.log("DEBUG", formatting .. tostring(v))
         end
     end
 end
 
-function M.log(level, msg)
-    if M.levels[level] == nil or M.levels[level] < M.current_level then
-        return -- Skip logging if the level is below the current threshold
-    end
-
+function M.log_line(msg, level)
+    if M.enabled == false then return end
     if log_buf == nil or not vim.api.nvim_buf_is_valid(log_buf) then
         log_buf = vim.api.nvim_create_buf(false, true)
         vim.api.nvim_buf_set_name(log_buf, buffer_name)
         vim.api.nvim_buf_set_lines(log_buf, 0, -1, false, {})
-        M.add_syntax_highlighting()
     end
 
     local line_count = vim.api.nvim_buf_line_count(log_buf)
@@ -135,17 +93,28 @@ function M.log(level, msg)
         vim.api.nvim_buf_set_lines(log_buf, line_count, line_count, false, { log_entry })
     end
 
-    -- Update line count for highlighting
-    line_count = vim.api.nvim_buf_line_count(log_buf) - 1
+    if level == "ERROR" then
+        vim.notify(msg, vim.log.levels.ERROR)
+    end
+end
 
-    -- Apply highlighting based on the specific keywords
-    M.highlight_words(log_buf, line_count, "ERROR", "ErrorMsg")
-    M.highlight_words(log_buf, line_count, "WARNING", "WarningMsg")
-    M.highlight_words(log_buf, line_count, "INFO", "LogInfo")
-    M.highlight_words(log_buf, line_count, "DEBUG", "LogDebug")
+function M.log(level, msg, indent)
+    if M.levels[level] == nil or M.levels[level] < M.current_level then
+        return
+    end
+
+    if type(msg) == "table" then
+        M.log_table(msg, indent)
+    else
+        M.log_line(msg, level)
+    end
 end
 
 function M.toggle()
+    if M.enabled == false then
+        return 1
+    end
+
     local current_buf = vim.api.nvim_win_get_buf(0)
 
     if current_buf == log_buf then

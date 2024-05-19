@@ -340,7 +340,7 @@ You also need `debugpy` installed in the venv you are switching to.
 ```
 settings = {
   options = {
-    debug = false                           -- switches on/off debug output
+    debug = false                           -- enables you to run the VenvSelectLog command to view debug logs
     on_telescope_result_callback = nil      -- callback function for when a search result shows up in telescope
     on_venv_activate_callback = nil         -- callback function for when a venv is activated
     fd_binary_name = nil                    -- plugin looks for `fd` or `fdfind` but you can set something else here

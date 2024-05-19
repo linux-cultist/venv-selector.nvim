@@ -1,32 +1,16 @@
-local config = require("venv-selector.config")
-
 local M = {}
 
 function M.table_has_content(t)
     return next(t) ~= nil
 end
 
-function M.dbg(msg, name)
-    if config.user_settings.options.debug == false then
-        return
-    end
-
-    if type(msg) == 'string' or type(msg) == 'number' or type(msg) == 'nil' then
-        if name ~= nil then
-            print(name .. ":", msg)
-        else
-            print(msg)
-        end
-    elseif type(msg) == 'table' then
-        if name ~= nil then
-            print(name .. ":")
-        end
-        M.print_table(msg, 2)
-    elseif type(msg) == 'boolean' then
-        print(tostring(msg))
-    else
-        print('Unhandled message type to dbg: message type is ' .. type(msg))
-    end
+function M.merge_user_settings(user_settings)
+    log.debug("User plugin settings: ", user_settings.settings, "")
+    M.user_settings = vim.tbl_deep_extend('force', M.default_settings, user_settings.settings)
+    M.user_settings.detected = {
+        system = vim.loop.os_uname().sysname
+    }
+    log.debug("Complete user settings:", M.user_settings, "")
 end
 
 function M.try(table, ...)
@@ -44,7 +28,9 @@ end
 function M.check_dependencies_installed()
     local installed, telescope = pcall(require, 'telescope')
     if installed == false then
-        print("VenvSelect requires telescope to be installed.")
+        local message = "VenvSelect requires telescope to be installed."
+        vim.notify(message, vim.log.levels.ERROR)
+        log.error(message)
         return false
     end
 

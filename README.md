@@ -190,24 +190,27 @@ However, some flags slows down the search significantly and should not be used i
 ### Override or disable a default search
 
 If you want to **override** one of the default searches, create a search with the same name. This changes the default workspace search. 
-
-`settings = {
+```
+settings = {
   search = {
     workspace = {
       command = "fd /bin/python$ $WORKSPACE_PATH --full-path --color never -E /proc -unrestricted",
     }
   }
-}`
+}
+```
 
 The above search adds the unrestriced flag to fd. See `fd` docs for what it does!
 
 If you want to **disable one** of the default searches, you can simply set it to false. This disables the workspace search.
 
-`settings = {
+```
+settings = {
   search = {
     workspace = false
   }
-}`
+}
+```
 
 If you want to **disable all** built in searches, set the global option `enable_default_searches` to false (see separate section about global options)
 

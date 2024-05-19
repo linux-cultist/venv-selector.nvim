@@ -359,10 +359,10 @@ settings = {
 
 These functions can be used to easily get the selected python interpreter and the active venv.
 
-`require("venv-selector").python()`           -- Gives back absolute path to python or nil if none is selected
-`require("venv-selector").venv()`             -- Gives back absolute path to the venv or nil if none is selected
-`require("venv-selector").source()`           -- Gives back the name of the search that found the venv
-`require("venv-selector").workspace_paths()`  -- Gives back the workspace paths your LSP is using
-`require("venv-selector").cwd()`              -- Gives back the current working directory
-`require("venv-selector").file_dir()`         -- Gives back the directory of the currently opened file
+- `require("venv-selector").python()`           -- Gives back absolute path to python or nil if none is selected
+- `require("venv-selector").venv()`             -- Gives back absolute path to the venv or nil if none is selected
+- `require("venv-selector").source()`           -- Gives back the name of the search that found the venv
+- `require("venv-selector").workspace_paths()`  -- Gives back the workspace paths your LSP is using
+- `require("venv-selector").cwd()`              -- Gives back the current working directory
+- `require("venv-selector").file_dir()`         -- Gives back the directory of the currently opened file
 

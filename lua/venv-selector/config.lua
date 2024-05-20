@@ -124,7 +124,8 @@ end
 
 function M.merge_user_settings(user_settings)
     log.debug("User plugin settings: ", user_settings.settings, "")
-    M.user_settings = vim.tbl_deep_extend('force', M.default_settings, user_settings.settings)
+    M.user_settings = vim.tbl_deep_extend('force', M.default_settings, user_settings.settings or {})
+
     M.user_settings.detected = {
         system = vim.loop.os_uname().sysname
     }

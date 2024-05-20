@@ -149,6 +149,13 @@ You can add multiple searches as well:
       }
 ```
 
+Some notes about using quotes or not around the regexp: 
+
+- For `fish` shell, you need to put the regexp in quotes: `'/bin/python$'`.
+- For `zsh` and `bash`, they are optional.
+- On `Windows` using `powershell`, quotes are not working.
+
+
 ### Your own anaconda search
 
 If you need to create your own anaconda search, you have to remember to set the type to "anaconda".

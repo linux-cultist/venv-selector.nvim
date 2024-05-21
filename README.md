@@ -160,9 +160,18 @@ Some notes about using quotes or not around the regexp:
 
 The only thing that determines speed for this plugin is how fast the `fd` search is.
 
-By default its searching **all your hidden files** in your working directory - and its subdirectories - to look for pythons hiding under `.venv`, `.env` and such.
+By default, its searching **all your hidden files** in your working directory - and its subdirectories - to look for pythons hiding under `.venv`, `.env` and such.
 
-This can be slow and pointless if you dont even have hidden venvs.
+It tries to be fast even when searching hidden files by skipping some well known directories that we are never interested in on Mac and Linux:
+
+- .git/
+- .wine/
+- .steam/
+- Steam/
+- site-packages/
+- /proc
+
+But sometimes its still so many files to search that it will become slow. 
 
 Here is an example of *replacing* the default cwd search with one that **doesnt** search for hidden files. It replaces the cwd search since its named `cwd`.
 
@@ -176,9 +185,9 @@ settings = {
 }
 ```
 
-The only difference compared to the default `cwd` search defined [here](https://github.com/linux-cultist/venv-selector.nvim/blob/regexp/lua/venv-selector/config.lua) is that we use `-I` instead if `-HI`. But it can make a big difference in search speed.
+The most important difference compared to the default `cwd` search defined [here](https://github.com/linux-cultist/venv-selector.nvim/blob/regexp/lua/venv-selector/config.lua) is that we dont search hidden files (using `-I` instead if `-HI`).
 
-If you know that your venvs are in a specific location, you can disable the default `cwd` search and write your own:
+If you know that your venvs are in a specific location, you can also disable the default `cwd` search and write your own:
 
 ```
 settings = {
@@ -191,7 +200,7 @@ settings = {
 }
 ```
 
-You can also disable all default searches. See the options section of the README.
+Or you can disable all the default searches and take complete control over everything. See the options section in this README.
 
 
 ## Your own anaconda search

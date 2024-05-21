@@ -51,7 +51,7 @@ function M.warning(...)
 end
 
 function M.error(...)
-    M.iterate_args("ERRRO", ...)
+    M.iterate_args("ERROR", ...)
 end
 
 function M.get_utc_date_time()

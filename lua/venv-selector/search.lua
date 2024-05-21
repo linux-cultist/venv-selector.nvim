@@ -146,7 +146,10 @@ local function run_search(opts, user_settings)
             if running then
                 vim.fn.jobstop(job_id)
                 local message = "Search with name '" ..
-                    jobs[job_id].name .. "' took more than " .. search_timeout .. " seconds and was stopped. Avoid using VenvSelect in your $HOME directory since it searches all hidden files by default."
+                    jobs[job_id].name ..
+                    "' took more than " ..
+                    search_timeout ..
+                    " seconds and was stopped. Avoid using VenvSelect in your $HOME directory since it searches all hidden files by default."
                 log.warning(message)
                 vim.notify(message, vim.log.levels.ERROR)
             end

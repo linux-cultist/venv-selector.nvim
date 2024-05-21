@@ -14,6 +14,11 @@ function M.create_dir()
 end
 
 function M.save(python_path, venv_type, venv_source)
+    if config.user_settings.options.enable_cached_venvs ~= true then
+        log.debug("Option 'enable_cached_venvs' is false so will not use cache.")
+        return
+    end
+
     M.create_dir()
 
     local venv_cache = {
@@ -42,6 +47,10 @@ function M.save(python_path, venv_type, venv_source)
 end
 
 function M.retrieve()
+    if config.user_settings.options.enable_cached_venvs ~= true then
+        log.debug("Option 'enable_cached_venvs' is false so will not use cache.")
+        return
+    end
     if vim.fn.filereadable(cache_file) == 1 then
         local cache_file_content = vim.fn.readfile(cache_file)
         log.debug("Read cache from " .. cache_file)

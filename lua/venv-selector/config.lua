@@ -33,9 +33,7 @@ function M.get_default_searches()
                     command = "$FD '/bin/python$' ~/.local/share/pipx/venvs --full-path --color never -E /proc",
                 },
                 cwd = {
-
-                    command = "$FD '/bin/python$' $CWD --full-path --color never -E /proc -HI -a -L",
-
+                    command = "$FD '/bin/python$' $CWD --full-path --color never -HI -a -L -E /proc -E .git/ -E .wine/ -E .steam/ -E Steam/ -E site-packages/",
                 },
                 workspace = {
                     command = "$FD '/bin/python$' $WORKSPACE_PATH --full-path --color never -E /proc -HI -a -L",
@@ -72,7 +70,7 @@ function M.get_default_searches()
                     command = "$FD '/bin/python$' ~/.local/share/pipx/venvs --full-path --color never -E /proc",
                 },
                 cwd = {
-                    command = "$FD '/bin/python$' $CWD --full-path --color never -E /proc -HI -a -L",
+                    command = "$FD '/bin/python$' $CWD --full-path --color never -HI -a -L -E /proc -E .git/ -E .wine/ -E .steam/ -E Steam/ -E site-packages/",
                 },
                 workspace = {
                     command = "$FD '/bin/python$' $WORKSPACE_PATH --full-path --color never -E /proc -HI -a -L",

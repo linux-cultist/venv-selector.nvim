@@ -84,6 +84,7 @@ If you want to see the values that the plugin will insert in place of these spec
 
 There wont be any workspace paths before your LSP has detected a workspace (normally happens when you open a python project).
 
+
 ### The current default searches are for:
 
 - Venvs created by [Virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest)
@@ -155,8 +156,45 @@ Some notes about using quotes or not around the regexp:
 - For `zsh` and `bash`, they are optional.
 - On `Windows` using `powershell`, quotes are not working.
 
+## VenvSelect is slow for me, what can i do?
 
-### Your own anaconda search
+The only thing that determines speed for this plugin is how fast the `fd` search is.
+
+By default its searching **all your hidden files** in your working directory - and its subdirectories - to look for pythons hiding under `.venv`, `.env` and such.
+
+This can be slow and pointless if you dont even have hidden venvs.
+
+Here is an example of *replacing* the default cwd search with one that **doesnt** search for hidden files. It replaces the cwd search since its named `cwd`.
+
+```
+settings = {
+  search = {
+    cwd = {
+      command = "fd '/bin/python$' $CWD --full-path --color never -E /proc -I -a -L",
+    },
+  },
+}
+```
+
+The only difference compared to the default `cwd` search defined [here](https://github.com/linux-cultist/venv-selector.nvim/blob/regexp/lua/venv-selector/config.lua) is that we use `-I` instead if `-HI`. But it can make a big difference in search speed.
+
+If you know that your venvs are in a specific location, you can disable the default `cwd` search and write your own:
+
+```
+settings = {
+  search = {
+    cwd = false, -- setting this to false disables the default cwd search
+    my_search = {
+      command = "fd /bin/python$ ~/Code --full-path -a -L" -- read up on the fd flags so it searches what you need
+    }
+  },
+}
+```
+
+You can also disable all default searches. See the options section of the README.
+
+
+## Your own anaconda search
 
 If you need to create your own anaconda search, you have to remember to set the type to "anaconda".
 
@@ -194,7 +232,7 @@ However, some flags slows down the search significantly and should not be used i
 
 
 
-### Override or disable a default search
+## Override or disable a default search
 
 If you want to **override** one of the default searches, create a search with the same name. This changes the default workspace search. 
 ```

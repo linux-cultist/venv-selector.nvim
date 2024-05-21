@@ -407,9 +407,7 @@ settings = {
     set_environment_variables = true,       -- sets VIRTUAL_ENV or CONDA_PREFIX environment variables
     show_telescope_search_type = true,      -- shows the name of the search in telescope
     notify_user_on_venv_activation = false  -- notifies user on activation of the virtual env
-    
     search_timeout = 5                      -- if a search takes longer than this many seconds, stop it and alert the user
-    
   }
 }
 

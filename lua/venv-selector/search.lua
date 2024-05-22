@@ -207,9 +207,11 @@ function M.New(opts, settings)
         local message =
         "Cannot find any fd binary on your system. If its installed under a different name, you can set options.fd_binary_name to its name."
         log.error(message)
+        vim.notify(message, vim.log.levels.ERROR)
     elseif utils.check_dependencies_installed() == false then
         local message = "Not all required modules are installed."
         log.error(message)
+        vim.notify(message, vim.log.levels.ERROR)
     else
         run_search(opts, settings)
     end

@@ -92,10 +92,6 @@ function M.log_line(msg, level)
     else
         vim.api.nvim_buf_set_lines(log_buf, line_count, line_count, false, { log_entry })
     end
-
-    if level == "ERROR" then
-        vim.notify(msg, vim.log.levels.ERROR)
-    end
 end
 
 function M.log(level, msg, indent)

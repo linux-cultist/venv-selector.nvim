@@ -69,11 +69,11 @@ end
 
 local function run_search(opts, user_settings)
     if M.search_in_progress == true then
-        log.info("Aborting search - previous search still running.")
+        log.info("Not starting new search because previous search is still running.")
         return
     end
 
-    M.search_in_progress = true
+
     local jobs = {}
     local workspace_folders = workspace.list_folders()
     local job_count = 0
@@ -129,7 +129,7 @@ local function run_search(opts, user_settings)
     local function start_search_job(job_name, search, count)
         local job = path.expand(search.execute_command)
         log.debug("Starting '" .. job_name .. "': '" .. job .. "'")
-
+        M.search_in_progress = true
         local job_id = vim.fn.jobstart(job, {
             stdout_buffered = true,
             stderr_buffered = true,

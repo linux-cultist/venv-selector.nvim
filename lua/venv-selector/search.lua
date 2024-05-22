@@ -75,7 +75,6 @@ local function run_search(opts, user_settings)
 
 
     local jobs = {}
-    local workspace_folders = workspace.list_folders()
     local job_count = 0
     local results = {}
     local search_settings = set_interactive_search(opts) or user_settings
@@ -179,6 +178,7 @@ local function run_search(opts, user_settings)
 
             -- search has $WORKSPACE_PATH inside - dont start it unless the lsp has discovered workspace folders
             if is_workspace_search(search.command) then
+                local workspace_folders = workspace.list_folders()
                 for _, workspace_path in pairs(workspace_folders) do
                     search.execute_command = search.execute_command:gsub("$WORKSPACE_PATH", workspace_path)
                     job_count = start_search_job(job_name, search, job_count)

@@ -30,7 +30,7 @@ function M.get_default_searches()
                     type = "anaconda"
                 },
                 pipx = {
-                    command = "$FD '/bin/python$' ~/.local/share/pipx/venvs --full-path --color never -E /proc",
+                    command = "$FD '/bin/python$' ~/.local/share/pipx/venvs ~/.local/pipx/venvs --full-path --color never -E /proc",
                 },
                 cwd = {
                     command = "$FD '/bin/python$' $CWD --full-path --color never -HI -a -L -E /proc -E .git/ -E .wine/ -E .steam/ -E Steam/ -E site-packages/",
@@ -67,7 +67,7 @@ function M.get_default_searches()
                     type = "anaconda"
                 },
                 pipx = {
-                    command = "$FD '/bin/python$' ~/.local/share/pipx/venvs --full-path --color never -E /proc",
+                    command = "$FD '/bin/python$' ~/.local/share/pipx/venvs ~/.local/pipx/venvs --full-path --color never -E /proc",
                 },
                 cwd = {
                     command = "$FD '/bin/python$' $CWD --full-path --color never -HI -a -L -E /proc -E .git/ -E .wine/ -E .steam/ -E Steam/ -E site-packages/",

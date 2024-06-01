@@ -28,28 +28,6 @@ local function disable_default_searches(search_settings)
     end
 end
 
---local function convert_for_gui(nested_tbl)
---    local transformed_table = {}
---    local seen = {} -- Table to keep track of items already added
---
---    for _, sublist in pairs(nested_tbl) do
---        for _, rv in ipairs(sublist) do
---            if rv.name ~= "" and not seen[rv.path] then -- Check if the path has not been added yet
---                seen[rv.path] = true                    -- Mark this path as seen
---                table.insert(transformed_table, {
---                    icon = "",
---                    name = rv.name,
---                    path = rv.path,
---                    type = rv.type,
---                    source = rv.source
---                })
---            end
---        end
---    end
---    log.debug("GUI results:", transformed_table)
---    return transformed_table
---end
-
 
 local function set_interactive_search(opts)
     if opts ~= nil and #opts.args > 0 then
@@ -124,11 +102,9 @@ local function run_search(opts)
             job_count = job_count - 1
             if job_count == 0 then
                 log.info("Searching finished.")
-                --gui.show(convert_for_gui(results))
-                --gui.show_results(false)
-                M.search_in_progress = false
                 gui.remove_dups()
                 gui.show_results()
+                M.search_in_progress = false
             end
         end
     end

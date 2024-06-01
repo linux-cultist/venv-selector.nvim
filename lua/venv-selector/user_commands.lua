@@ -1,11 +1,13 @@
 local config = require 'venv-selector.config'
 local search = require 'venv-selector.search'
+local gui = require 'venv-selector.gui'
 
 local M = {}
 
 function M.register()
     vim.api.nvim_create_user_command('VenvSelect', function(opts)
-        search.New(opts, config.user_settings)
+        gui.open()
+        search.New(opts)
     end, { nargs = '*', desc = 'Activate venv' })
 
     vim.api.nvim_create_user_command('VenvSelectLog', function()

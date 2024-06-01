@@ -28,27 +28,27 @@ local function disable_default_searches(search_settings)
     end
 end
 
-local function convert_for_gui(nested_tbl)
-    local transformed_table = {}
-    local seen = {} -- Table to keep track of items already added
-
-    for _, sublist in pairs(nested_tbl) do
-        for _, rv in ipairs(sublist) do
-            if rv.name ~= "" and not seen[rv.path] then -- Check if the path has not been added yet
-                seen[rv.path] = true                    -- Mark this path as seen
-                table.insert(transformed_table, {
-                    icon = "",
-                    name = rv.name,
-                    path = rv.path,
-                    type = rv.type,
-                    source = rv.source
-                })
-            end
-        end
-    end
-    log.debug("GUI results:", transformed_table)
-    return transformed_table
-end
+--local function convert_for_gui(nested_tbl)
+--    local transformed_table = {}
+--    local seen = {} -- Table to keep track of items already added
+--
+--    for _, sublist in pairs(nested_tbl) do
+--        for _, rv in ipairs(sublist) do
+--            if rv.name ~= "" and not seen[rv.path] then -- Check if the path has not been added yet
+--                seen[rv.path] = true                    -- Mark this path as seen
+--                table.insert(transformed_table, {
+--                    icon = "",
+--                    name = rv.name,
+--                    path = rv.path,
+--                    type = rv.type,
+--                    source = rv.source
+--                })
+--            end
+--        end
+--    end
+--    log.debug("GUI results:", transformed_table)
+--    return transformed_table
+--end
 
 
 local function set_interactive_search(opts)
@@ -67,19 +67,24 @@ local function set_interactive_search(opts)
     return nil
 end
 
-local function run_search(opts, user_settings)
+local function run_search(opts)
+    local user_settings = require("venv-selector.config").user_settings
+    local options = require("venv-selector.config").user_settings.options
+
     if M.search_in_progress == true then
         log.info("Not starting new search because previous search is still running.")
         return
     end
 
-    gui.show_results(true)
     local jobs = {}
     local job_count = 0
     local results = {}
     local search_settings = set_interactive_search(opts) or user_settings
     local cwd = vim.fn.getcwd()
-    local search_timeout = user_settings.options.search_timeout
+
+    local search_timeout = options.search_timeout
+
+
 
     local function on_event(job_id, data, event)
         local callback = jobs[job_id].on_telescope_result_callback or
@@ -104,12 +109,9 @@ local function run_search(opts, user_settings)
                         rv.name = callback(line, rv.source)
                     end
 
-                    --table.insert(results[job_id], rv)
                     gui.insert_result(rv)
-                    log.debug("Result: " .. rv.path)
                 end
             end
-
         elseif event == 'stderr' and data then
             if data and #data > 0 then
                 for _, line in ipairs(data) do
@@ -125,6 +127,8 @@ local function run_search(opts, user_settings)
                 --gui.show(convert_for_gui(results))
                 --gui.show_results(false)
                 M.search_in_progress = false
+                gui.remove_dups()
+                gui.show_results()
             end
         end
     end
@@ -170,7 +174,7 @@ local function run_search(opts, user_settings)
         return count
     end
 
-    if user_settings.options.enable_default_searches == false then
+    if options.enable_default_searches == false then
         disable_default_searches(search_settings)
     end
 
@@ -179,7 +183,7 @@ local function run_search(opts, user_settings)
     -- Start search jobs from config
     for job_name, search in pairs(search_settings.search) do
         if search ~= false then -- Can be set to false by user to not search path
-            search.execute_command = search.command:gsub("$FD", user_settings.options.fd_binary_name)
+            search.execute_command = search.command:gsub("$FD", options.fd_binary_name)
 
             -- search has $WORKSPACE_PATH inside - dont start it unless the lsp has discovered workspace folders
             if is_workspace_search(search.command) then
@@ -204,13 +208,12 @@ local function run_search(opts, user_settings)
             end
         end
     end
-
-    --gui.show()
 end
 
 
-function M.New(opts, settings)
-    if settings.options.fd_binary_name == nil then
+function M.New(opts)
+    local options = require("venv-selector.config").user_settings.options
+    if options.fd_binary_name == nil then
         local message =
         "Cannot find any fd binary on your system. If its installed under a different name, you can set options.fd_binary_name to its name."
         log.error(message)
@@ -219,8 +222,10 @@ function M.New(opts, settings)
         local message = "Not all required modules are installed."
         log.error(message)
         vim.notify(message, vim.log.levels.ERROR)
+    elseif utils.table_has_content(gui.results) == false then
+        run_search(opts)
     else
-        run_search(opts, settings)
+
     end
 end
 

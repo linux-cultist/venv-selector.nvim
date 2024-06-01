@@ -1,7 +1,14 @@
 local M = {}
 
+
 function M.set_python_path_for_client(client_name, venv_python)
     return M.execute_for_client(client_name, function(client)
+        if venv_python == nil then
+            vim.lsp.stop_client(client.id)
+            log.debug("Stopped lsp server for " .. client_name)
+            return
+        end
+
         local config = require("venv-selector.config")
         if client.settings then
             client.settings = vim.tbl_deep_extend('force', client.settings, { python = { pythonPath = venv_python } })

@@ -53,6 +53,12 @@ function M.remove_trailing_slash(path)
     return path
 end
 
+function M.remove_current()
+    if M.current_python_path ~= nil then
+        M.remove(M.get_base(M.current_python_path))
+    end
+end
+
 function M.remove(removalDir)
     local clean_dir = M.remove_trailing_slash(removalDir)
     local path = vim.fn.getenv("PATH")

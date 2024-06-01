@@ -5,6 +5,13 @@ local M = {}
 
 M.current_source = nil -- contains the name of the search, like anaconda, pipx etc.
 
+function M.stop_lsp_servers()
+    local hooks = require("venv-selector.config").user_settings.hooks
+    for _, hook in pairs(hooks) do
+        hook(nil)
+    end
+end
+
 function M.activate(hooks, selected_entry)
     local python_path = selected_entry.path
     local venv_type = selected_entry.type
@@ -45,7 +52,6 @@ function M.activate_from_cache(settings, venv_info)
     local venv_type = venv_info.type
     local venv_source = venv_info.source
     local on_venv_activate_callback = config.user_settings.options.on_venv_activate_callback
-
     for _, hook in pairs(settings.hooks) do
         hook(python_path)
     end
@@ -62,6 +68,8 @@ function M.activate_from_cache(settings, venv_info)
 
     path.update_python_dap(python_path)
     path.save_selected_python(python_path)
+    path.add(path.get_base(python_path))
+
     if on_venv_activate_callback ~= nil then
         M.current_source = venv_source
         log.debug("Setting require(\"venv-selector\").source() to '" .. venv_source .. '"')
@@ -87,6 +95,11 @@ function M.unset_env(env_variable_name)
             log.debug("$" .. env_variable_name .. " has been unset.")
         end
     end
+end
+
+function M.unset_env_variables()
+    vim.fn.setenv("VIRTUAL_ENV", nil)
+    vim.fn.setenv("CONDA_PREFIX", nil)
 end
 
 return M

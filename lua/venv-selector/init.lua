@@ -43,8 +43,13 @@ function M.file_dir()
     return path.get_current_file_directory()
 end
 
+function M.stop_lsp_servers()
+    venv.stop_lsp_servers()
+end
+
 function M.deactivate()
-    -- TODO: Find a way to deactivate lsp to what it was before the plugin
+    path.remove_current()
+    venv.unset_env_variables()
 end
 
 function M.setup(plugin_settings)

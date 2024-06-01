@@ -73,7 +73,7 @@ local function run_search(opts, user_settings)
         return
     end
 
-
+    gui.show_results(true)
     local jobs = {}
     local job_count = 0
     local results = {}
@@ -90,22 +90,26 @@ local function run_search(opts, user_settings)
 
             if not results[job_id] then results[job_id] = {} end
             for _, line in ipairs(data) do
-                local rv = {}
-                rv.path = line
-                rv.name = line
-                rv.type = search.type or "venv"
-                rv.source = search.name
                 if line ~= "" and line ~= nil then
+                    local rv = {}
+                    rv.path = line
+                    rv.name = line
+                    rv.icon = ""
+                    rv.type = search.type or "venv"
+                    rv.source = search.name
+
                     if callback then
                         log.debug("Calling on_telescope_result() callback function with line '" ..
                             line .. "' and source '" .. rv.source .. "'")
                         rv.name = callback(line, rv.source)
                     end
 
-                    table.insert(results[job_id], rv)
+                    --table.insert(results[job_id], rv)
+                    gui.insert_result(rv)
                     log.debug("Result: " .. rv.path)
                 end
             end
+
         elseif event == 'stderr' and data then
             if data and #data > 0 then
                 for _, line in ipairs(data) do
@@ -118,7 +122,8 @@ local function run_search(opts, user_settings)
             job_count = job_count - 1
             if job_count == 0 then
                 log.info("Searching finished.")
-                gui.show(convert_for_gui(results), user_settings)
+                --gui.show(convert_for_gui(results))
+                --gui.show_results(false)
                 M.search_in_progress = false
             end
         end
@@ -199,6 +204,8 @@ local function run_search(opts, user_settings)
             end
         end
     end
+
+    --gui.show()
 end
 
 

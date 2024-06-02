@@ -20,7 +20,7 @@ function M.set_python_path_for_client(client_name, venv_python)
 
         local message = "Registered '" .. venv_python .. "' with " .. client_name .. " LSP."
         if config.user_settings.options.notify_user_on_venv_activation == true then
-            vim.notify(message, vim.log.levels.INFO)
+            vim.notify(message, vim.log.levels.INFO, { title = 'VenvSelect' })
         end
         log.info(message)
     end)
@@ -55,7 +55,7 @@ function M.pylsp_hook(venv_python)
 
         local message = "Registered '" .. venv_python .. "' with " .. client_name .. " LSP."
         if config.user_settings.options.notify_user_on_venv_activation == true then
-            vim.notify(message, vim.log.levels.INFO)
+            vim.notify(message, vim.log.levels.INFO, { title = 'VenvSelect' })
         end
         log.info(message)
     end)

@@ -135,7 +135,7 @@ local function run_search(opts)
                     search_timeout ..
                     " seconds and was stopped. Avoid using VenvSelect in your $HOME directory since it searches all hidden files by default."
                 log.warning(message)
-                vim.notify(message, vim.log.levels.ERROR)
+                vim.notify(message, vim.log.levels.ERROR, { title = 'VenvSelect' })
             end
         end
 
@@ -193,11 +193,11 @@ function M.New(opts)
         local message =
         "Cannot find any fd binary on your system. If its installed under a different name, you can set options.fd_binary_name to its name."
         log.error(message)
-        vim.notify(message, vim.log.levels.ERROR)
+        vim.notify(message, vim.log.levels.ERROR, { title = 'VenvSelect' })
     elseif utils.check_dependencies_installed() == false then
         local message = "Not all required modules are installed."
         log.error(message)
-        vim.notify(message, vim.log.levels.ERROR)
+        vim.notify(message, vim.log.levels.ERROR, { title = 'VenvSelect' })
     elseif utils.table_has_content(gui.results) == false then
         run_search(opts)
     else

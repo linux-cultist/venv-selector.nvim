@@ -28,7 +28,7 @@ function M.activate(hooks, selected_entry)
         if count == 0 then
             local message =
             "No python lsp servers are running. Please open a python file and then select a venv to activate."
-            vim.notify(message, vim.log.levels.INFO)
+            vim.notify(message, vim.log.levels.INFO, { title = 'VenvSelect' })
             log.info(message)
             return false
         else

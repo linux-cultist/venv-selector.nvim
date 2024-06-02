@@ -13,7 +13,7 @@ function M.register()
     vim.api.nvim_create_user_command('VenvSelectLog', function()
         local rc = log.toggle()
         if rc == 1 then
-            vim.notify("Please set debug to true in options to use the logger.", vim.log.levels.INFO)
+            vim.notify("Please set debug to true in options to use the logger.", vim.log.levels.INFO, { title = 'VenvSelect' })
         end
     end, { desc = "Toggle the VenvSelect log window" })
 end

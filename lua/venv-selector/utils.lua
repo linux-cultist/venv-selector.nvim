@@ -29,7 +29,7 @@ function M.check_dependencies_installed()
     local installed, telescope = pcall(require, 'telescope')
     if installed == false then
         local message = "VenvSelect requires telescope to be installed."
-        vim.notify(message, vim.log.levels.ERROR)
+        vim.notify(message, vim.log.levels.ERROR, { title = 'VenvSelect' })
         log.error(message)
         return false
     end

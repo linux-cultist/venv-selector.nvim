@@ -31,6 +31,7 @@ M.default_settings = {
   cache_dir = system.get_cache_default_path(),
   dap_enabled = false,
   notify_user_on_activate = true,
+  stay_on_this_version = false,
   changed_venv_hooks = { hooks.basedpyright_hook, hooks.pyright_hook, hooks.pylance_hook, hooks.pylsp_hook },
 }
 

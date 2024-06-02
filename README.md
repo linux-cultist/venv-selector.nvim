@@ -29,7 +29,7 @@ Browse existing python virtual environments on your computer and select one to a
 - Plug and play, no configuration required
 - Switch back and forth between virtual environments without restarting neovim
 - Support [Basedpyright](https://github.com/detachhead/basedpyright), [Pyright](https://github.com/microsoft/pyright), [Pylance](https://github.com/microsoft/pylance-release) and [Pylsp](https://github.com/python-lsp/python-lsp-server) lsp servers with ability to config hooks for others.
-- ♡Currently supports virtual environments created in:
+- Currently supports virtual environments created in:
   - [Python](https://www.python.org/) (`python3 -m venv venv`)
   - [Poetry](https://python-poetry.org)
   - [PDM](https://github.com/pdm-project/pdm)

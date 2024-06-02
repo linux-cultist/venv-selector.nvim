@@ -13,6 +13,10 @@ function M.setup(settings)
   config.settings = vim.tbl_deep_extend('force', config.default_settings, settings or {})
   dbg(config.settings)
 
+ if config.default_settings.stay_on_this_version == false then
+ 	utils.notify("This plugin has a new 2024 version that was rewritten from scratch to support user defined searches: https://github.com/linux-cultist/venv-selector.nvim/tree/regexp.")
+ 	utils.notify("Its highly recommended to upgrade, but if you want to stay on this version, you can set the option 'stay_on_this_version' to true. Only the new version will receive updates.")
+ end
   -- Create the VenvSelect command.
   local venv_select_current = function()
     if M.get_active_venv() ~= nil then

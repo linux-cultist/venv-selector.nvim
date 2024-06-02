@@ -14,6 +14,57 @@ function M.insert_result(row)
     M.show_results()
 end
 
+function M.make_entry_maker()
+    local entry_display = require 'telescope.pickers.entry_display'
+
+
+    local displayer = entry_display.create {
+        separator = ' ',
+        items = {
+            { width = 2 },
+            { width = 110 },
+            { width = 2 },
+            { width = 20 },
+            { width = 0.95 },
+        },
+    }
+
+    local function draw_icons_for_types(e)
+        if vim.tbl_contains({ 'cwd', 'workspace', 'file' }, e.source) then
+            return '󰥨'
+        elseif vim.tbl_contains({ 'virtualenvs', 'hatch', 'poetry', 'pyenv', 'anaconda_envs', 'anaconda_base', 'pipx' }) then
+            return ''
+        else
+            return '' -- user created venv icon
+        end
+    end
+
+    local function hl_active_venv(e)
+        local icon_highlight = 'VenvSelectActiveVenv'
+        if e.path == path.current_python_path then
+            return icon_highlight
+        end
+        return nil
+    end
+
+
+    return function(entry)
+        local icon = entry.icon
+        entry.value = entry.name
+        entry.ordinal = entry.path
+        entry.display = function(e)
+            return displayer {
+                { icon,                                                                                         hl_active_venv(entry) },
+                { e.path },
+                { config.user_settings.options.show_telescope_search_type and draw_icons_for_types(entry) or "" },
+                { config.user_settings.options.show_telescope_search_type and e.source or "" }
+            }
+        end
+
+        return entry
+    end
+end
+
 function M.remove_dups()
     -- If a venv is found both by another search AND (cwd or file) search, then keep the one found by another search.
     local seen = {}
@@ -43,34 +94,11 @@ end
 function M.show_results()
     local finders = require 'telescope.finders'
     local actions_state = require 'telescope.actions.state'
-    local entry_display = require 'telescope.pickers.entry_display'
 
-
-    local displayer = entry_display.create {
-        separator = ' ',
-        items = {
-            { width = 2 },
-            { width = 110 },
-            { width = 20 },
-            { width = 0.95 },
-        },
-    }
 
     local finder = finders.new_table {
         results = M.results,
-        entry_maker = function(entry)
-            entry.value = entry.path
-            entry.ordinal = entry.path
-            entry.display = function(e)
-                return displayer {
-                    { e.icon },
-                    { e.path },
-                    { e.source },
-                }
-            end
-
-            return entry
-        end,
+        entry_maker = M.make_entry_maker()
     }
 
     local bufnr = vim.api.nvim_get_current_buf()
@@ -85,45 +113,14 @@ function M.open()
     local pickers = require 'telescope.pickers'
     local actions_state = require 'telescope.actions.state'
     local actions = require 'telescope.actions'
-    local entry_display = require 'telescope.pickers.entry_display'
     local sorters = require('telescope.sorters')
-
-    local displayer = entry_display.create {
-        separator = ' ',
-        items = {
-            { width = 2 },
-            { width = 110 },
-            { width = 20 },
-            { width = 0.95 },
-        },
-    }
 
     local title = 'Virtual environments (ctrl-r to refresh)'
 
     local finder = finders.new_table {
         results = M.results,
-        entry_maker = function(entry)
-            entry.value = entry.name
-            entry.ordinal = entry.name
-            entry.display = function(e)
-                if config.user_settings.options.show_telescope_search_type == true then
-                    return displayer {
-                        { e.icon },
-                        { e.name },
-                        { e.source },
-                    }
-                else
-                    return displayer {
-                        { e.icon },
-                        { e.name },
-                    }
-                end
-            end
-
-            return entry
-        end,
+        entry_maker = M.make_entry_maker()
     }
-
 
     local opts = {
         prompt_title = title,

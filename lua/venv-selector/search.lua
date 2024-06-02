@@ -77,7 +77,7 @@ local function run_search(opts)
                     local rv = {}
                     rv.path = line
                     rv.name = line
-                    rv.icon = ""
+                    rv.icon = ""
                     rv.type = search.type or "venv"
                     rv.source = search.name
 

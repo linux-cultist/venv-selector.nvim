@@ -16,6 +16,7 @@ vim.api.nvim_create_autocmd("LspAttach", {
 })
 
 
+vim.api.nvim_command('hi VenvSelectActiveVenv guifg=#00FF00')
 
 local M = {}
 

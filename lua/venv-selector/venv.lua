@@ -47,6 +47,13 @@ end
 
 function M.activate_from_cache(settings, venv_info)
     log.debug("Activating venv from cache")
+
+    -- Set the below two variables as quick as possible since its used in sorting results in telescope
+    -- and if the user is quick to open the telescope before lsp has activated, the selected
+    -- venv wont be displayed otherwise.
+    path.current_python_path = venv_info.value
+    path.current_venv_path = path.get_base(venv_info.value)
+
     local venv = require("venv-selector.venv")
     local python_path = venv_info.value
     local venv_type = venv_info.type
@@ -55,8 +62,6 @@ function M.activate_from_cache(settings, venv_info)
     for _, hook in pairs(settings.hooks) do
         hook(python_path)
     end
-
-    path.add(path.get_base(python_path.value))
 
     if venv_type ~= nil and venv_type == "anaconda" then
         venv.unset_env("VIRTUAL_ENV")

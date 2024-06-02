@@ -91,10 +91,24 @@ function M.remove_dups()
     M.results = filtered_results
 end
 
+function M.sort_results()
+    local selected_python = path.current_python_path
+    table.sort(M.results, function(a, b)
+        if a.name == selected_python and b.name ~= selected_python then
+            return true            -- `a` comes first because it matches `selected_python`
+        elseif a.name ~= selected_python and b.name == selected_python then
+            return false           -- `b` comes first because it matches `selected_python`
+        else
+            return a.name > b.name -- Otherwise sort alphabetically
+        end
+    end)
+end
+
 function M.show_results()
     local finders = require 'telescope.finders'
     local actions_state = require 'telescope.actions.state'
 
+    M.sort_results()
 
     local finder = finders.new_table {
         results = M.results,
@@ -108,7 +122,7 @@ function M.show_results()
     end
 end
 
-function M.open()
+function M.open(in_progress)
     local finders = require 'telescope.finders'
     local pickers = require 'telescope.pickers'
     local actions_state = require 'telescope.actions.state'
@@ -116,6 +130,10 @@ function M.open()
     local sorters = require('telescope.sorters')
 
     local title = 'Virtual environments (ctrl-r to refresh)'
+
+    if in_progress == false then
+        M.sort_results()
+    end
 
     local finder = finders.new_table {
         results = M.results,

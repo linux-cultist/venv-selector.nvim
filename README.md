@@ -33,6 +33,7 @@
 - Virtual environments are remembered for each specific working directory and automatically activated the next time.
 - Requires [fd](https://github.com/sharkdp/fd) and [Telescope](https://github.com/nvim-telescope/telescope.nvim) for fast searches, and visual pickers.
 - Requires [nvim-dap-python](https://github.com/mfussenegger/nvim-dap-python), [debugpy](https://github.com/microsoft/debugpy) and [nvim-dap](https://github.com/mfussenegger/nvim-dap) for debugger support
+- Requires a terminal [nerd font](https://www.nerdfonts.com/) to be configured for the icons to look correct.
 
 
 ## Configuration snippet for [lazy.nvim](https://github.com/folke/lazy.nvim)

@@ -107,7 +107,7 @@ function M.sort_results()
     local selected_python = path.current_python_path
     local current_file_dir = vim.fn.expand('%:p:h')
 
-
+    log.debug("Calculating path similarity based on: '" .. current_file_dir .. "'")
     -- Normalize path by converting all separators to a common one (e.g., '/')
     local function normalize_path(path)
         return path:gsub('\\', '/')
@@ -130,7 +130,8 @@ function M.sort_results()
         return count
     end
 
-    log.debug("Using '" .. current_file_dir .. "' to calculate path similarity.")
+
+    log.debug("Sorting telescope results on path similarity.")
     table.sort(M.results, function(a, b)
         -- Check for 'selected_python' match
         local a_is_selected = a.path == selected_python
@@ -156,8 +157,6 @@ end
 function M.update_results()
     local finders = require 'telescope.finders'
     local actions_state = require 'telescope.actions.state'
-
-    log.debug("Calling sort results in show_results")
 
     local finder = finders.new_table {
         results = M.results,

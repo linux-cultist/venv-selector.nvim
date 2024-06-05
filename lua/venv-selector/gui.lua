@@ -55,7 +55,7 @@ function M.make_entry_maker()
         entry.display = function(e)
             return displayer {
                 { icon,                                                                                         hl_active_venv(entry) },
-                { e.path },
+                { e.name },
                 { config.user_settings.options.show_telescope_search_type and draw_icons_for_types(entry) or "" },
                 { config.user_settings.options.show_telescope_search_type and e.source or "" }
             }

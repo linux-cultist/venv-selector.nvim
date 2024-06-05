@@ -19,7 +19,8 @@ function M.get_default_searches()
                     command = "$FD '/bin/python$' ~/.cache/pypoetry/virtualenvs --full-path"
                 },
                 pyenv = {
-                    command = "$FD '/bin/python$' ~/.pyenv/versions --full-path --color never -E /proc -E pkgs/ -E envs/ -L"
+                    command =
+                    "$FD '/bin/python$' ~/.pyenv/versions --full-path --color never -E /proc -E pkgs/ -E envs/ -L"
                 },
                 anaconda_envs = {
                     command = "$FD 'bin/python$' ~/.conda/envs --full-path --color never -E /proc",
@@ -30,10 +31,12 @@ function M.get_default_searches()
                     type = "anaconda"
                 },
                 pipx = {
-                    command = "$FD '/bin/python$' ~/.local/share/pipx/venvs ~/.local/pipx/venvs --full-path --color never -E /proc",
+                    command =
+                    "$FD '/bin/python$' ~/.local/share/pipx/venvs ~/.local/pipx/venvs --full-path --color never -E /proc",
                 },
                 cwd = {
-                    command = "$FD '/bin/python$' $CWD --full-path --color never -HI -a -L -E /proc -E .git/ -E .wine/ -E .steam/ -E Steam/ -E site-packages/",
+                    command =
+                    "$FD '/bin/python$' $CWD --full-path --color never -HI -a -L -E /proc -E .git/ -E .wine/ -E .steam/ -E Steam/ -E site-packages/",
                 },
                 workspace = {
                     command = "$FD '/bin/python$' $WORKSPACE_PATH --full-path --color never -E /proc -HI -a -L",
@@ -56,7 +59,8 @@ function M.get_default_searches()
                     command = "$FD '/bin/python$' ~/Library/Caches/pypoetry/virtualenvs --full-path"
                 },
                 pyenv = {
-                    command = "$FD '/bin/python$' ~/.pyenv/versions --full-path --color never -E /proc -E pkgs/ -E envs/ -L"
+                    command =
+                    "$FD '/bin/python$' ~/.pyenv/versions --full-path --color never -E /proc -E pkgs/ -E envs/ -L"
                 },
                 anaconda_envs = {
                     command = "$FD 'bin/python$' ~/.conda/envs --full-path --color never -E /proc",
@@ -67,10 +71,12 @@ function M.get_default_searches()
                     type = "anaconda"
                 },
                 pipx = {
-                    command = "$FD '/bin/python$' ~/.local/share/pipx/venvs ~/.local/pipx/venvs --full-path --color never -E /proc",
+                    command =
+                    "$FD '/bin/python$' ~/.local/share/pipx/venvs ~/.local/pipx/venvs --full-path --color never -E /proc",
                 },
                 cwd = {
-                    command = "$FD '/bin/python$' $CWD --full-path --color never -HI -a -L -E /proc -E .git/ -E .wine/ -E .steam/ -E Steam/ -E site-packages/",
+                    command =
+                    "$FD '/bin/python$' $CWD --full-path --color never -HI -a -L -E /proc -E .git/ -E .wine/ -E .steam/ -E Steam/ -E site-packages/",
                 },
                 workspace = {
                     command = "$FD '/bin/python$' $WORKSPACE_PATH --full-path --color never -E /proc -HI -a -L",
@@ -145,17 +151,20 @@ M.default_settings = {
     },
     hooks = { hooks.basedpyright_hook, hooks.pyright_hook, hooks.pylance_hook, hooks.pylsp_hook },
     options = {
-        debug = false,                             -- enables you to run the VenvSelectLog command to view debug logs
-        on_telescope_result_callback = nil,        -- callback function for all searches
         on_venv_activate_callback = nil,           -- callback function for after a venv activates
-        fd_binary_name = M.find_fd_command_name(), -- plugin looks for `fd` or `fdfind` but you can set something else here
         enable_default_searches = true,            -- switches all default searches on/off
         enable_cached_venvs = true,                -- automatically activates the venv you used last time in a directory
         activate_venv_in_terminal = true,          -- activate the selected python interpreter in terminal windows opened from neovim
         set_environment_variables = true,          -- sets VIRTUAL_ENV or CONDA_PREFIX environment variables
-        show_telescope_search_type = true,         -- shows the name of the search in telescope
         notify_user_on_venv_activation = false,    -- notifies user on activation of the virtual env
-        search_timeout = 5                         -- if a search takes longer than this many seconds, stop it and alert the user
+        search_timeout = 5,                        -- if a search takes longer than this many seconds, stop it and alert the user
+        debug = false,                             -- enables you to run the VenvSelectLog command to view debug logs
+        fd_binary_name = M.find_fd_command_name(), -- plugin looks for `fd` or `fdfind` but you can set something else here
+
+        -- telescope viewer options
+        on_telescope_result_callback = nil, -- callback function for telescope results
+        show_telescope_search_type = true,  -- Shows which of the searches found which venv in telescope
+        telescope_filter_type = "substring" -- When you type something in telescope, filter by "substring" or "character"
     },
     search = M.get_default_searches()()
 }

@@ -14,6 +14,18 @@ function M.insert_result(row)
     M.show_results()
 end
 
+function M.get_sorter()
+    local sorters = require('telescope.sorters')
+    local conf = require('telescope.config').values
+
+    local choices = {
+        ['character'] = function() return conf.file_sorter() end,
+        ['substring'] = function() return sorters.get_substr_matcher() end,
+    }
+
+    return choices[config.user_settings.options.telescope_filter_type]
+end
+
 function M.make_entry_maker()
     local entry_display = require 'telescope.pickers.entry_display'
 
@@ -127,7 +139,7 @@ function M.open(in_progress)
     local pickers = require 'telescope.pickers'
     local actions_state = require 'telescope.actions.state'
     local actions = require 'telescope.actions'
-    local sorters = require('telescope.sorters')
+
 
     local title = 'Virtual environments (ctrl-r to refresh)'
 
@@ -152,7 +164,7 @@ function M.open(in_progress)
         cwd = require('telescope.utils').buffer_dir(),
 
         sorting_strategy = 'ascending',
-        sorter = sorters.get_substr_matcher(),
+        sorter = M.get_sorter()(),
         attach_mappings = function(bufnr, map)
             map('i', '<cr>', function()
                 local selected_entry = actions_state.get_selected_entry()

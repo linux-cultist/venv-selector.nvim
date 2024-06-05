@@ -20,7 +20,7 @@
   - [Poetry](https://python-poetry.org)
   - [Pipenv](https://pipenv.pypa.io/en/latest/)
   - [Anaconda](https://www.anaconda.com)
-  - [Pyenv](https://github.com/pyenv/pyenv)
+  - [Pyenv](https://github.com/pyenv/pyenv) (including `pyenv-virtualenv` and `pyenv-win-venv` plugins)
   - [Virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/)
   - [Hatch](https://hatch.pypa.io/latest/)
   - [Pipx](https://github.com/pypa/pipx)

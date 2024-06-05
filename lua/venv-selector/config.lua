@@ -90,7 +90,7 @@ function M.get_default_searches()
                     command = "$FD python.exe$ $HOME/AppData/Local/pypoetry/Cache/virtualenvs --full-path --color never"
                 },
                 pyenv = {
-                    command = "$FD python.exe$ $HOME/.pyenv/pyenv-win/versions -E Lib"
+                    command = "$FD python.exe$ $HOME/.pyenv/pyenv-win/versions $HOME/.pyenv-win-venv/envs -E Lib"
                 },
                 anaconda_envs = {
                     command = "$FD python.exe$ $HOME/anaconda3/envs --full-path -a -E Lib",

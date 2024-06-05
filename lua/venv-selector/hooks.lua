@@ -1,5 +1,24 @@
 local M = {}
 
+M.notifications_memory = {}
+
+function M.send_notification(message)
+    local now = vim.loop.hrtime()
+
+    -- Check if this is the first notification or if more than 1 second has passed
+    local last_notification_time = M.notifications_memory[message]
+    if last_notification_time == nil or (now - last_notification_time) > 1e9 then
+        log.debug("Below message sent to user since this message was not notified about before.")
+        log.info(message)
+        vim.notify(message, vim.log.levels.INFO, { title = 'VenvSelect' })
+        M.notifications_memory[message] = now
+    else
+        -- Less than one second since last notification with same message
+        log.debug(
+            "Below message was NOT sent to user since we notified about the same message less than a second ago.")
+        log.debug(message)
+    end
+end
 
 function M.set_python_path_for_client(client_name, venv_python)
     return M.execute_for_client(client_name, function(client)
@@ -20,9 +39,8 @@ function M.set_python_path_for_client(client_name, venv_python)
 
         local message = "Registered '" .. venv_python .. "' with " .. client_name .. " LSP."
         if config.user_settings.options.notify_user_on_venv_activation == true then
-            vim.notify(message, vim.log.levels.INFO, { title = 'VenvSelect' })
+            M.send_notification(message)
         end
-        log.info(message)
     end)
 end
 

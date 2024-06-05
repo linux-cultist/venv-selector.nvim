@@ -106,9 +106,9 @@ end
 function M.sort_results()
     local selected_python = path.current_python_path
     table.sort(M.results, function(a, b)
-        if a.name == selected_python and b.name ~= selected_python then
+        if a.path == selected_python and b.path ~= selected_python then
             return true            -- `a` comes first because it matches `selected_python`
-        elseif a.name ~= selected_python and b.name == selected_python then
+        elseif a.path ~= selected_python and b.path == selected_python then
             return false           -- `b` comes first because it matches `selected_python`
         else
             return a.name > b.name -- Otherwise sort alphabetically

@@ -19,7 +19,7 @@ function M.get_default_searches()
                     command = "$FD '/bin/python$' ~/.cache/pypoetry/virtualenvs --full-path"
                 },
                 pyenv = {
-                    command = "$FD 'versions/([0-9.]+)/bin/python$' ~/.pyenv/versions --full-path --color never -E /proc"
+                    command = "$FD '/bin/python$' ~/.pyenv/versions --full-path --color never -E /proc -E pkgs/ -E envs/ -L"
                 },
                 anaconda_envs = {
                     command = "$FD 'bin/python$' ~/.conda/envs --full-path --color never -E /proc",
@@ -56,7 +56,7 @@ function M.get_default_searches()
                     command = "$FD '/bin/python$' ~/Library/Caches/pypoetry/virtualenvs --full-path"
                 },
                 pyenv = {
-                    command = "$FD 'versions/([0-9.]+)/bin/python$' ~/.pyenv/versions --full-path --color never -E /proc"
+                    command = "$FD '/bin/python$' ~/.pyenv/versions --full-path --color never -E /proc -E pkgs/ -E envs/ -L"
                 },
                 anaconda_envs = {
                     command = "$FD 'bin/python$' ~/.conda/envs --full-path --color never -E /proc",

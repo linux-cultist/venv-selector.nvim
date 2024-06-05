@@ -398,17 +398,20 @@ You also need `debugpy` installed in the venv you are switching to.
 ```
 settings = {
   options = {
-    debug = false                           -- enables you to run the VenvSelectLog command to view debug logs
-    on_telescope_result_callback = nil      -- callback function for when a search result shows up in telescope
-    on_venv_activate_callback = nil         -- callback function for when a venv is activated
-    fd_binary_name = nil                    -- plugin looks for `fd` or `fdfind` but you can set something else here
-    enable_default_searches = true          -- switches all default searches on/off
-    enable_cached_venvs = true              -- automatically activates the venv you used last time in a directory
-    activate_venv_in_terminal = true,       -- activate the selected python interpreter in terminal windows opened from neovim
-    set_environment_variables = true,       -- sets VIRTUAL_ENV or CONDA_PREFIX environment variables
-    show_telescope_search_type = true,      -- shows the name of the search in telescope
-    notify_user_on_venv_activation = false  -- notifies user on activation of the virtual env
-    search_timeout = 5                      -- if a search takes longer than this many seconds, stop it and alert the user
+        on_venv_activate_callback = nil,           -- callback function for after a venv activates
+        enable_default_searches = true,            -- switches all default searches on/off
+        enable_cached_venvs = true,                -- automatically activates the venv you used last time in a directory
+        activate_venv_in_terminal = true,          -- activate the selected python interpreter in terminal windows opened from neovim
+        set_environment_variables = true,          -- sets VIRTUAL_ENV or CONDA_PREFIX environment variables
+        notify_user_on_venv_activation = false,    -- notifies user on activation of the virtual env
+        search_timeout = 5,                        -- if a search takes longer than this many seconds, stop it and alert the user
+        debug = false,                             -- enables you to run the VenvSelectLog command to view debug logs
+        fd_binary_name = M.find_fd_command_name(), -- plugin looks for `fd` or `fdfind` but you can set something else here
+
+        -- telescope viewer options
+        on_telescope_result_callback = nil,        -- callback function for modifying telescope results
+        show_telescope_search_type = true,         -- shows which of the searches found which venv in telescope
+        telescope_filter_type = "substring"        -- when you type something in telescope, filter by "substring" or "character"
   }
 }
 

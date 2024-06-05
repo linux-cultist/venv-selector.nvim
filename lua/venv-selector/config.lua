@@ -162,7 +162,7 @@ M.default_settings = {
         fd_binary_name = M.find_fd_command_name(), -- plugin looks for `fd` or `fdfind` but you can set something else here
 
         -- telescope viewer options
-        on_telescope_result_callback = nil, -- callback function for telescope results
+        on_telescope_result_callback = nil, -- callback function for modifying telescope results
         show_telescope_search_type = true,  -- Shows which of the searches found which venv in telescope
         telescope_filter_type = "substring" -- When you type something in telescope, filter by "substring" or "character"
     },

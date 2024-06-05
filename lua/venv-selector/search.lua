@@ -103,7 +103,8 @@ local function run_search(opts)
             if job_count == 0 then
                 log.info("Searching finished.")
                 gui.remove_dups()
-                gui.show_results()
+                gui.sort_results()
+                gui.update_results()
                 M.search_in_progress = false
             end
         end

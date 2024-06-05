@@ -11,7 +11,7 @@ function M.insert_result(row)
     log.debug(row)
 
     table.insert(M.results, row)
-    M.show_results()
+    M.update_results()
 end
 
 function M.get_sorter()
@@ -105,22 +105,59 @@ end
 
 function M.sort_results()
     local selected_python = path.current_python_path
-    table.sort(M.results, function(a, b)
-        if a.path == selected_python and b.path ~= selected_python then
-            return true            -- `a` comes first because it matches `selected_python`
-        elseif a.path ~= selected_python and b.path == selected_python then
-            return false           -- `b` comes first because it matches `selected_python`
-        else
-            return a.name > b.name -- Otherwise sort alphabetically
+    local current_file_dir = vim.fn.expand('%:p:h')
+
+
+    -- Normalize path by converting all separators to a common one (e.g., '/')
+    local function normalize_path(path)
+        return path:gsub('\\', '/')
+    end
+
+    -- Calculate the path similarity
+    local function path_similarity(path1, path2)
+        path1 = normalize_path(path1)
+        path2 = normalize_path(path2)
+        local segments1 = vim.split(path1, '/')
+        local segments2 = vim.split(path2, '/')
+        local count = 0
+        for i = 1, math.min(#segments1, #segments2) do
+            if segments1[i] == segments2[i] then
+                count = count + 1
+            else
+                break
+            end
         end
+        return count
+    end
+
+    log.debug("Using '" .. current_file_dir .. "' to calculate path similarity.")
+    table.sort(M.results, function(a, b)
+        -- Check for 'selected_python' match
+        local a_is_selected = a.path == selected_python
+        local b_is_selected = b.path == selected_python
+        if a_is_selected and not b_is_selected then
+            return true
+        elseif not a_is_selected and b_is_selected then
+            return false
+        end
+
+        -- Compare based on path similarity
+        local sim_a = path_similarity(a.path, current_file_dir)
+        local sim_b = path_similarity(b.path, current_file_dir)
+        if sim_a ~= sim_b then
+            return sim_a > sim_b
+        end
+
+        -- Fallback to alphabetical sort
+        return a.name > b.name
     end)
 end
 
-function M.show_results()
+function M.update_results()
     local finders = require 'telescope.finders'
     local actions_state = require 'telescope.actions.state'
 
-    M.sort_results()
+    log.debug("Calling sort results in show_results")
 
     local finder = finders.new_table {
         results = M.results,

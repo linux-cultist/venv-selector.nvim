@@ -7,7 +7,9 @@ log = require 'venv-selector.logger'
 
 local function on_lsp_attach()
     local cache = require("venv-selector.cached_venv")
-    cache.retrieve()
+    if config.user_settings.options.cached_venv_automatic_activation == true then
+        cache.retrieve()
+    end
 end
 
 vim.api.nvim_create_autocmd("LspAttach", {

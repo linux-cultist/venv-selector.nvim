@@ -34,7 +34,7 @@ function M.make_entry_maker()
         separator = ' ',
         items = {
             { width = 2 },
-            { width = 110 },
+            { width = 80 },
             { width = 2 },
             { width = 20 },
             { width = 0.95 },
@@ -191,10 +191,10 @@ function M.open(in_progress)
     local opts = {
         prompt_title = title,
         finder = finder,
-        layout_strategy = 'horizontal',
+        layout_strategy = 'vertical',
         layout_config = {
             height = 0.4,
-            width = 140,
+            width = 120,
             prompt_position = 'top',
         },
         cwd = require('telescope.utils').buffer_dir(),

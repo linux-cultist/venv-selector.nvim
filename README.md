@@ -287,9 +287,10 @@ Maybe you dont want to see the entire full path to python in the telescope viewe
   config = function()
   
       -- This function gets called by the plugin when a new result from fd is received
-      -- You can change the filename displayed here to what you like. Here in the example we remove the /bin/python part.
-      local function remove_last_part(filename)
-        return filename:gsub("/bin/python", "")
+      -- You can change the filename displayed here to what you like. 
+      -- Here in the example for linux/mac we replace the home directory with '~' and remove the /bin/python part.
+      local function shorter_name(filename)
+         return filename:gsub(os.getenv("HOME"), "~"):gsub("/bin/python", "")
       end
 
 
@@ -297,7 +298,7 @@ Maybe you dont want to see the entire full path to python in the telescope viewe
         settings = {
           options = {
             -- If you put the callback here as a global option, its used for all searches (including the default ones by the plugin)
-            on_telescope_result_callback = remove_last_part 
+            on_telescope_result_callback = shorter_name 
           },
 
           search = {

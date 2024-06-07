@@ -34,7 +34,7 @@ function M.make_entry_maker()
         separator = ' ',
         items = {
             { width = 2 },
-            { width = 80 },
+            { width = 90 },
             { width = 2 },
             { width = 20 },
             { width = 0.95 },

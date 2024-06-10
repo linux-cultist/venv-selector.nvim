@@ -1,5 +1,6 @@
 local path = require("venv-selector.path")
 local config = require("venv-selector.config")
+local log = require 'venv-selector.logger'
 
 local M = {}
 

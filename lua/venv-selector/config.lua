@@ -1,5 +1,5 @@
 local hooks = require 'venv-selector.hooks'
-
+local log = require 'venv-selector.logger'
 
 local M = {}
 

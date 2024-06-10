@@ -1,7 +1,7 @@
 local config = require 'venv-selector.config'
 local search = require 'venv-selector.search'
 local gui = require 'venv-selector.gui'
-
+local log = require 'venv-selector.logger'
 
 local M = {}
 

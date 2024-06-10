@@ -1,3 +1,5 @@
+local log = require 'venv-selector.logger'
+
 local M = {}
 
 function M.table_has_content(t)

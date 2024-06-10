@@ -1,3 +1,5 @@
+local log = require 'venv-selector.logger'
+
 local M = {}
 
 M.notifications_memory = {}

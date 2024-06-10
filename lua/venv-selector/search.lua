@@ -2,6 +2,7 @@ local gui = require 'venv-selector.gui'
 local workspace = require 'venv-selector.workspace'
 local path = require("venv-selector.path")
 local utils = require("venv-selector.utils")
+local log = require 'venv-selector.logger'
 
 local function is_workspace_search(str)
     return string.find(str, "$WORKSPACE_PATH") ~= nil

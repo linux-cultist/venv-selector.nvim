@@ -1,6 +1,6 @@
 local config = require("venv-selector.config")
 local path = require("venv-selector.path")
-
+local log = require 'venv-selector.logger'
 
 local cache_file = path.expand(config.user_settings.cache.file)
 local base_dir = path.get_base(cache_file)

@@ -1,4 +1,5 @@
 local utils = require("venv-selector.utils")
+local log = require 'venv-selector.logger'
 
 local M = {}
 

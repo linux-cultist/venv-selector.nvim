@@ -53,7 +53,7 @@ function M.get_default_searches()
                 },
                 hatch = {
                     command =
-                    "$FD 'python$' ~/Library/Application/Support/hatch/env/virtual --color never -E '*-build*' -E /proc"
+                    "$FD 'python$' ~/Library/Application Support/hatch/env/virtual --color never -E '*-build*' -E /proc"
                 },
                 poetry = {
                     command = "$FD '/bin/python$' ~/Library/Caches/pypoetry/virtualenvs --full-path"

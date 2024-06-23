@@ -30,11 +30,11 @@ function M.get_default_searches()
           type = 'anaconda',
         },
         miniconda_envs = {
-          command = "$FD 'bin/python$' ~/miniconda/envs --full-path --color never -E /proc",
+          command = "$FD 'bin/python$' ~/miniconda3/envs --full-path --color never -E /proc",
           type = 'miniconda',
         },
         miniconda_base = {
-          command = "$FD '/python$' ~/miniconda/bin --full-path --color never -E /proc",
+          command = "$FD '/python$' ~/miniconda3/bin --full-path --color never -E /proc",
           type = 'miniconda',
         },
         pipx = {

@@ -1,4 +1,4 @@
-local utils = require("venv-selector.utils")
+local utils = require 'venv-selector.utils'
 local log = require 'venv-selector.logger'
 
 local M = {}
@@ -15,9 +15,9 @@ function M.list_folders()
     end
 
     if utils.table_has_content(workspace_folders) then
-        log.debug("Workspace folders: ", workspace_folders)
+        log.debug('Workspace folders: ', workspace_folders)
     else
-        log.debug("No workspace folders.")
+        log.debug 'No workspace folders.'
     end
 
     return workspace_folders

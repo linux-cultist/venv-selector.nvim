@@ -4,22 +4,27 @@ local config = require 'venv-selector.config'
 local venv = require 'venv-selector.venv'
 local path = require 'venv-selector.path'
 local ws = require 'venv-selector.workspace'
+local cache = require 'venv-selector.cached_venv'
 
-
-local function on_lsp_attach()
-    local cache = require("venv-selector.cached_venv")
-    if config.user_settings.options.cached_venv_automatic_activation == true then
+local function on_lsp_attach(client, bufnr)
+    if config.default_settings.options.cached_venv_automatic_activation == true then
         cache.retrieve()
     end
 end
 
-vim.api.nvim_create_autocmd("LspAttach", {
-    pattern = "*.py",
-    callback = on_lsp_attach,
+vim.api.nvim_create_autocmd('LspAttach', {
+    group = vim.api.nvim_create_augroup('lsp_acttach_python_venv', { clear = true }),
+    pattern = '*.py',
+    callback = function(args)
+        local client = vim.lsp.get_client_by_id(args.data.client_id)
+        local bufnr = args.buf
+        if client and bufnr then
+            on_lsp_attach(client, bufnr)
+        end
+    end,
 })
 
-
-vim.api.nvim_command('hi VenvSelectActiveVenv guifg=#00FF00')
+vim.api.nvim_command 'hi VenvSelectActiveVenv guifg=#00FF00'
 
 local M = {}
 
@@ -58,7 +63,7 @@ end
 
 function M.setup(plugin_settings)
     config.merge_user_settings(plugin_settings or {})
-    if config.user_settings.options.debug == true then
+    if config.default_settings.options.debug == true then
         log.enabled = true
     end
     user_commands.register()

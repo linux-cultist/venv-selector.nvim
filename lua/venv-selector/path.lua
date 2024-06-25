@@ -108,4 +108,13 @@ function M.get_base(path)
     end
 end
 
+function M.is_directory(path)
+    if path == nil then
+        return false
+    end
+
+    local stat = vim.loop.fs_stat(path)
+    return stat and stat.type == 'directory'
+end
+
 return M

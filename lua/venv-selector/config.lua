@@ -137,9 +137,9 @@ function M.find_fd_command_name()
 end
 
 M.default_settings = {
-    cache = {
-        file = '~/.cache/venv-selector/venvs2.json',
-    },
+    -- cache = {
+    --     file = '~/.cache/venv-selector/venvs2.json',
+    -- },
     hooks = { hooks.basedpyright_hook, hooks.pyright_hook, hooks.pylance_hook, hooks.pylsp_hook },
     options = {
         on_venv_activate_callback = nil, -- callback function for after a venv activates

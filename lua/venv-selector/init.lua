@@ -8,7 +8,7 @@ local cache = require 'venv-selector.cached_venv'
 
 local function on_lsp_attach(client, bufnr)
     if config.default_settings.options.cached_venv_automatic_activation == true then
-        cache.retrieve()
+        cache.retrieve(client, bufnr)
     end
 end
 

@@ -20,6 +20,7 @@
   - [Poetry](https://python-poetry.org)
   - [Pipenv](https://pipenv.pypa.io/en/latest/)
   - [Anaconda](https://www.anaconda.com)
+  - [Miniconda](https://docs.anaconda.com/miniconda/) (Linux only for now)
   - [Pyenv](https://github.com/pyenv/pyenv) (including `pyenv-virtualenv` and `pyenv-win-venv` plugins)
   - [Virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/)
   - [Hatch](https://hatch.pypa.io/latest/)
@@ -93,6 +94,7 @@ There wont be any workspace paths before your LSP has detected a workspace (norm
 - Venvs created by [Hatch](https://hatch.pypa.io/latest)
 - Venvs created by [Pyenv](https://github.com/pyenv/pyenv)
 - Venvs created by [Anaconda](https://www.anaconda.com)
+- Venvs created by [Miniconda](https://docs.anaconda.com/miniconda/) (Linux only for now)
 - Venvs created by [Pipx](https://github.com/pypa/pipx)
 - Venvs in the current working directory (uses the `cwd` search pattern)
 - Venvs in the lsp workspace directories (uses the `workspace` search pattern)
@@ -204,9 +206,9 @@ settings = {
 Or you can disable all the default searches and take complete control over everything. See the options section in this README.
 
 
-## Your own anaconda search
+## Your own anaconda/miniconda search
 
-If you need to create your own anaconda search, you have to remember to set the type to "anaconda".
+If you need to create your own anaconda/miniconda search, you have to remember to set the type to "anaconda" or "miniconda".
 
 ```
       require("venv-selector").setup {

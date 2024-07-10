@@ -1,8 +1,8 @@
-local gui = require 'venv-selector.gui'
-local workspace = require 'venv-selector.workspace'
+local gui = require("venv-selector.gui")
+local workspace = require("venv-selector.workspace")
 local path = require("venv-selector.path")
 local utils = require("venv-selector.utils")
-local log = require 'venv-selector.logger'
+local log = require("venv-selector.logger")
 
 local function is_workspace_search(str)
     return string.find(str, "$WORKSPACE_PATH") ~= nil
@@ -16,7 +16,6 @@ local function is_filepath_search(str)
     return string.find(str, "$FILE_DIR") ~= nil
 end
 
-
 local M = {}
 
 local function disable_default_searches(search_settings)
@@ -29,15 +28,14 @@ local function disable_default_searches(search_settings)
     end
 end
 
-
 local function set_interactive_search(opts)
     if opts ~= nil and #opts.args > 0 then
         local settings = {
             search = {
                 interactive = {
-                    command = opts.args:gsub("%$CWD", vim.fn.getcwd())
-                }
-            }
+                    command = opts.args:gsub("%$CWD", vim.fn.getcwd()),
+                },
+            },
         }
         log.debug("Interactive search replaces previous search settings: ", settings)
         return settings
@@ -63,16 +61,16 @@ local function run_search(opts)
 
     local search_timeout = options.search_timeout
 
-
-
     local function on_event(job_id, data, event)
-        local callback = jobs[job_id].on_telescope_result_callback or
-            utils.try(search_settings, "options", "on_telescope_result_callback")
+        local callback = jobs[job_id].on_telescope_result_callback
+            or utils.try(search_settings, "options", "on_telescope_result_callback")
 
-        if event == 'stdout' and data then
+        if event == "stdout" and data then
             local search = jobs[job_id]
 
-            if not results[job_id] then results[job_id] = {} end
+            if not results[job_id] then
+                results[job_id] = {}
+            end
             for _, line in ipairs(data) do
                 if line ~= "" and line ~= nil then
                     local rv = {}
@@ -83,15 +81,20 @@ local function run_search(opts)
                     rv.source = search.name
 
                     if callback then
-                        log.debug("Calling on_telescope_result() callback function with line '" ..
-                            line .. "' and source '" .. rv.source .. "'")
+                        log.debug(
+                            "Calling on_telescope_result() callback function with line '"
+                                .. line
+                                .. "' and source '"
+                                .. rv.source
+                                .. "'"
+                        )
                         rv.name = callback(line, rv.source)
                     end
 
                     gui.insert_result(rv)
                 end
             end
-        elseif event == 'stderr' and data then
+        elseif event == "stderr" and data then
             if data and #data > 0 then
                 for _, line in ipairs(data) do
                     if line ~= "" then
@@ -99,7 +102,7 @@ local function run_search(opts)
                     end
                 end
             end
-        elseif event == 'exit' then
+        elseif event == "exit" then
             job_count = job_count - 1
             if job_count == 0 then
                 log.info("Searching finished.")
@@ -131,23 +134,29 @@ local function run_search(opts)
             local running = vim.fn.jobwait({ job_id }, 0)[1] == -1
             if running then
                 vim.fn.jobstop(job_id)
-                local message = "Search with name '" ..
-                    jobs[job_id].name ..
-                    "' took more than " ..
-                    search_timeout ..
-                    " seconds and was stopped. Avoid using VenvSelect in your $HOME directory since it searches all hidden files by default."
+                local message = "Search with name '"
+                    .. jobs[job_id].name
+                    .. "' took more than "
+                    .. search_timeout
+                    .. " seconds and was stopped. Avoid using VenvSelect in your $HOME directory since it searches all hidden files by default."
                 log.warning(message)
-                vim.notify(message, vim.log.levels.ERROR, { title = 'VenvSelect' })
+                vim.notify(message, vim.log.levels.ERROR, {
+                    title = "VenvSelect",
+                })
             end
         end
 
         -- Start a timer to terminate the job after 5 seconds
         local timer = uv.new_timer()
-        timer:start(search_timeout * 1000, 0, vim.schedule_wrap(function()
-            stop_job()
-            timer:stop()
-            timer:close()
-        end))
+        timer:start(
+            search_timeout * 1000,
+            0,
+            vim.schedule_wrap(function()
+                stop_job()
+                timer:stop()
+                timer:close()
+            end)
+        )
 
         return count
     end
@@ -170,11 +179,11 @@ local function run_search(opts)
                     search.execute_command = search.execute_command:gsub("$WORKSPACE_PATH", workspace_path)
                     job_count = start_search_job(job_name, search, job_count)
                 end
-                -- search has $CWD inside
+            -- search has $CWD inside
             elseif is_cwd_search(search.command) then
                 search.execute_command = search.execute_command:gsub("$CWD", cwd)
                 job_count = start_search_job(job_name, search, job_count)
-                -- search has $FILE_DIR inside
+            -- search has $FILE_DIR inside
             elseif is_filepath_search(search.command) then
                 if current_dir ~= nil then
                     search.execute_command = search.execute_command:gsub("$FILE_DIR", current_dir)
@@ -188,22 +197,20 @@ local function run_search(opts)
     end
 end
 
-
 function M.New(opts)
     local options = require("venv-selector.config").user_settings.options
     if options.fd_binary_name == nil then
         local message =
-        "Cannot find any fd binary on your system. If its installed under a different name, you can set options.fd_binary_name to its name."
+            "Cannot find any fd binary on your system. If its installed under a different name, you can set options.fd_binary_name to its name."
         log.error(message)
-        vim.notify(message, vim.log.levels.ERROR, { title = 'VenvSelect' })
+        vim.notify(message, vim.log.levels.ERROR, { title = "VenvSelect" })
     elseif utils.check_dependencies_installed() == false then
         local message = "Not all required modules are installed."
         log.error(message)
-        vim.notify(message, vim.log.levels.ERROR, { title = 'VenvSelect' })
+        vim.notify(message, vim.log.levels.ERROR, { title = "VenvSelect" })
     elseif utils.table_has_content(gui.results) == false then
         run_search(opts)
     else
-
     end
 end
 

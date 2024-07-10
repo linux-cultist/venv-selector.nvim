@@ -1,6 +1,6 @@
 local path = require("venv-selector.path")
 local config = require("venv-selector.config")
-local log = require 'venv-selector.logger'
+local log = require("venv-selector.logger")
 
 local M = {}
 
@@ -28,8 +28,8 @@ function M.activate(hooks, selected_entry)
 
         if count == 0 then
             local message =
-            "No python lsp servers are running. Please open a python file and then select a venv to activate."
-            vim.notify(message, vim.log.levels.INFO, { title = 'VenvSelect' })
+                "No python lsp servers are running. Please open a python file and then select a venv to activate."
+            vim.notify(message, vim.log.levels.INFO, { title = "VenvSelect" })
             log.info(message)
             return false
         else
@@ -37,7 +37,7 @@ function M.activate(hooks, selected_entry)
             cache.save(python_path, venv_type, source)
             if on_venv_activate_callback ~= nil then
                 M.current_source = source
-                log.debug("Setting require(\"venv-selector\").source() to '" .. source .. "'")
+                log.debug('Setting require("venv-selector").source() to \'' .. source .. "'")
                 log.debug("Calling on_venv_activate_callback() function")
                 on_venv_activate_callback()
             end
@@ -78,7 +78,7 @@ function M.activate_from_cache(settings, venv_info)
 
     if on_venv_activate_callback ~= nil then
         M.current_source = venv_source
-        log.debug("Setting require(\"venv-selector\").source() to '" .. venv_source .. '"')
+        log.debug('Setting require("venv-selector").source() to \'' .. venv_source .. '"')
         log.debug("Calling on_venv_activate_callback() function")
         on_venv_activate_callback()
     end

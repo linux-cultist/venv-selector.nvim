@@ -8,7 +8,7 @@ M.levels = {
     INFO = 2,
     WARNING = 3,
     ERROR = 4,
-    NONE = 5
+    NONE = 5,
 }
 
 M.current_level = M.levels.DEBUG
@@ -60,8 +60,12 @@ function M.get_utc_date_time()
 end
 
 function M.log_table(tbl, indent)
-    if M.enabled == false then return end
-    if not indent then indent = 0 end
+    if M.enabled == false then
+        return
+    end
+    if not indent then
+        indent = 0
+    end
 
     for k, v in pairs(tbl) do
         local formatting = string.rep("  ", indent) .. k .. ": "
@@ -75,7 +79,9 @@ function M.log_table(tbl, indent)
 end
 
 function M.log_line(msg, level)
-    if M.enabled == false then return end
+    if M.enabled == false then
+        return
+    end
     if log_buf == nil or not vim.api.nvim_buf_is_valid(log_buf) then
         log_buf = vim.api.nvim_create_buf(false, true)
         vim.api.nvim_buf_set_name(log_buf, buffer_name)
@@ -117,7 +123,7 @@ function M.toggle()
         if prev_buf and vim.api.nvim_buf_is_valid(prev_buf) then
             vim.api.nvim_win_set_buf(0, prev_buf)
         else
-            vim.api.nvim_command('enew')
+            vim.api.nvim_command("enew")
         end
         prev_buf = nil
     else

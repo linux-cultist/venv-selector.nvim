@@ -1,10 +1,9 @@
-local log = require 'venv-selector.logger'
-local user_commands = require 'venv-selector.user_commands'
-local config = require 'venv-selector.config'
-local venv = require 'venv-selector.venv'
-local path = require 'venv-selector.path'
-local ws = require 'venv-selector.workspace'
-
+local log = require("venv-selector.logger")
+local user_commands = require("venv-selector.user_commands")
+local config = require("venv-selector.config")
+local venv = require("venv-selector.venv")
+local path = require("venv-selector.path")
+local ws = require("venv-selector.workspace")
 
 local function on_lsp_attach()
     local cache = require("venv-selector.cached_venv")
@@ -18,8 +17,7 @@ vim.api.nvim_create_autocmd("LspAttach", {
     callback = on_lsp_attach,
 })
 
-
-vim.api.nvim_command('hi VenvSelectActiveVenv guifg=#00FF00')
+vim.api.nvim_command("hi VenvSelectActiveVenv guifg=#00FF00")
 
 local M = {}
 

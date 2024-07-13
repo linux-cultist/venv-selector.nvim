@@ -1,6 +1,6 @@
 local config = require("venv-selector.config")
 local path = require("venv-selector.path")
-local log = require 'venv-selector.logger'
+local log = require("venv-selector.logger")
 
 local cache_file = path.expand(config.user_settings.cache.file)
 local base_dir = path.get_base(cache_file)
@@ -9,7 +9,7 @@ local M = {}
 
 function M.create_dir()
     if vim.fn.filewritable(base_dir) == 0 then
-        vim.fn.mkdir(base_dir, 'p')
+        vim.fn.mkdir(base_dir, "p")
     end
 end
 
@@ -22,7 +22,11 @@ function M.save(python_path, venv_type, venv_source)
     M.create_dir()
 
     local venv_cache = {
-        [vim.fn.getcwd()] = { value = python_path, type = venv_type, source = venv_source },
+        [vim.fn.getcwd()] = {
+            value = python_path,
+            type = venv_type,
+            source = venv_source,
+        },
     }
 
     local venv_cache_json = nil
@@ -32,7 +36,7 @@ function M.save(python_path, venv_type, venv_source)
         local cached_file = vim.fn.readfile(cache_file)
         if cached_file ~= nil and cached_file[1] ~= nil then
             local cached_json = vim.fn.json_decode(cached_file[1])
-            local merged_cache = vim.tbl_deep_extend('force', cached_json, venv_cache)
+            local merged_cache = vim.tbl_deep_extend("force", cached_json, venv_cache)
             venv_cache_json = vim.fn.json_encode(merged_cache)
             log.debug("Cache content: ", venv_cache_json)
         end
@@ -40,7 +44,6 @@ function M.save(python_path, venv_type, venv_source)
         venv_cache_json = vim.fn.json_encode(venv_cache)
         log.debug("Cache content: ", venv_cache_json)
     end
-
 
     vim.fn.writefile({ venv_cache_json }, cache_file)
     log.debug("Wrote cache content to " .. cache_file)

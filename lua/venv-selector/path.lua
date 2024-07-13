@@ -1,6 +1,6 @@
 local config = require("venv-selector.config")
 local utils = require("venv-selector.utils")
-local log = require 'venv-selector.logger'
+local log = require("venv-selector.logger")
 
 local M = {}
 M.current_python_path = nil
@@ -11,8 +11,8 @@ function M.save_selected_python(python_path)
     local path = require("venv-selector.path")
     M.current_python_path = python_path
     M.current_venv_path = path.get_base(path.get_base(python_path))
-    log.debug("Setting require(\"venv-selector\").python() to '" .. M.current_python_path .. "'")
-    log.debug("Setting require(\"venv-selector\").venv() to '" .. M.current_venv_path .. "'")
+    log.debug('Setting require("venv-selector").python() to \'' .. M.current_python_path .. "'")
+    log.debug('Setting require("venv-selector").venv() to \'' .. M.current_venv_path .. "'")
 end
 
 function M.add(newDir)
@@ -22,7 +22,7 @@ function M.add(newDir)
                 M.remove(previous_dir)
             end
             local path = vim.fn.getenv("PATH")
-            local path_separator = package.config:sub(1, 1) == '\\' and ';' or ':'
+            local path_separator = package.config:sub(1, 1) == "\\" and ";" or ":"
             local clean_dir = M.remove_trailing_slash(newDir)
             local updated_path = clean_dir .. path_separator .. path
             previous_dir = clean_dir
@@ -33,8 +33,8 @@ function M.add(newDir)
 end
 
 function M.update_python_dap(python_path)
-    local dap_python_installed, dap_python = pcall(require, 'dap-python')
-    local dap_installed, dap = pcall(require, 'dap')
+    local dap_python_installed, dap_python = pcall(require, "dap-python")
+    local dap_installed, dap = pcall(require, "dap")
     if dap_python_installed and dap_installed then
         log.debug("Setting dap python interpreter to '" .. python_path .. "'")
         dap_python.resolve_python = function()
@@ -64,7 +64,7 @@ function M.remove(removalDir)
     local clean_dir = M.remove_trailing_slash(removalDir)
     local path = vim.fn.getenv("PATH")
     log.debug("Path before venv removal: ", path)
-    local pathSeparator = package.config:sub(1, 1) == '\\' and ';' or ':'
+    local pathSeparator = package.config:sub(1, 1) == "\\" and ";" or ":"
     local paths = {}
     for p in string.gmatch(path, "[^" .. pathSeparator .. "]+") do
         if p ~= clean_dir then
@@ -77,7 +77,7 @@ function M.remove(removalDir)
 end
 
 function M.get_current_file_directory()
-    local opened_filepath = vim.fn.expand('%:p')
+    local opened_filepath = vim.fn.expand("%:p")
     if opened_filepath ~= nil then
         return M.get_base(opened_filepath)
     end

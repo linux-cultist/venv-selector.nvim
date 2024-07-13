@@ -116,11 +116,11 @@ function M.get_default_searches()
                     type = "anaconda",
                 },
                 miniconda_envs = { -- TODO: Set correct path on windows
-                    command = "$FD python.exe$ $HOME/anaconda3/envs --full-path -a -E Lib",
+                    command = "$FD python.exe$ $HOME/miniconda3/envs --full-path -a -E Lib",
                     type = "anaconda",
                 },
                 miniconda_base = { -- TODO: Set correct path on windows
-                    command = "$FD anaconda3\\\\python.exe $HOME/anaconda3 --full-path -a --color never",
+                    command = "$FD miniconda3\\\\python.exe $HOME/miniconda3 --full-path -a --color never",
                     type = "anaconda",
                 },
                 pipx = {

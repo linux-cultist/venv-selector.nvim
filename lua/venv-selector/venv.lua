@@ -47,7 +47,12 @@ function M.activate(hooks, selected_entry)
 end
 
 function M.activate_from_cache(settings, venv_info)
-    log.debug("Activating venv from cache")
+    if vim.fn.filereadable(venv_info.value) ~= 1 then
+        log.debug("Cached venv `" .. venv_info.value .. "` doesnt exist so cant activate it.")
+        return
+    end
+
+    log.debug("Activating venv `" .. venv_info.value .. "` from cache.")
 
     -- Set the below two variables as quick as possible since its used in sorting results in telescope
     -- and if the user is quick to open the telescope before lsp has activated, the selected

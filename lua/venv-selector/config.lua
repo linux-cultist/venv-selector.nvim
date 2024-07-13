@@ -179,7 +179,7 @@ M.default_settings = {
         search_timeout = 5, -- if a search takes longer than this many seconds, stop it and alert the user
         debug = false, -- enables you to run the VenvSelectLog command to view debug logs
         fd_binary_name = M.find_fd_command_name(), -- plugin looks for `fd` or `fdfind` but you can set something else here
-
+        require_lsp_activation = true, -- require activation of an lsp before setting env variables
         -- telescope viewer options
         on_telescope_result_callback = nil, -- callback function for modifying telescope results
         show_telescope_search_type = true, -- Shows which of the searches found which venv in telescope

@@ -31,11 +31,11 @@ function M.get_default_searches()
                 },
                 miniconda_envs = {
                     command = "$FD 'bin/python$' ~/miniconda3/envs --full-path --color never -E /proc",
-                    type = "miniconda",
+                    type = "anaconda",
                 },
                 miniconda_base = {
                     command = "$FD '/python$' ~/miniconda3/bin --full-path --color never -E /proc",
-                    type = "miniconda",
+                    type = "anaconda",
                 },
                 pipx = {
                     command = "$FD '/bin/python$' ~/.local/share/pipx/venvs ~/.local/pipx/venvs --full-path --color never -E /proc",
@@ -73,6 +73,14 @@ function M.get_default_searches()
                     command = "$FD '/python$' /opt/anaconda/bin --full-path --color never -E /proc",
                     type = "anaconda",
                 },
+                miniconda_envs = {
+                    command = "$FD 'bin/python$' ~/miniconda3/envs --full-path --color never -E /proc",
+                    type = "anaconda",
+                },
+                miniconda_base = {
+                    command = "$FD '/python$' ~/miniconda3/bin --full-path --color never -E /proc",
+                    type = "anaconda",
+                },
                 pipx = {
                     command = "$FD '/bin/python$' ~/.local/share/pipx/venvs ~/.local/pipx/venvs --full-path --color never -E /proc",
                 },
@@ -107,6 +115,14 @@ function M.get_default_searches()
                     command = "$FD anaconda3\\\\python.exe $HOME/anaconda3 --full-path -a --color never",
                     type = "anaconda",
                 },
+                miniconda_envs = { -- TODO: Set correct path on windows
+                    command = "$FD python.exe$ $HOME/anaconda3/envs --full-path -a -E Lib",
+                    type = "anaconda",
+                },
+                miniconda_base = { -- TODO: Set correct path on windows
+                    command = "$FD anaconda3\\\\python.exe $HOME/anaconda3 --full-path -a --color never",
+                    type = "anaconda",
+                },
                 pipx = {
                     command = "fd Scripts\\\\python.exe $HOME/pipx/venvs --full-path -a --color never",
                 },
@@ -134,6 +150,7 @@ function M.merge_user_settings(user_settings)
     M.user_settings.detected = {
         system = vim.loop.os_uname().sysname,
     }
+
     log.debug("Complete user settings:", M.user_settings, "")
 end
 
@@ -150,12 +167,7 @@ M.default_settings = {
     cache = {
         file = "~/.cache/venv-selector/venvs2.json",
     },
-    hooks = {
-        hooks.basedpyright_hook,
-        hooks.pyright_hook,
-        hooks.pylance_hook,
-        hooks.pylsp_hook,
-    },
+    hooks = { hooks.basedpyright_hook, hooks.pyright_hook, hooks.pylance_hook, hooks.pylsp_hook },
     options = {
         on_venv_activate_callback = nil, -- callback function for after a venv activates
         enable_default_searches = true, -- switches all default searches on/off

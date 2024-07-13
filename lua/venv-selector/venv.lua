@@ -64,9 +64,7 @@ function M.activate_from_cache(settings, venv_info)
         hook(python_path)
     end
 
-    local is_conda_family = venv_type == "anaconda" or venv_type == "miniconda"
-
-    if venv_type ~= nil and is_conda_family then -- venv_type == 'anaconda' then
+    if venv_type ~= nil and venv_type == "anaconda" then
         venv.unset_env("VIRTUAL_ENV")
         venv.set_env(python_path, "CONDA_PREFIX")
     else

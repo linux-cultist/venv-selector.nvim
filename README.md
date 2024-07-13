@@ -94,7 +94,7 @@ There wont be any workspace paths before your LSP has detected a workspace (norm
 - Venvs created by [Hatch](https://hatch.pypa.io/latest)
 - Venvs created by [Pyenv](https://github.com/pyenv/pyenv)
 - Venvs created by [Anaconda](https://www.anaconda.com)
-- Venvs created by [Miniconda](https://docs.anaconda.com/miniconda/) (Linux only for now)
+- Venvs created by [Miniconda](https://docs.anaconda.com/miniconda/)
 - Venvs created by [Pipx](https://github.com/pypa/pipx)
 - Venvs in the current working directory (uses the `cwd` search pattern)
 - Venvs in the lsp workspace directories (uses the `workspace` search pattern)

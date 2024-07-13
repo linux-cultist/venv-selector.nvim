@@ -60,6 +60,8 @@ function M.make_entry_maker()
                 "pyenv",
                 "anaconda_envs",
                 "anaconda_base",
+                "miniconda_envs",
+                "miniconda_base",
                 "pipx",
             })
         then

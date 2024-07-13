@@ -20,6 +20,7 @@
   - [Poetry](https://python-poetry.org)
   - [Pipenv](https://pipenv.pypa.io/en/latest/)
   - [Anaconda](https://www.anaconda.com)
+  - [Miniconda](https://docs.anaconda.com/miniconda/)
   - [Pyenv](https://github.com/pyenv/pyenv) (including `pyenv-virtualenv` and `pyenv-win-venv` plugins)
   - [Virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/)
   - [Hatch](https://hatch.pypa.io/latest/)
@@ -93,6 +94,7 @@ There wont be any workspace paths before your LSP has detected a workspace (norm
 - Venvs created by [Hatch](https://hatch.pypa.io/latest)
 - Venvs created by [Pyenv](https://github.com/pyenv/pyenv)
 - Venvs created by [Anaconda](https://www.anaconda.com)
+- Venvs created by [Miniconda](https://docs.anaconda.com/miniconda/)
 - Venvs created by [Pipx](https://github.com/pypa/pipx)
 - Venvs in the current working directory (uses the `cwd` search pattern)
 - Venvs in the lsp workspace directories (uses the `workspace` search pattern)
@@ -157,6 +159,28 @@ Some notes about using quotes or not around the regexp:
 - For `zsh` and `bash`, they are optional.
 - On `Windows` using `powershell`, quotes are not working.
 
+### Special note about anaconda/miniconda searches
+
+If you need to create your own anaconda/miniconda search, you have to remember to set the `type` to `anaconda`. This is because the plugin uses the type to understand if it should set conda-specific environment variables like `CONDA_PREFIX` when a virtual environment is activated.
+
+Even if its a miniconda environment, the type needs to be anaconda since the same environment variables are set.
+
+```
+      require("venv-selector").setup {
+        settings = {
+          search = {
+            anaconda_base = {
+                command = "fd /python$ /opt/anaconda/bin --full-path --color never -E /proc",
+                type = "anaconda"
+            },
+          },
+        },
+      }
+
+```
+
+
+
 ## VenvSelect is slow for me, what can i do?
 
 The only thing that determines speed for this plugin is how fast the `fd` search is.
@@ -203,24 +227,6 @@ settings = {
 
 Or you can disable all the default searches and take complete control over everything. See the options section in this README.
 
-
-## Your own anaconda search
-
-If you need to create your own anaconda search, you have to remember to set the type to "anaconda".
-
-```
-      require("venv-selector").setup {
-        settings = {
-          search = {
-            anaconda_base = {
-                command = "fd /python$ /opt/anaconda/bin --full-path --color never -E /proc",
-                type = "anaconda"
-            },
-          },
-        },
-      }
-
-```
 
 This is because the plugin needs to know that you want the `CONDA_PREFIX` to be set, amongst other things.
 

@@ -10,35 +10,38 @@ function M.get_default_searches()
         ["Linux"] = function()
             return {
                 virtualenvs = {
-                    command = "$FD 'python$' ~/.virtualenvs --color never -E /proc",
+                    command = "$FD 'python$' ~/.virtualenvs --color never",
                 },
                 hatch = {
-                    command = "$FD 'python$' ~/.local/share/hatch --color never -E '*-build*' -E /proc",
+                    command = "$FD 'python$' ~/.local/share/hatch --color never -E '*-build*'",
                 },
                 poetry = {
                     command = "$FD '/bin/python$' ~/.cache/pypoetry/virtualenvs --full-path",
                 },
                 pyenv = {
-                    command = "$FD '/bin/python$' ~/.pyenv/versions --full-path --color never -E /proc -E pkgs/ -E envs/ -L",
+                    command = "$FD '/bin/python$' ~/.pyenv/versions --full-path --color never -E pkgs/ -E envs/ -L",
+                },
+                pipenv = {
+                    command = "$FD '/bin/python$' ~/.local/share/virtualenvs --full-path --color never",
                 },
                 anaconda_envs = {
-                    command = "$FD 'bin/python$' ~/.conda/envs --full-path --color never -E /proc",
+                    command = "$FD 'bin/python$' ~/.conda/envs --full-path --color never",
                     type = "anaconda",
                 },
                 anaconda_base = {
-                    command = "$FD '/python$' /opt/anaconda/bin --full-path --color never -E /proc",
+                    command = "$FD '/python$' /opt/anaconda/bin --full-path --color never",
                     type = "anaconda",
                 },
                 miniconda_envs = {
-                    command = "$FD 'bin/python$' ~/miniconda3/envs --full-path --color never -E /proc",
+                    command = "$FD 'bin/python$' ~/miniconda3/envs --full-path --color never",
                     type = "anaconda",
                 },
                 miniconda_base = {
-                    command = "$FD '/python$' ~/miniconda3/bin --full-path --color never -E /proc",
+                    command = "$FD '/python$' ~/miniconda3/bin --full-path --color never",
                     type = "anaconda",
                 },
                 pipx = {
-                    command = "$FD '/bin/python$' ~/.local/share/pipx/venvs ~/.local/pipx/venvs --full-path --color never -E /proc",
+                    command = "$FD '/bin/python$' ~/.local/share/pipx/venvs ~/.local/pipx/venvs --full-path --color never",
                 },
                 cwd = {
                     command = "$FD '/bin/python$' $CWD --full-path --color never -HI -a -L -E /proc -E .git/ -E .wine/ -E .steam/ -E Steam/ -E site-packages/",
@@ -54,35 +57,38 @@ function M.get_default_searches()
         ["Darwin"] = function()
             return {
                 virtualenvs = {
-                    command = "$FD 'python$' ~/.virtualenvs --color never -E /proc",
+                    command = "$FD 'python$' ~/.virtualenvs --color never",
                 },
                 hatch = {
-                    command = "$FD 'python$' ~/Library/Application\\\\ Support/hatch/env/virtual --color never -E '*-build*' -E /proc",
+                    command = "$FD 'python$' ~/Library/Application\\\\ Support/hatch/env/virtual --color never -E '*-build*'",
                 },
                 poetry = {
                     command = "$FD '/bin/python$' ~/Library/Caches/pypoetry/virtualenvs --full-path",
                 },
                 pyenv = {
-                    command = "$FD '/bin/python$' ~/.pyenv/versions --full-path --color never -E /proc -E pkgs/ -E envs/ -L",
+                    command = "$FD '/bin/python$' ~/.pyenv/versions --full-path --color never -E pkgs/ -E envs/ -L",
+                },
+                pipenv = {
+                    command = "$FD '/bin/python$' ~/.local/share/virtualenvs --full-path --color never",
                 },
                 anaconda_envs = {
-                    command = "$FD 'bin/python$' ~/.conda/envs --full-path --color never -E /proc",
+                    command = "$FD 'bin/python$' ~/.conda/envs --full-path --color never",
                     type = "anaconda",
                 },
                 anaconda_base = {
-                    command = "$FD '/python$' /opt/anaconda/bin --full-path --color never -E /proc",
+                    command = "$FD '/python$' /opt/anaconda/bin --full-path --color never",
                     type = "anaconda",
                 },
                 miniconda_envs = {
-                    command = "$FD 'bin/python$' ~/miniconda3/envs --full-path --color never -E /proc",
+                    command = "$FD 'bin/python$' ~/miniconda3/envs --full-path --color never",
                     type = "anaconda",
                 },
                 miniconda_base = {
-                    command = "$FD '/python$' ~/miniconda3/bin --full-path --color never -E /proc",
+                    command = "$FD '/python$' ~/miniconda3/bin --full-path --color never",
                     type = "anaconda",
                 },
                 pipx = {
-                    command = "$FD '/bin/python$' ~/.local/share/pipx/venvs ~/.local/pipx/venvs --full-path --color never -E /proc",
+                    command = "$FD '/bin/python$' ~/.local/share/pipx/venvs ~/.local/pipx/venvs --full-path --color never",
                 },
                 cwd = {
                     command = "$FD '/bin/python$' $CWD --full-path --color never -HI -a -L -E /proc -E .git/ -E .wine/ -E .steam/ -E Steam/ -E site-packages/",
@@ -107,6 +113,9 @@ function M.get_default_searches()
                 pyenv = {
                     command = "$FD python.exe$ $HOME/.pyenv/pyenv-win/versions $HOME/.pyenv-win-venv/envs -E Lib",
                 },
+                pipenv = { -- TODO: Set correct path on windows
+                    command = "$FD '/bin/python$' ~/.local/share/virtualenvs --full-path --color never",
+                },
                 anaconda_envs = {
                     command = "$FD python.exe$ $HOME/anaconda3/envs --full-path -a -E Lib",
                     type = "anaconda",
@@ -115,11 +124,11 @@ function M.get_default_searches()
                     command = "$FD anaconda3\\\\python.exe $HOME/anaconda3 --full-path -a --color never",
                     type = "anaconda",
                 },
-                miniconda_envs = { -- TODO: Set correct path on windows
+                miniconda_envs = {
                     command = "$FD python.exe$ $HOME/miniconda3/envs --full-path -a -E Lib",
                     type = "anaconda",
                 },
-                miniconda_base = { -- TODO: Set correct path on windows
+                miniconda_base = {
                     command = "$FD miniconda3\\\\python.exe $HOME/miniconda3 --full-path -a --color never",
                     type = "anaconda",
                 },

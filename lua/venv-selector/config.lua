@@ -113,8 +113,8 @@ function M.get_default_searches()
                 pyenv = {
                     command = "$FD python.exe$ $HOME/.pyenv/pyenv-win/versions $HOME/.pyenv-win-venv/envs -E Lib",
                 },
-                pipenv = { -- TODO: Set correct path on windows
-                    command = "$FD '/bin/python$' ~/.local/share/virtualenvs --full-path --color never",
+                pipenv = {
+                    command = "$FD 'python.exe$' $HOME/.virtualenvs --full-path --color never",
                 },
                 anaconda_envs = {
                     command = "$FD python.exe$ $HOME/anaconda3/envs --full-path -a -E Lib",

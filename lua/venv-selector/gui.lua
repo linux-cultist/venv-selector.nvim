@@ -232,7 +232,7 @@ function M.open(in_progress)
         sorting_strategy = "ascending",
         sorter = M.get_sorter()(),
         attach_mappings = function(bufnr, map)
-            map("i", "<cr>", function()
+            map({ "i", "n" }, "<cr>", function()
                 local selected_entry = actions_state.get_selected_entry()
                 local activated = false
                 if selected_entry ~= nil then

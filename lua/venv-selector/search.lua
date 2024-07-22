@@ -119,7 +119,15 @@ local function run_search(opts)
         local job = path.expand(search.execute_command)
         log.debug("Starting '" .. job_name .. "': '" .. job .. "'")
         M.search_in_progress = true
-        local job_id = vim.fn.jobstart(job, {
+
+        local cmd
+        if vim.loop.os_uname().sysname == "Windows_NT" then
+          cmd = { vim.o.shell, vim.o.shellcmdflag, job }
+        else
+          cmd = job
+        end
+
+        local job_id = vim.fn.jobstart(cmd, {
             stdout_buffered = true,
             stderr_buffered = true,
             on_stdout = on_event,

@@ -13,7 +13,7 @@ local function on_lsp_attach()
 end
 
 vim.api.nvim_create_autocmd("LspAttach", {
-    pattern = "*.py",
+    pattern = "*.py,*.pyi",
     callback = on_lsp_attach,
 })
 

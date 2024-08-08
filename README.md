@@ -28,7 +28,7 @@
 - Supports callbacks to further filter or rename telescope results as they are found.
 - Supports using any program to find virtual environments (`fd`, `find`, `ls`, `dir` etc)
 - Supports running any interactive command to populate the telescope viewer:
-  - `:VenvSelect fd 'python$' . --full-path -IH -a`
+  - `:VenvSelect fd python$ . --full-path -IH -a`
 
 - Support [Pyright](https://github.com/microsoft/pyright), [Pylance](https://github.com/microsoft/pylance-release) and [Pylsp](https://github.com/python-lsp/python-lsp-server) lsp servers with ability to config hooks for others.
 - Virtual environments are remembered for each specific working directory and automatically activated the next time.
@@ -117,7 +117,7 @@ The configuration looks like this:
         settings = {
           search = {
             my_venvs = {
-              command = "fd python$ ~/Code",
+              command = { "fd", "python$", "~/Code" },
             },
           },
         },
@@ -143,21 +143,15 @@ You can add multiple searches as well:
         settings = {
           search = {
             find_code_venvs = {
-              command = "fd /bin/python$ ~/Code --full-path",
+              command = { "fd", "/bin/python$", "~/Code", "--full-path" },
             },
             find_programming_venvs = {
-              command = "fd /bin/python$ ~/Programming/Python --full-path -IHL -E /proc",
+              command = { "fd", "/bin/python$", "~/Programming/Python", "--full-path", "-IHL", "-E", "/proc" },
             },
           },
         },
       }
 ```
-
-Some notes about using quotes or not around the regexp: 
-
-- For `fish` shell, you need to put the regexp in quotes: `'/bin/python$'`.
-- For `zsh` and `bash`, they are optional.
-- On `Windows` using `powershell`, quotes are not working.
 
 ### Special note about anaconda/miniconda searches
 
@@ -170,7 +164,7 @@ Even if its a miniconda environment, the type needs to be anaconda since the sam
         settings = {
           search = {
             anaconda_base = {
-                command = "fd /python$ /opt/anaconda/bin --full-path --color never -E /proc",
+                command = { "fd", "/python$", "/opt/anaconda/bin", "--full-path", "--color", "never", "-E", "/proc" },
                 type = "anaconda"
             },
           },
@@ -204,7 +198,7 @@ Here is an example of *replacing* the default cwd search with one that **doesnt*
 settings = {
   search = {
     cwd = {
-      command = "fd '/bin/python$' $CWD --full-path --color never -E /proc -I -a -L",
+      command = { "fd", "/bin/python$", "$CWD", "--full-path", "--color", "never", "-E", "/proc", "-I", "-a", "-L" },
     },
   },
 }
@@ -219,7 +213,7 @@ settings = {
   search = {
     cwd = false, -- setting this to false disables the default cwd search
     my_search = {
-      command = "fd /bin/python$ ~/Code --full-path -a -L" -- read up on the fd flags so it searches what you need
+      command = { "fd", "/bin/python$", "~/Code", "--full-path", "-a", "-L" }, -- read up on the fd flags so it searches what you need
     }
   },
 }
@@ -255,7 +249,7 @@ If you want to **override** one of the default searches, create a search with th
 settings = {
   search = {
     workspace = {
-      command = "fd /bin/python$ $WORKSPACE_PATH --full-path --color never -E /proc -unrestricted",
+      command = { "fd", "/bin/python$", "$WORKSPACE_PATH", "--full-path", "--color", "never", "-E", "/proc", "--unrestricted" },
     }
   }
 }
@@ -309,7 +303,7 @@ Maybe you dont want to see the entire full path to python in the telescope viewe
 
           search = {
             my_venvs = {
-              command = "fd python$ ~/Code", -- Sample command, need to be changed for your own venvs
+              command = { "fd", "python$", "~/Code" }, -- Sample command, need to be changed for your own venvs
               
               -- If you put the callback here, its only called for your "my_venvs" search
               on_telescope_result_callback = shorter_name 

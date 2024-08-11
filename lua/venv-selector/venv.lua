@@ -22,31 +22,31 @@ end
 ---
 --- This function will update the paths and environment variables to the selected virtual environment,
 --- and inform the lsp servers about the change.
----@param venv_path string The path to the python executable in the virtual environment.
+---@param python_path string The path to the python executable in the virtual environment.
 ---@param type string The type of the virtual environment. This is used to determine which environment variable to set (e.g. conda or venv)
 ---@param check_lsp boolean Whether to check if lsp servers are running before activating the virtual environment.
 ---@return boolean activated Whether the virtual environment was activated successfully.
-function M.activate(venv_path, type, check_lsp)
-    if venv_path == nil then
+function M.activate(python_path, type, check_lsp)
+    if python_path == nil then
         return false
     end
 
-    if vim.fn.filereadable(venv_path) ~= 1 then
-        log.debug("Venv `" .. venv_path .. "` doesnt exist so cant activate it.")
+    if vim.fn.filereadable(python_path) ~= 1 then
+        log.debug("Venv `" .. python_path .. "` doesnt exist so cant activate it.")
         return false
     end
 
     -- Set the below two variables as quick as possible since its used in sorting results in telescope
     -- and if the user is quick to open the telescope before lsp has activated, the selected
     -- venv wont be displayed otherwise.
-    path.current_python_path = venv_path
-    path.current_venv_path = path.get_base(venv_path)
+    path.current_python_path = python_path
+    path.current_venv_path = path.get_base(python_path)
 
     -- Inform lsp servers
     local count = 0
     local hooks = require("venv-selector.config").user_settings.hooks
     for _, hook in pairs(hooks) do
-        count = count + hook(venv_path)
+        count = count + hook(python_path)
     end
 
     if check_lsp and count == 0 and config.user_settings.options.require_lsp_activation == true then
@@ -58,9 +58,9 @@ function M.activate(venv_path, type, check_lsp)
     end
 
     local cache = require("venv-selector.cached_venv")
-    cache.save(venv_path, type)
+    cache.save(python_path, type)
 
-    M.update_paths(venv_path, type)
+    M.update_paths(python_path, type)
 
     local on_venv_activate_callback = config.user_settings.options.on_venv_activate_callback
     if on_venv_activate_callback ~= nil then

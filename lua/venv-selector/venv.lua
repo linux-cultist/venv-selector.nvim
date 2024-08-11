@@ -13,16 +13,20 @@ function M.stop_lsp_servers()
     end
 end
 
+function M.set_source(source)
+    log.debug('Setting require("venv-selector").source() to \'' .. source .. "'")
+    M.current_source = source
+end
+
 --- Activate a virtual environment.
 ---
 --- This function will update the paths and environment variables to the selected virtual environment,
 --- and inform the lsp servers about the change.
 ---@param venv_path string The path to the python executable in the virtual environment.
 ---@param type string The type of the virtual environment. This is used to determine which environment variable to set (e.g. conda or venv)
----@param source string The search source of the virtual environment.
 ---@param check_lsp boolean Whether to check if lsp servers are running before activating the virtual environment.
 ---@return boolean activated Whether the virtual environment was activated successfully.
-function M.activate(venv_path, type, source, check_lsp)
+function M.activate(venv_path, type, check_lsp)
     if venv_path == nil then
         return false
     end
@@ -35,7 +39,6 @@ function M.activate(venv_path, type, source, check_lsp)
     -- Set the below two variables as quick as possible since its used in sorting results in telescope
     -- and if the user is quick to open the telescope before lsp has activated, the selected
     -- venv wont be displayed otherwise.
-    local path = require("venv-selector.path")
     path.current_python_path = venv_path
     path.current_venv_path = path.get_base(venv_path)
 
@@ -55,14 +58,12 @@ function M.activate(venv_path, type, source, check_lsp)
     end
 
     local cache = require("venv-selector.cached_venv")
-    cache.save(venv_path, type, source)
+    cache.save(venv_path, type)
 
     M.update_paths(venv_path, type)
 
     local on_venv_activate_callback = config.user_settings.options.on_venv_activate_callback
     if on_venv_activate_callback ~= nil then
-        M.current_source = source
-        log.debug('Setting require("venv-selector").source() to \'' .. source .. "'")
         log.debug("Calling on_venv_activate_callback() function")
         on_venv_activate_callback()
     end
@@ -71,7 +72,6 @@ function M.activate(venv_path, type, source, check_lsp)
 end
 
 function M.update_paths(venv_path, type)
-    local path = require("venv-selector.path")
     path.add(path.get_base(venv_path))
     path.update_python_dap(venv_path)
     path.save_selected_python(venv_path)

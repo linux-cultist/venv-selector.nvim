@@ -235,7 +235,8 @@ function M.open(in_progress)
             map({ "i", "n" }, "<cr>", function()
                 local selected_entry = actions_state.get_selected_entry()
                 if selected_entry ~= nil then
-                    venv.activate(selected_entry.path, selected_entry.type, selected_entry.source, true)
+                    venv.set_source(selected_entry.source)
+                    venv.activate(selected_entry.path, selected_entry.type, true)
                 end
                 actions.close(bufnr)
             end)

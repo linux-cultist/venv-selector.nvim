@@ -13,7 +13,7 @@ function M.create_dir()
     end
 end
 
-function M.save(python_path, venv_type, venv_source)
+function M.save(python_path, venv_type)
     if config.user_settings.options.enable_cached_venvs ~= true then
         log.debug("Option 'enable_cached_venvs' is false so will not use cache.")
         return
@@ -25,7 +25,6 @@ function M.save(python_path, venv_type, venv_source)
         [vim.fn.getcwd()] = {
             value = python_path,
             type = venv_type,
-            source = venv_source,
         },
     }
 
@@ -66,7 +65,7 @@ function M.retrieve()
                 local venv_info = venv_cache[vim.fn.getcwd()]
 
                 log.debug("Activating venv `" .. venv_info.value .. "` from cache.")
-                venv.activate(venv_info.value, venv_info.type, venv_info.source, false)
+                venv.activate(venv_info.value, venv_info.type, false)
                 return
             end
         end

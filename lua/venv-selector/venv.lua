@@ -13,79 +13,75 @@ function M.stop_lsp_servers()
     end
 end
 
-function M.activate(hooks, selected_entry)
-    local python_path = selected_entry.path
-    local venv_type = selected_entry.type
-    local source = selected_entry.source
-    local on_venv_activate_callback = config.user_settings.options.on_venv_activate_callback
-
-    if python_path ~= nil then
-        log.debug("Telescope entry selected by user: ", selected_entry)
-        local count = 0
-        for _, hook in pairs(hooks) do
-            count = count + hook(python_path)
-        end
-
-        if count == 0 and config.user_settings.options.require_lsp_activation == true then
-            local message =
-                "No python lsp servers are running. Please open a python file and then select a venv to activate."
-            vim.notify(message, vim.log.levels.INFO, { title = "VenvSelect" })
-            log.info(message)
-            return false
-        else
-            local cache = require("venv-selector.cached_venv")
-            cache.save(python_path, venv_type, source)
-            if on_venv_activate_callback ~= nil then
-                M.current_source = source
-                log.debug('Setting require("venv-selector").source() to \'' .. source .. "'")
-                log.debug("Calling on_venv_activate_callback() function")
-                on_venv_activate_callback()
-            end
-            return true
-        end
-    end
-end
-
-function M.activate_from_cache(settings, venv_info)
-    if vim.fn.filereadable(venv_info.value) ~= 1 then
-        log.debug("Cached venv `" .. venv_info.value .. "` doesnt exist so cant activate it.")
-        return
+--- Activate a virtual environment.
+---
+--- This function will update the paths and environment variables to the selected virtual environment,
+--- and inform the lsp servers about the change.
+---@param venv_path string The path to the python executable in the virtual environment.
+---@param type string The type of the virtual environment. This is used to determine which environment variable to set (e.g. conda or venv)
+---@param source string The search source of the virtual environment.
+---@param check_lsp boolean Whether to check if lsp servers are running before activating the virtual environment.
+---@return boolean activated Whether the virtual environment was activated successfully.
+function M.activate(venv_path, type, source, check_lsp)
+    if venv_path == nil then
+        return false
     end
 
-    log.debug("Activating venv `" .. venv_info.value .. "` from cache.")
+    if vim.fn.filereadable(venv_path) ~= 1 then
+        log.debug("Venv `" .. venv_path .. "` doesnt exist so cant activate it.")
+        return false
+    end
 
     -- Set the below two variables as quick as possible since its used in sorting results in telescope
     -- and if the user is quick to open the telescope before lsp has activated, the selected
     -- venv wont be displayed otherwise.
-    path.current_python_path = venv_info.value
-    path.current_venv_path = path.get_base(venv_info.value)
+    local path = require("venv-selector.path")
+    path.current_python_path = venv_path
+    path.current_venv_path = path.get_base(venv_path)
 
-    local venv = require("venv-selector.venv")
-    local python_path = venv_info.value
-    local venv_type = venv_info.type
-    local venv_source = venv_info.source
+    -- Inform lsp servers
+    local count = 0
+    local hooks = require("venv-selector.config").user_settings.hooks
+    for _, hook in pairs(hooks) do
+        count = count + hook(venv_path)
+    end
+
+    if check_lsp and count == 0 and config.user_settings.options.require_lsp_activation == true then
+        local message =
+            "No python lsp servers are running. Please open a python file and then select a venv to activate."
+        vim.notify(message, vim.log.levels.INFO, { title = "VenvSelect" })
+        log.info(message)
+        return false
+    end
+
+    local cache = require("venv-selector.cached_venv")
+    cache.save(venv_path, type, source)
+
+    M.update_paths(venv_path, type)
+
     local on_venv_activate_callback = config.user_settings.options.on_venv_activate_callback
-    for _, hook in pairs(settings.hooks) do
-        hook(python_path)
-    end
-
-    if venv_type ~= nil and venv_type == "anaconda" then
-        venv.unset_env("VIRTUAL_ENV")
-        venv.set_env(python_path, "CONDA_PREFIX")
-    else
-        venv.unset_env("CONDA_PREFIX")
-        venv.set_env(python_path, "VIRTUAL_ENV")
-    end
-
-    path.update_python_dap(python_path)
-    path.save_selected_python(python_path)
-    path.add(path.get_base(python_path))
-
     if on_venv_activate_callback ~= nil then
-        M.current_source = venv_source
-        log.debug('Setting require("venv-selector").source() to \'' .. venv_source .. '"')
+        M.current_source = source
+        log.debug('Setting require("venv-selector").source() to \'' .. source .. "'")
         log.debug("Calling on_venv_activate_callback() function")
         on_venv_activate_callback()
+    end
+
+    return true
+end
+
+function M.update_paths(venv_path, type)
+    local path = require("venv-selector.path")
+    path.add(path.get_base(venv_path))
+    path.update_python_dap(venv_path)
+    path.save_selected_python(venv_path)
+
+    if type == "anaconda" then
+        M.unset_env("VIRTUAL_ENV")
+        M.set_env(venv_path, "CONDA_PREFIX")
+    else
+        M.unset_env("CONDA_PREFIX")
+        M.set_env(venv_path, "VIRTUAL_ENV")
     end
 end
 

@@ -63,7 +63,10 @@ function M.retrieve()
             local venv_cache = vim.fn.json_decode(cache_file_content[1])
             if venv_cache ~= nil and venv_cache[vim.fn.getcwd()] ~= nil then
                 local venv = require("venv-selector.venv")
-                venv.activate_from_cache(config.default_settings, venv_cache[vim.fn.getcwd()])
+                local venv_info = venv_cache[vim.fn.getcwd()]
+
+                log.debug("Activating venv `" .. venv_info.value .. "` from cache.")
+                venv.activate(venv_info.value, venv_info.type, venv_info.source, false)
                 return
             end
         end

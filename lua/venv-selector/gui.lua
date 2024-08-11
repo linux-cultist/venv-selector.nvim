@@ -234,22 +234,8 @@ function M.open(in_progress)
         attach_mappings = function(bufnr, map)
             map({ "i", "n" }, "<cr>", function()
                 local selected_entry = actions_state.get_selected_entry()
-                local activated = false
                 if selected_entry ~= nil then
-                    activated = venv.activate(config.user_settings.hooks, selected_entry)
-                    if activated == true then
-                        path.add(path.get_base(selected_entry.path))
-                        path.update_python_dap(selected_entry.path)
-                        path.save_selected_python(selected_entry.path)
-
-                        if selected_entry.type == "anaconda" then
-                            venv.unset_env("VIRTUAL_ENV")
-                            venv.set_env(selected_entry.path, "CONDA_PREFIX")
-                        else
-                            venv.unset_env("CONDA_PREFIX")
-                            venv.set_env(selected_entry.path, "VIRTUAL_ENV")
-                        end
-                    end
+                    venv.activate(selected_entry.path, selected_entry.type, selected_entry.source, true)
                 end
                 actions.close(bufnr)
             end)

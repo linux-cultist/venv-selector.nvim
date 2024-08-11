@@ -51,6 +51,10 @@ function M.stop_lsp_servers()
     venv.stop_lsp_servers()
 end
 
+function M.activate(python_path, type)
+    venv.activate(python_path, type, true)
+end
+
 function M.deactivate()
     path.remove_current()
     venv.unset_env_variables()

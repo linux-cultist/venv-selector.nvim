@@ -438,4 +438,4 @@ These functions can be used to easily get the selected python interpreter and th
 - `require("venv-selector").file_dir()`         -- Gives back the directory of the currently opened file
 - `require("venv-selector").deactivate()`       -- Removes the venv from terminal path and unsets environment variables
 - `require("venv-selector").stop_lsp_servers()` -- Stops the lsp servers used by the plugin
-
+- `require("venv-selector").activate_from_path(python_path)` -- Activates a python interpreter given a path to it

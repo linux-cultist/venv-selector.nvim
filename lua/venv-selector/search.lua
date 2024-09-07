@@ -83,10 +83,10 @@ local function run_search(opts)
                     if callback then
                         log.debug(
                             "Calling on_telescope_result() callback function with line '"
-                                .. line
-                                .. "' and source '"
-                                .. rv.source
-                                .. "'"
+                            .. line
+                            .. "' and source '"
+                            .. rv.source
+                            .. "'"
                         )
                         rv.name = callback(line, rv.source)
                     end
@@ -117,8 +117,15 @@ local function run_search(opts)
     local uv = vim.loop
     local function start_search_job(job_name, search, count)
         local job = path.expand(search.execute_command)
+
         log.debug("Starting '" .. job_name .. "': '" .. job .. "'")
         M.search_in_progress = true
+
+        -- Special for windows to run the command without a shell (translate the command to a lua table before sending to jobstart)
+        if vim.loop.os_uname().sysname == "Windows_NT" then
+            job = utils.split_cmd_for_windows(job)
+        end
+
         local job_id = vim.fn.jobstart(job, {
             stdout_buffered = true,
             stderr_buffered = true,
@@ -179,11 +186,11 @@ local function run_search(opts)
                     search.execute_command = search.execute_command:gsub("$WORKSPACE_PATH", workspace_path)
                     job_count = start_search_job(job_name, search, job_count)
                 end
-            -- search has $CWD inside
+                -- search has $CWD inside
             elseif is_cwd_search(search.command) then
                 search.execute_command = search.execute_command:gsub("$CWD", cwd)
                 job_count = start_search_job(job_name, search, job_count)
-            -- search has $FILE_DIR inside
+                -- search has $FILE_DIR inside
             elseif is_filepath_search(search.command) then
                 if current_dir ~= nil then
                     search.execute_command = search.execute_command:gsub("$FILE_DIR", current_dir)
@@ -201,7 +208,7 @@ function M.New(opts)
     local options = require("venv-selector.config").user_settings.options
     if options.fd_binary_name == nil then
         local message =
-            "Cannot find any fd binary on your system. If its installed under a different name, you can set options.fd_binary_name to its name."
+        "Cannot find any fd binary on your system. If its installed under a different name, you can set options.fd_binary_name to its name."
         log.error(message)
         vim.notify(message, vim.log.levels.ERROR, { title = "VenvSelect" })
     elseif utils.check_dependencies_installed() == false then

@@ -83,10 +83,10 @@ local function run_search(opts)
                     if callback then
                         log.debug(
                             "Calling on_telescope_result() callback function with line '"
-                            .. line
-                            .. "' and source '"
-                            .. rv.source
-                            .. "'"
+                                .. line
+                                .. "' and source '"
+                                .. rv.source
+                                .. "'"
                         )
                         rv.name = callback(line, rv.source)
                     end
@@ -208,7 +208,7 @@ function M.New(opts)
     local options = require("venv-selector.config").user_settings.options
     if options.fd_binary_name == nil then
         local message =
-        "Cannot find any fd binary on your system. If its installed under a different name, you can set options.fd_binary_name to its name."
+            "Cannot find any fd binary on your system. If its installed under a different name, you can set options.fd_binary_name to its name."
         log.error(message)
         vim.notify(message, vim.log.levels.ERROR, { title = "VenvSelect" })
     elseif utils.check_dependencies_installed() == false then

@@ -117,8 +117,15 @@ local function run_search(opts)
     local uv = vim.loop
     local function start_search_job(job_name, search, count)
         local job = path.expand(search.execute_command)
+
         log.debug("Starting '" .. job_name .. "': '" .. job .. "'")
         M.search_in_progress = true
+
+        -- Special for windows to run the command without a shell (translate the command to a lua table before sending to jobstart)
+        if vim.loop.os_uname().sysname == "Windows_NT" then
+            job = utils.split_cmd_for_windows(job)
+        end
+
         local job_id = vim.fn.jobstart(job, {
             stdout_buffered = true,
             stderr_buffered = true,
@@ -179,11 +186,11 @@ local function run_search(opts)
                     search.execute_command = search.execute_command:gsub("$WORKSPACE_PATH", workspace_path)
                     job_count = start_search_job(job_name, search, job_count)
                 end
-            -- search has $CWD inside
+                -- search has $CWD inside
             elseif is_cwd_search(search.command) then
                 search.execute_command = search.execute_command:gsub("$CWD", cwd)
                 job_count = start_search_job(job_name, search, job_count)
-            -- search has $FILE_DIR inside
+                -- search has $FILE_DIR inside
             elseif is_filepath_search(search.command) then
                 if current_dir ~= nil then
                     search.execute_command = search.execute_command:gsub("$FILE_DIR", current_dir)

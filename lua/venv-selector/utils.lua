@@ -15,35 +15,54 @@ function M.merge_user_settings(user_settings)
     log.debug("Complete user settings:", M.user_settings, "")
 end
 
-function M.split_cmd_for_windows(input_str)
-    -- Translates the cmd string to a lua table for windows to support different shells.
-    -- Spaces in filenames are supported if user is quoting the path with ''.
-    -- Each value is also expanded to make sure $HOME etc is translated to a real path.
+-- split a string
+function M.split_string(str, delimiter)
+  local result = { }
+  local from  = 1
+  local delim_from, delim_to = string.find( str, delimiter, from  )
+  while delim_from do
+    table.insert( result, string.sub( str, from , delim_from-1 ) )
+    from  = delim_to + 1
+    delim_from, delim_to = string.find( str, delimiter, from  )
+  end
+  table.insert( result, string.sub( str, from  ) )
+  return result
+end
 
+function M.combine_split_string(input)
     local result = {}
-    local pattern = [=[(['"])(.-)%1]=] -- pattern to match quoted strings
+    local inQuotes = false
+    local currentQuote = ""
 
-    -- Remove the quotes and capture quoted parts
-    local function add_to_result(quoted, str)
-        if quoted then
-            table.insert(result, vim.fn.expand(str)) -- Add the string without quotes
+    for _, word in ipairs(input) do
+        if word:sub(1,1) == "'" and word:sub(-1) == "'" then
+            -- Word is completely quoted
+            table.insert(result, word)
+        elseif word:sub(1,1) == "'" then
+            -- Start of a quote
+            inQuotes = true
+            currentQuote = word
+        elseif word:sub(-1) == "'" and inQuotes then
+            -- End of a quote
+            currentQuote = currentQuote .. " " .. word
+            table.insert(result, currentQuote)
+            inQuotes = false
+            currentQuote = ""
+        elseif inQuotes then
+            -- Middle of a quote
+            currentQuote = currentQuote .. " " .. word
         else
-            for word in string.gmatch(str, "%S+") do
-                table.insert(result, vim.fn.expand(word))
-            end
+            -- Not in quotes
+            table.insert(result, word)
         end
     end
 
-    -- Use gsub to remove quoted strings from input and handle rest
-    local unquoted = input_str:gsub(pattern, function(_, str)
-        add_to_result(true, str)
-        return ""
-    end)
-
-    -- Handle remaining parts that are not quoted
-    add_to_result(false, unquoted)
-
     return result
+end
+
+function M.split_cmd_for_windows(str)
+   local split = M.split_string(str, ' ')  --- "one 'two three' four" => {"one", "'two", three'", "four"}
+   return M.combine_split_string(split) --- {"one", "'two", three'", "four"} => {"one", "'two three'", "four"}
 end
 
 function M.try(table, ...)

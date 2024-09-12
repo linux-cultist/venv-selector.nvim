@@ -31,33 +31,33 @@ end
 
 function M.combine_split_string(input)
     local result = {}
-    local inQuotes = false
-    local currentQuote = ""
+        local inQuotes = false
+        local currentQuote = ""
 
-    for _, word in ipairs(input) do
-        if word:sub(1,1) == "'" and word:sub(-1) == "'" then
-            -- Word is completely quoted
-            table.insert(result, word)
-        elseif word:sub(1,1) == "'" then
-            -- Start of a quote
-            inQuotes = true
-            currentQuote = word
-        elseif word:sub(-1) == "'" and inQuotes then
-            -- End of a quote
-            currentQuote = currentQuote .. " " .. word
-            table.insert(result, currentQuote)
-            inQuotes = false
-            currentQuote = ""
-        elseif inQuotes then
-            -- Middle of a quote
-            currentQuote = currentQuote .. " " .. word
-        else
-            -- Not in quotes
-            table.insert(result, word)
+        for _, word in ipairs(input) do
+            if word:sub(1,1) == "'" and word:sub(-1) == "'" then
+                -- Word is completely quoted
+                table.insert(result, '"' .. word:sub(2, -2) .. '"')
+            elseif word:sub(1,1) == "'" then
+                -- Start of a quote
+                inQuotes = true
+                currentQuote = word:sub(2)  -- Remove opening single quote
+            elseif word:sub(-1) == "'" and inQuotes then
+                -- End of a quote
+                currentQuote = currentQuote .. " " .. word:sub(1, -2)  -- Remove closing single quote
+                table.insert(result, '"' .. currentQuote .. '"')
+                inQuotes = false
+                currentQuote = ""
+            elseif inQuotes then
+                -- Middle of a quote
+                currentQuote = currentQuote .. " " .. word
+            else
+                -- Not in quotes
+                table.insert(result, word)
+            end
         end
-    end
 
-    return result
+        return result
 end
 
 function M.split_cmd_for_windows(str)

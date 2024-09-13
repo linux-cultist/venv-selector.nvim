@@ -18,7 +18,7 @@ end
 -- split a string
 function M.split_string(str)
     local result = {}
-    local buffer = ''
+    local buffer = ""
     local in_quotes = false
     local quote_char = nil
     local i = 1
@@ -39,13 +39,13 @@ function M.split_string(str)
                 quote_char = c
                 -- Do not include the opening quote
             end
-        elseif c == ' ' then
+        elseif c == " " then
             if in_quotes then
                 buffer = buffer .. c
             else
                 if #buffer > 0 then
                     table.insert(result, buffer)
-                    buffer = ''
+                    buffer = ""
                 end
             end
         else

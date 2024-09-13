@@ -24,42 +24,38 @@ function M.split_string(str)
     local i = 1
 
     while i <= #str do
-      local c = str:sub(i,i)
-
-      if c == "'" or c == '"' then
-        buffer = buffer .. c  -- Include the quote character in the buffer
-        if in_quotes then
-          if c == quote_char then
-            in_quotes = false
-            quote_char = nil
-            -- Closing quote handled
-          end
+        local c = str:sub(i, i)
+        if c == "'" or c == '"' then
+            if in_quotes then
+                if c == quote_char then
+                    in_quotes = false
+                    quote_char = nil
+                    -- Do not include the closing quote
+                else
+                    buffer = buffer .. c
+                end
+            else
+                in_quotes = true
+                quote_char = c
+                -- Do not include the opening quote
+            end
+        elseif c == ' ' then
+            if in_quotes then
+                buffer = buffer .. c
+            else
+                if #buffer > 0 then
+                    table.insert(result, buffer)
+                    buffer = ''
+                end
+            end
         else
-          in_quotes = true
-          quote_char = c
-          -- Opening quote handled
+            buffer = buffer .. c
         end
-      elseif c == ' ' then
-        if in_quotes then
-          buffer = buffer .. c
-        else
-          if #buffer > 0 then
-            -- Replace single quotes with double quotes in the buffer
-            buffer = buffer:gsub("'", '"')
-            table.insert(result, buffer)
-            buffer = ''
-          end
-        end
-      else
-        buffer = buffer .. c
-      end
-      i = i + 1
+        i = i + 1
     end
 
     if #buffer > 0 then
-      -- Replace single quotes with double quotes in the buffer
-      buffer = buffer:gsub("'", '"')
-      table.insert(result, buffer)
+        table.insert(result, buffer)
     end
 
     return result
@@ -67,7 +63,6 @@ end
 
 function M.split_cmd_for_windows(str)
     return M.split_string(str)
-
 end
 
 function M.try(table, ...)

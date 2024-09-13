@@ -16,53 +16,54 @@ function M.merge_user_settings(user_settings)
 end
 
 -- split a string
-function M.split_string(str, delimiter)
-  local result = { }
-  local from  = 1
-  local delim_from, delim_to = string.find( str, delimiter, from  )
-  while delim_from do
-    table.insert( result, string.sub( str, from , delim_from-1 ) )
-    from  = delim_to + 1
-    delim_from, delim_to = string.find( str, delimiter, from  )
-  end
-  table.insert( result, string.sub( str, from  ) )
-  return result
-end
-
-function M.combine_split_string(input)
+function M.split_string(str)
     local result = {}
-        local inQuotes = false
-        local currentQuote = ""
+    local buffer = ''
+    local in_quotes = false
+    local quote_char = nil
+    local i = 1
 
-        for _, word in ipairs(input) do
-            if word:sub(1,1) == "'" and word:sub(-1) == "'" then
-                -- Word is completely quoted
-                table.insert(result, '"' .. word:sub(2, -2) .. '"')
-            elseif word:sub(1,1) == "'" then
-                -- Start of a quote
-                inQuotes = true
-                currentQuote = word:sub(2)  -- Remove opening single quote
-            elseif word:sub(-1) == "'" and inQuotes then
-                -- End of a quote
-                currentQuote = currentQuote .. " " .. word:sub(1, -2)  -- Remove closing single quote
-                table.insert(result, '"' .. currentQuote .. '"')
-                inQuotes = false
-                currentQuote = ""
-            elseif inQuotes then
-                -- Middle of a quote
-                currentQuote = currentQuote .. " " .. word
+    while i <= #str do
+        local c = str:sub(i, i)
+        if c == "'" or c == '"' then
+            if in_quotes then
+                if c == quote_char then
+                    in_quotes = false
+                    quote_char = nil
+                    -- Do not include the closing quote
+                else
+                    buffer = buffer .. c
+                end
             else
-                -- Not in quotes
-                table.insert(result, word)
+                in_quotes = true
+                quote_char = c
+                -- Do not include the opening quote
             end
+        elseif c == ' ' then
+            if in_quotes then
+                buffer = buffer .. c
+            else
+                if #buffer > 0 then
+                    table.insert(result, buffer)
+                    buffer = ''
+                end
+            end
+        else
+            buffer = buffer .. c
         end
+        i = i + 1
+    end
 
-        return result
+    if #buffer > 0 then
+        table.insert(result, buffer)
+    end
+
+    return result
 end
 
 function M.split_cmd_for_windows(str)
-   local split = M.split_string(str, ' ')  --- "one 'two three' four" => {"one", "'two", three'", "four"}
-   return M.combine_split_string(split) --- {"one", "'two", three'", "four"} => {"one", "'two three'", "four"}
+    return M.split_string(str)
+
 end
 
 function M.try(table, ...)

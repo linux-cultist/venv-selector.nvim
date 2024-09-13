@@ -25,25 +25,27 @@ function M.split_string(str)
 
     while i <= #str do
         local c = str:sub(i, i)
+
         if c == "'" or c == '"' then
+            buffer = buffer .. c -- Include the quote character in the buffer
             if in_quotes then
                 if c == quote_char then
                     in_quotes = false
                     quote_char = nil
-                    -- Do not include the closing quote
-                else
-                    buffer = buffer .. c
+                    -- Closing quote handled
                 end
             else
                 in_quotes = true
                 quote_char = c
-                -- Do not include the opening quote
+                -- Opening quote handled
             end
         elseif c == ' ' then
             if in_quotes then
                 buffer = buffer .. c
             else
                 if #buffer > 0 then
+                    -- Replace single quotes with double quotes in the buffer
+                    buffer = buffer:gsub("'", '"')
                     table.insert(result, buffer)
                     buffer = ''
                 end
@@ -55,6 +57,8 @@ function M.split_string(str)
     end
 
     if #buffer > 0 then
+        -- Replace single quotes with double quotes in the buffer
+        buffer = buffer:gsub("'", '"')
         table.insert(result, buffer)
     end
 
@@ -63,7 +67,6 @@ end
 
 function M.split_cmd_for_windows(str)
     return M.split_string(str)
-
 end
 
 function M.try(table, ...)

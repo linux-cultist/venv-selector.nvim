@@ -134,7 +134,7 @@ function M.get_default_searches()
                     type = "anaconda",
                 },
                 pipx = {
-                    command = "fd Scripts//python.exe$ $HOME/pipx/venvs --full-path -a --color never",
+                    command = "$FD Scripts//python.exe$ $HOME/pipx/venvs --full-path -a --color never",
                 },
                 cwd = {
                     command = "$FD Scripts//python.exe$ $CWD --full-path --color never -HI -a -L",

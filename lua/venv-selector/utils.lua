@@ -62,8 +62,7 @@ function M.split_string(str)
 end
 
 function M.split_cmd_for_windows(str)
-    local s = M.split_string(str)
-    return s:gsub("\\", "//")
+    return M.split_string(str)
 end
 
 function M.try(table, ...)

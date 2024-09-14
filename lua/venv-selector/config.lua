@@ -122,7 +122,7 @@ function M.get_default_searches()
                     type = "anaconda",
                 },
                 anaconda_base = {
-                    command = "$FD anaconda3/python.exe $HOME/anaconda3 --full-path -a --color never",
+                    command = "$FD anaconda3//python.exe $HOME/anaconda3 --full-path -a --color never",
                     type = "anaconda",
                 },
                 miniconda_envs = {
@@ -130,20 +130,20 @@ function M.get_default_searches()
                     type = "anaconda",
                 },
                 miniconda_base = {
-                    command = "$FD miniconda3/python.exe $HOME/miniconda3 --full-path -a --color never",
+                    command = "$FD miniconda3//python.exe $HOME/miniconda3 --full-path -a --color never",
                     type = "anaconda",
                 },
                 pipx = {
-                    command = "fd Scripts/python.exe $HOME/pipx/venvs --full-path -a --color never",
+                    command = "fd Scripts//python.exe$ $HOME/pipx/venvs --full-path -a --color never",
                 },
                 cwd = {
-                    command = "$FD Scripts/python.exe$ $CWD --full-path --color never -HI -a -L",
+                    command = "$FD Scripts//python.exe$ $CWD --full-path --color never -HI -a -L",
                 },
                 workspace = {
-                    command = "$FD Scripts/python.exe$ $WORKSPACE_PATH --full-path --color never -HI -a -L",
+                    command = "$FD Scripts//python.exe$ $WORKSPACE_PATH --full-path --color never -HI -a -L",
                 },
                 file = {
-                    command = "$FD Scripts/python.exe$ $FILE_DIR --full-path --color never -HI -a -L",
+                    command = "$FD Scripts//python.exe$ $FILE_DIR --full-path --color never -HI -a -L",
                 },
             }
         end,

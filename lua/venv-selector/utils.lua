@@ -62,8 +62,7 @@ function M.split_string(str)
 end
 
 function M.split_cmd_for_windows(str)
-    local s = M.split_string(str)
-    return M.replace_backslashes_in_table(s)
+    return M.split_string(str)
 end
 
 function M.replace_backslashes_in_table(tbl)

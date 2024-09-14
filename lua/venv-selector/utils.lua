@@ -65,15 +65,6 @@ function M.split_cmd_for_windows(str)
     return M.split_string(str)
 end
 
-function M.replace_backslashes_in_table(tbl)
-  for key, value in pairs(tbl) do
-    if type(value) == "string" then
-      -- Replace all backslashes with double forward slashes
-      tbl[key] = value:gsub("\\", "//")
-    end
-  end
-end
-
 function M.try(table, ...)
     local result = table
     for _, key in ipairs({ ... }) do

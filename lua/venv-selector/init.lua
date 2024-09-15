@@ -19,7 +19,6 @@ vim.api.nvim_create_autocmd("LspAttach", {
     callback = on_lsp_attach,
 })
 
-
 local M = {}
 
 function M.python()

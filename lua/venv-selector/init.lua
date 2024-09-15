@@ -19,7 +19,6 @@ vim.api.nvim_create_autocmd("LspAttach", {
     callback = on_lsp_attach,
 })
 
-vim.api.nvim_command("hi VenvSelectActiveVenv guifg=#00FF00")
 
 local M = {}
 
@@ -68,6 +67,7 @@ end
 
 function M.setup(plugin_settings)
     config.merge_user_settings(plugin_settings or {})
+    vim.api.nvim_command("hi VenvSelectActiveVenv guifg=" .. config.user_settings.options.telescope_active_venv_color)
     if config.user_settings.options.debug == true then
         log.enabled = true
     end

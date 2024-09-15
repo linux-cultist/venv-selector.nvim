@@ -43,7 +43,7 @@
 {
   "linux-cultist/venv-selector.nvim",
     dependencies = {
-      "neovim/nvim-lspconfig", 
+      "neovim/nvim-lspconfig",
       "mfussenegger/nvim-dap", "mfussenegger/nvim-dap-python", --optional
       { "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } },
     },
@@ -60,9 +60,9 @@
 
 ## Why did you rewrite the plugin?
 
-Because the current code has grown from supporting only simple venvs to lots of different venv managers. Each one works in a slightly different way, and the current code has lots of conditional logic to try and figure out what to do in certain situations. It made it difficult to change something without breaking something else. And it made it difficult to add features in a clean way. 
+Because the current code has grown from supporting only simple venvs to lots of different venv managers. Each one works in a slightly different way, and the current code has lots of conditional logic to try and figure out what to do in certain situations. It made it difficult to change something without breaking something else. And it made it difficult to add features in a clean way.
 
-This rewrite is about giving you as a user the option to add your own searches, and have anything you want show up in the telescope viewer. If its the path to a python executable, the plugin will attempt to activate it. Note that your LSP server must be running for this to happen, so you need to have a python file opened in the editor. 
+This rewrite is about giving you as a user the option to add your own searches, and have anything you want show up in the telescope viewer. If its the path to a python executable, the plugin will attempt to activate it. Note that your LSP server must be running for this to happen, so you need to have a python file opened in the editor.
 
 ## Default searches
 
@@ -74,15 +74,15 @@ Some of them use special variables in the `fd` search query (these are not envir
 
 - `$CWD` - Current working directory. The directory where you start neovim.
 - `$WORKSPACE_PATH` - The workspace directories found by your LSP when you have an opened python file.
-- `$FILE_DIR` - The directory of the file in the neovim buffer. 
+- `$FILE_DIR` - The directory of the file in the neovim buffer.
 
 You can use these in your own queries as well. Maybe you want to search the parent directories of your opened file for example.
 
 If you want to see the values that the plugin will insert in place of these special variables, you can use these functions:
 
 - `require("venv-selector").workspace_paths()`
-- `require("venv-selector").cwd()`             
-- `require("venv-selector").file_dir()`         
+- `require("venv-selector").cwd()`
+- `require("venv-selector").file_dir()`
 
 There wont be any workspace paths before your LSP has detected a workspace (normally happens when you open a python project).
 
@@ -106,7 +106,7 @@ If your venvs are not being found because they are in a custom location, you can
 
 ## My venvs dont show up - how can i create my own search?
 
-You create a search for python venvs with `fd` and you put that into the plugin config. You can also use `find` or any other command as long as its output lists your venvs. 
+You create a search for python venvs with `fd` and you put that into the plugin config. You can also use `find` or any other command as long as its output lists your venvs.
 
 The best way to craft a search is to run `fd` with your desired parameters on the command line before you put it into the plugin config.
 
@@ -134,7 +134,7 @@ The example command above launches a search for any path ending with `python` in
 ```
 
 
-These results will be shown in the telescope viewer and if they are a python virtual environment, they can be activated by pressing enter. 
+These results will be shown in the telescope viewer and if they are a python virtual environment, they can be activated by pressing enter.
 
 You can add multiple searches as well:
 
@@ -153,7 +153,7 @@ You can add multiple searches as well:
       }
 ```
 
-Some notes about using quotes or not around the regexp: 
+Some notes about using quotes or not around the regexp:
 
 - For `fish` shell, you need to put the regexp in quotes: `'/bin/python$'`.
 - For `zsh` and `bash`, they are optional.
@@ -196,7 +196,7 @@ It tries to be fast even when searching hidden files by skipping some well known
 - site-packages/
 - /proc
 
-But sometimes its still so many files to search that it will become slow. 
+But sometimes its still so many files to search that it will become slow.
 
 Here is an example of *replacing* the default cwd search with one that **doesnt** search for hidden files. It replaces the cwd search since its named `cwd`.
 
@@ -250,7 +250,7 @@ However, some flags slows down the search significantly and should not be used i
 
 ## Override or disable a default search
 
-If you want to **override** one of the default searches, create a search with the same name. This changes the default workspace search. 
+If you want to **override** one of the default searches, create a search with the same name. This changes the default workspace search.
 ```
 settings = {
   search = {
@@ -284,16 +284,16 @@ Maybe you dont want to see the entire full path to python in the telescope viewe
 {
   "linux-cultist/venv-selector.nvim",
     dependencies = {
-      "neovim/nvim-lspconfig", 
+      "neovim/nvim-lspconfig",
       "mfussenegger/nvim-dap", "mfussenegger/nvim-dap-python", --both are optionals for debugging
       { "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } },
     },
   lazy = false,
   branch = "regexp", -- This is the regexp branch, use this for the new version
   config = function()
-  
+
       -- This function gets called by the plugin when a new result from fd is received
-      -- You can change the filename displayed here to what you like. 
+      -- You can change the filename displayed here to what you like.
       -- Here in the example for linux/mac we replace the home directory with '~' and remove the /bin/python part.
       local function shorter_name(filename)
          return filename:gsub(os.getenv("HOME"), "~"):gsub("/bin/python", "")
@@ -304,15 +304,15 @@ Maybe you dont want to see the entire full path to python in the telescope viewe
         settings = {
           options = {
             -- If you put the callback here as a global option, its used for all searches (including the default ones by the plugin)
-            on_telescope_result_callback = shorter_name 
+            on_telescope_result_callback = shorter_name
           },
 
           search = {
             my_venvs = {
               command = "fd python$ ~/Code", -- Sample command, need to be changed for your own venvs
-              
+
               -- If you put the callback here, its only called for your "my_venvs" search
-              on_telescope_result_callback = shorter_name 
+              on_telescope_result_callback = shorter_name
             },
           },
         },
@@ -334,7 +334,7 @@ In this case, we want to run `poetry env use <path to selected python>` when the
   2) A terminal was opened afterwards.
 
 
-The function `on_venv_activate` sets up a neovim autocommand to run the function `run_shell_command` when the terminal opens. 
+The function `on_venv_activate` sets up a neovim autocommand to run the function `run_shell_command` when the terminal opens.
 
 We only want to run the function once, which is why we have the `command_run` flag.
 
@@ -359,13 +359,13 @@ We only want to run the function once, which is why we have the `command_run` fl
         local function run_shell_command()
           local source = require("venv-selector").source()
           local python = require("venv-selector").python()
-          
+
           if source == "poetry" and command_run == false then
             local command = "poetry env use " .. python
             vim.api.nvim_feedkeys(command .. "\n", "n", false)
             command_run = true
           end
-          
+
         end
 
         vim.api.nvim_create_augroup("TerminalCommands", { clear = true })
@@ -377,7 +377,7 @@ We only want to run the function once, which is why we have the `command_run` fl
         })
       end
 
-      
+
       require("venv-selector").setup {
         settings = {
           options = {
@@ -421,6 +421,7 @@ settings = {
         on_telescope_result_callback = nil,        -- callback function for modifying telescope results
         show_telescope_search_type = true,         -- shows which of the searches found which venv in telescope
         telescope_filter_type = "substring"        -- when you type something in telescope, filter by "substring" or "character"
+        telescope_active_venv_color = "#00FF00"    -- The color of the active venv in telescope
   }
 }
 

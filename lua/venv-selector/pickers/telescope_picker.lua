@@ -1,13 +1,13 @@
 local config = require("venv-selector.config")
 local venv = require("venv-selector.venv")
-local Picker = require("venv-selector.pickers.picker_interface")
+local PickerInterface = require("venv-selector.pickers.picker_interface")
 
-local TelescopePicker = setmetatable({}, Picker)
+local TelescopePicker = setmetatable({}, PickerInterface)
 TelescopePicker.__index = TelescopePicker
 
 ---@diagnostic disable-next-line: duplicate-set-field
 function TelescopePicker.new()
-    local self = setmetatable(Picker.new(), TelescopePicker)
+    local self = setmetatable(PickerInterface.new(), TelescopePicker)
     return self
 end
 

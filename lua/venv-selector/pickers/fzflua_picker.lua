@@ -15,7 +15,7 @@ setmetatable(FzfLuaPicker, {
 })
 
 function FzfLuaPicker.new()
-    local self = setmetatable({}, FzfLuaPicker)
+    local self = setmetatable(PickerInterface.new(), FzfLuaPicker)
     return self
 end
 
@@ -43,22 +43,24 @@ end
 
 function FzfLuaPicker:update_results()
     if self.reload_action then
-        local opts = {}
         local fzf_lua = require("fzf-lua")
         fzf_lua.fzf_exec(function(fzf_cb)
             for i, entry in ipairs(self.results) do
                 fzf_cb(string.format("%d\t%s", i, entry.text))
             end
             fzf_cb() -- EOF
-        end, opts)
+        end, self.fzf_opts)
     end
 end
 
-function FzfLuaPicker:open(search_in_progress)
+--- FIXME: Currently will only show results after ctrl+r. search never "completes" and the spinner goes ad infinitum.
+--- if you pick a venv after the ctrl + r refresh it will activate but if you try to refresh again it breaks
+--- The ctrl + r doesn't actually refresh a new search either, it just shows the results from the previous search
+function FzfLuaPicker:open()
     local fzf_lua = require("fzf-lua")
     local search = require("venv-selector.search")
 
-    local opts = {
+    self.fzf_opts = {
         prompt = "Virtual environments > ",
         fzf_opts = {
             ["--header"] = "Virtual environments (ctrl-r to refresh)",
@@ -70,13 +72,39 @@ function FzfLuaPicker:open(search_in_progress)
         },
         actions = {
             ["default"] = function(selected)
-                local entry = selected
-                if entry then
-                    local path = entry:match("%s([^%s]+)$")
-                    if path then
-                        venv.set_source(entry.entry.source)
-                        venv.activate(path, entry.entry.type, true)
+                log.debug("Selected: " .. vim.inspect(selected))
+                if selected and #selected > 0 then
+                    local selection = selected[1]
+                    log.debug("Selection: " .. selection)
+
+                    local index = tonumber(selection:match("^(%d+)"))
+                    if index then
+                        local entry = self.results[index]
+                        if entry and entry.entry then
+                            log.debug("Activating venv: " .. entry.entry.path)
+                            venv.set_source(entry.entry.source)
+                            venv.activate(entry.entry.path, entry.entry.type, true)
+                        else
+                            log.error("Failed to retrieve valid entry data for index: " .. index)
+                        end
+                    else
+                        local path = selection:match("([^%s]+)$")
+                        if path then
+                            log.debug("Activating venv by path: " .. path)
+                            for _, entry in ipairs(self.results) do
+                                if entry.entry and entry.entry.path == path then
+                                    venv.set_source(entry.entry.source)
+                                    venv.activate(path, entry.entry.type, true)
+                                    return
+                                end
+                            end
+                            log.error("Failed to find entry data for path: " .. path)
+                        else
+                            log.error("Failed to extract path from selection: " .. selection)
+                        end
                     end
+                else
+                    log.error("No selection made")
                 end
             end,
             ["ctrl-r"] = function()
@@ -93,14 +121,14 @@ function FzfLuaPicker:open(search_in_progress)
                 if result then
                     local entry = self:make_entry_maker()(result)
                     self:insert_result(entry)
-                    fzf_cb(entry.text)
+                    fzf_cb(string.format("%d\t%s", #self.results, entry.text))
                 end
             end,
             on_complete = function()
-                fzf_cb(nil)
+                fzf_cb()
             end,
         })
-    end, opts)
+    end, self.fzf_opts)
 end
 
 return FzfLuaPicker

@@ -1,8 +1,11 @@
-local gui = require("venv-selector.gui")
 local workspace = require("venv-selector.workspace")
 local path = require("venv-selector.path")
 local utils = require("venv-selector.utils")
 local log = require("venv-selector.logger")
+local config = require("venv-selector.config")
+local gui = require("venv-selector.gui")
+
+local M = {}
 
 local function is_workspace_search(str)
     return string.find(str, "$WORKSPACE_PATH") ~= nil
@@ -16,10 +19,8 @@ local function is_filepath_search(str)
     return string.find(str, "$FILE_DIR") ~= nil
 end
 
-local M = {}
-
 local function disable_default_searches(search_settings)
-    local default_searches = require("venv-selector.config").default_settings.search
+    local default_searches = config.default_settings.search
     for search_name, _ in pairs(search_settings.search) do
         if default_searches[search_name] ~= nil then
             log.debug("Disabling default search for '" .. search_name .. '"')
@@ -29,7 +30,7 @@ local function disable_default_searches(search_settings)
 end
 
 local function set_interactive_search(opts)
-    if opts ~= nil and #opts.args > 0 then
+    if opts ~= nil and opts.args ~= nil and #opts.args > 0 then
         local settings = {
             search = {
                 interactive = {
@@ -45,8 +46,8 @@ local function set_interactive_search(opts)
 end
 
 local function run_search(opts)
-    local user_settings = require("venv-selector.config").user_settings
-    local options = require("venv-selector.config").user_settings.options
+    local user_settings = config.user_settings
+    local options = user_settings.options
 
     if M.search_in_progress == true then
         log.info("Not starting new search because previous search is still running.")
@@ -91,7 +92,11 @@ local function run_search(opts)
                         rv.name = callback(line, rv.source)
                     end
 
-                    gui.insert_result(rv)
+                    gui:insert_result(rv)
+
+                    if opts.on_result then
+                        opts.on_result(rv)
+                    end
                 end
             end
         elseif event == "stderr" and data then
@@ -106,10 +111,14 @@ local function run_search(opts)
             job_count = job_count - 1
             if job_count == 0 then
                 log.info("Searching finished.")
-                gui.remove_dups()
-                gui.sort_results()
-                gui.update_results()
+                gui:remove_dups()
+                gui:sort_results()
+                gui:update_results()
                 M.search_in_progress = false
+                if opts.on_complete then
+                    log.info("Calling on_complete callback now")
+                    opts.on_complete()
+                end
             end
         end
     end
@@ -117,8 +126,15 @@ local function run_search(opts)
     local uv = vim.loop
     local function start_search_job(job_name, search, count)
         local job = path.expand(search.execute_command)
+
         log.debug("Starting '" .. job_name .. "': '" .. job .. "'")
         M.search_in_progress = true
+
+        -- Special for windows to run the command without a shell (translate the command to a lua table before sending to jobstart)
+        if vim.loop.os_uname().sysname == "Windows_NT" then
+            job = utils.split_cmd_for_windows(job)
+        end
+
         local job_id = vim.fn.jobstart(job, {
             stdout_buffered = true,
             stderr_buffered = true,
@@ -179,11 +195,11 @@ local function run_search(opts)
                     search.execute_command = search.execute_command:gsub("$WORKSPACE_PATH", workspace_path)
                     job_count = start_search_job(job_name, search, job_count)
                 end
-            -- search has $CWD inside
+                -- search has $CWD inside
             elseif is_cwd_search(search.command) then
                 search.execute_command = search.execute_command:gsub("$CWD", cwd)
                 job_count = start_search_job(job_name, search, job_count)
-            -- search has $FILE_DIR inside
+                -- search has $FILE_DIR inside
             elseif is_filepath_search(search.command) then
                 if current_dir ~= nil then
                     search.execute_command = search.execute_command:gsub("$FILE_DIR", current_dir)
@@ -198,7 +214,7 @@ local function run_search(opts)
 end
 
 function M.New(opts)
-    local options = require("venv-selector.config").user_settings.options
+    local options = config.user_settings.options
     if options.fd_binary_name == nil then
         local message =
             "Cannot find any fd binary on your system. If its installed under a different name, you can set options.fd_binary_name to its name."

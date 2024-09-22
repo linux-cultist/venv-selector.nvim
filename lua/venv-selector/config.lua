@@ -102,7 +102,8 @@ function M.get_default_searches()
             }
         end,
         ["Windows_NT"] = function()
-            -- NOTE: In lua, '\' is an escape character. So in windows paths, we need 4 slashes where there normally would be 2 slashes on the command line.
+            -- NOTE: For windows searches, we convert the string below to a lua table before running it, so the execution doesnt use a shell that needs
+            -- a lot of escaping of the strings to get right.
             return {
                 hatch = {
                     command = "$FD python.exe $HOME/AppData/Local/hatch/env/virtual --full-path --color never",
@@ -121,7 +122,7 @@ function M.get_default_searches()
                     type = "anaconda",
                 },
                 anaconda_base = {
-                    command = "$FD anaconda3\\\\python.exe $HOME/anaconda3 --full-path -a --color never",
+                    command = "$FD anaconda3//python.exe $HOME/anaconda3 --full-path -a --color never",
                     type = "anaconda",
                 },
                 miniconda_envs = {
@@ -129,20 +130,20 @@ function M.get_default_searches()
                     type = "anaconda",
                 },
                 miniconda_base = {
-                    command = "$FD miniconda3\\\\python.exe $HOME/miniconda3 --full-path -a --color never",
+                    command = "$FD miniconda3//python.exe $HOME/miniconda3 --full-path -a --color never",
                     type = "anaconda",
                 },
                 pipx = {
-                    command = "fd Scripts\\\\python.exe $HOME/pipx/venvs --full-path -a --color never",
+                    command = "$FD Scripts//python.exe$ $HOME/pipx/venvs --full-path -a --color never",
                 },
                 cwd = {
-                    command = "$FD Scripts\\\\python.exe$ $CWD --full-path --color never -HI -a -L",
+                    command = "$FD Scripts//python.exe$ $CWD --full-path --color never -HI -a -L",
                 },
                 workspace = {
-                    command = "$FD Scripts\\\\python.exe$ $WORKSPACE_PATH --full-path --color never -HI -a -L",
+                    command = "$FD Scripts//python.exe$ $WORKSPACE_PATH --full-path --color never -HI -a -L",
                 },
                 file = {
-                    command = "$FD Scripts\\\\python.exe$ $FILE_DIR --full-path --color never -HI -a -L",
+                    command = "$FD Scripts//python.exe$ $FILE_DIR --full-path --color never -HI -a -L",
                 },
             }
         end,
@@ -186,13 +187,15 @@ M.default_settings = {
         set_environment_variables = true, -- sets VIRTUAL_ENV or CONDA_PREFIX environment variables
         notify_user_on_venv_activation = false, -- notifies user on activation of the virtual env
         search_timeout = 5, -- if a search takes longer than this many seconds, stop it and alert the user
-        debug = false, -- enables you to run the VenvSelectLog command to view debug logs
+        debug = true, -- enables you to run the VenvSelectLog command to view debug logs
         fd_binary_name = M.find_fd_command_name(), -- plugin looks for `fd` or `fdfind` but you can set something else here
         require_lsp_activation = true, -- require activation of an lsp before setting env variables
         -- telescope viewer options
         on_telescope_result_callback = nil, -- callback function for modifying telescope results
         show_telescope_search_type = true, -- Shows which of the searches found which venv in telescope
         telescope_filter_type = "substring", -- When you type something in telescope, filter by "substring" or "character"
+        telescope_active_venv_color = "#00FF00", -- The color of the active venv in telescope
+        picker = "fzf-lua",
     },
     search = M.get_default_searches()(),
 }

@@ -6,18 +6,18 @@ local path = require("venv-selector.path")
 local ws = require("venv-selector.workspace")
 
 local function on_lsp_attach()
-    local cache = require("venv-selector.cached_venv")
-    if config.user_settings.options.cached_venv_automatic_activation == true then
-        cache.retrieve()
+    if vim.bo.filetype == "python" then
+        local cache = require("venv-selector.cached_venv")
+        if config.user_settings.options.cached_venv_automatic_activation == true then
+            cache.retrieve()
+        end
     end
 end
 
 vim.api.nvim_create_autocmd("LspAttach", {
-    pattern = "*.py",
+    pattern = "*",
     callback = on_lsp_attach,
 })
-
-vim.api.nvim_command("hi VenvSelectActiveVenv guifg=#00FF00")
 
 local M = {}
 
@@ -49,6 +49,16 @@ function M.stop_lsp_servers()
     venv.stop_lsp_servers()
 end
 
+function M.activate_from_path(python_path)
+    venv.activate(python_path, "activate_from_path", true)
+end
+
+-- Temporary, will be removed later.
+function M.split_command(str)
+    local ut = require("venv-selector.utils")
+    return ut.split_cmd_for_windows(str)
+end
+
 function M.deactivate()
     path.remove_current()
     venv.unset_env_variables()
@@ -56,6 +66,7 @@ end
 
 function M.setup(plugin_settings)
     config.merge_user_settings(plugin_settings or {})
+    vim.api.nvim_command("hi VenvSelectActiveVenv guifg=" .. config.user_settings.options.telescope_active_venv_color)
     if config.user_settings.options.debug == true then
         log.enabled = true
     end

@@ -1,15 +1,28 @@
-local config = require("venv-selector.config")
-local search = require("venv-selector.search")
 local log = require("venv-selector.logger")
+local config = require("venv-selector.config")
 
 local M = {}
 
 function M.register()
-    vim.api.nvim_create_user_command("VenvSelect", function(opts)
-        local gui = require("venv-selector.gui")
-        gui:open(search.search_in_progress)
-        search:New(opts)
-    end, { nargs = "*", desc = "Activate venv" })
+    local guiPicker = config.user_settings.options.picker
+    if guiPicker == "telescope" then
+        vim.api.nvim_create_user_command("VenvSelect", function(opts)
+            local gui = require("venv-selector.gui")
+            local search = require("venv-selector.fzf_search")
+            gui:open(search.search_in_progress)
+            search:New(opts)
+        end, { nargs = "*", desc = "Activate venv" })
+    elseif guiPicker == "fzf-lua" then
+        vim.api.nvim_create_user_command("VenvSelect", function(opts)
+            local gui = require("venv-selector.gui")
+            local search = require("venv-selector.telescope_search")
+            gui:open(search.search_in_progress)
+            search:New(opts)
+        end, { nargs = "*", desc = "Activate venv" })
+    else
+        vim.notify('Invalid picker setting, please select one of "telescope" or "fzf-lua"', vim.log.levels.ERROR)
+        vim.notify("The currently selected picker is: " .. guiPicker, vim.log.levels.ERROR)
+    end
 
     vim.api.nvim_create_user_command("VenvSelectLog", function()
         local rc = log.toggle()

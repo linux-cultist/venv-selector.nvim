@@ -132,7 +132,7 @@ function PickerInterface:sort_results()
         return count
     end
 
-    log.debug("Sorting telescope results on path similarity.")
+    log.debug("Sorting results on path similarity.")
     table.sort(self.results, function(a, b)
         -- Check for 'selected_python' match
         local a_is_selected = a.path == selected_python

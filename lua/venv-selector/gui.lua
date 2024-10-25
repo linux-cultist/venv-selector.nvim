@@ -1,12 +1,7 @@
 local config = require("venv-selector.config")
-
---- FIXME: I need to figure out how to get the picker from the user settings
---- but I keep running into issues where the user settings are not merged before
---- the code tries to access the merged table of settings.
-
-local guiPicker = "fzf-lua"
 local M = {}
 
+local guiPicker = config.user_settings.options.picker
 if guiPicker == "telescope" then
     local TelescopePicker = require("venv-selector.pickers.telescope_picker")
     M = TelescopePicker:new()

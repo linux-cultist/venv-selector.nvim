@@ -1,11 +1,8 @@
+local gui = require("venv-selector.gui")
 local workspace = require("venv-selector.workspace")
 local path = require("venv-selector.path")
 local utils = require("venv-selector.utils")
 local log = require("venv-selector.logger")
-local config = require("venv-selector.config")
-local gui = require("venv-selector.gui")
-
-local M = {}
 
 local function is_workspace_search(str)
     return string.find(str, "$WORKSPACE_PATH") ~= nil
@@ -19,8 +16,10 @@ local function is_filepath_search(str)
     return string.find(str, "$FILE_DIR") ~= nil
 end
 
+local M = {}
+
 local function disable_default_searches(search_settings)
-    local default_searches = config.default_settings.search
+    local default_searches = require("venv-selector.config").default_settings.search
     for search_name, _ in pairs(search_settings.search) do
         if default_searches[search_name] ~= nil then
             log.debug("Disabling default search for '" .. search_name .. '"')
@@ -30,7 +29,7 @@ local function disable_default_searches(search_settings)
 end
 
 local function set_interactive_search(opts)
-    if opts ~= nil and opts.args ~= nil and #opts.args > 0 then
+    if opts ~= nil and #opts.args > 0 then
         local settings = {
             search = {
                 interactive = {
@@ -46,8 +45,8 @@ local function set_interactive_search(opts)
 end
 
 local function run_search(opts)
-    local user_settings = config.user_settings
-    local options = user_settings.options
+    local user_settings = require("venv-selector.config").user_settings
+    local options = require("venv-selector.config").user_settings.options
 
     if M.search_in_progress == true then
         log.info("Not starting new search because previous search is still running.")
@@ -92,11 +91,7 @@ local function run_search(opts)
                         rv.name = callback(line, rv.source)
                     end
 
-                    gui:insert_result(rv)
-
-                    if opts.on_result then
-                        opts.on_result(rv)
-                    end
+                    gui.insert_result(rv)
                 end
             end
         elseif event == "stderr" and data then
@@ -111,14 +106,10 @@ local function run_search(opts)
             job_count = job_count - 1
             if job_count == 0 then
                 log.info("Searching finished.")
-                gui:remove_dups()
-                gui:sort_results()
-                gui:update_results()
+                gui.remove_dups()
+                gui.sort_results()
+                gui.update_results()
                 M.search_in_progress = false
-                if opts.on_complete then
-                    log.info("Calling on_complete callback now")
-                    opts.on_complete()
-                end
             end
         end
     end
@@ -214,7 +205,7 @@ local function run_search(opts)
 end
 
 function M.New(opts)
-    local options = config.user_settings.options
+    local options = require("venv-selector.config").user_settings.options
     if options.fd_binary_name == nil then
         local message =
             "Cannot find any fd binary on your system. If its installed under a different name, you can set options.fd_binary_name to its name."

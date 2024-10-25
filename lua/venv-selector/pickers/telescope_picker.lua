@@ -127,7 +127,7 @@ function TelescopePicker:open(in_progress)
 
             map("i", "<C-r>", function()
                 self.results = {}
-                local search = require("venv-selector.search")
+                local search = require("venv-selector.telescope_search")
                 search.New(nil)
             end)
 

@@ -1,5 +1,4 @@
 local config = require("venv-selector.config")
-local venv = require("venv-selector.venv")
 local PickerInterface = require("venv-selector.pickers.picker_interface")
 local path = require("venv-selector.path")
 local log = require("venv-selector.logger")
@@ -20,23 +19,58 @@ function FzfLuaPicker.new()
 end
 
 function FzfLuaPicker:make_entry_maker()
-    return function(entry)
-        local icon = entry.icon
-        local active_indicator = entry.path == path.current_python_path and " " or ""
-        local search_type_indicator = config.user_settings.options.show_telescope_search_type
-                and self:draw_icons_for_types(entry) .. " " .. entry.source
-            or ""
+    local function draw_icons_for_types(e)
+        if
+            vim.tbl_contains({
+                "cwd",
+                "workspace",
+                "file",
+                "combined",
+            }, e.source)
+        then
+            return "󰥨"
+        elseif
+            vim.tbl_contains({
+                "virtualenvs",
+                "hatch",
+                "poetry",
+                "pyenv",
+                "anaconda_envs",
+                "anaconda_base",
+                "miniconda_envs",
+                "miniconda_base",
+                "pipx",
+            }, e.source)
+        then
+            return ""
+        else
+            return "" -- user created venv icon
+        end
+    end
 
+    local function hl_active_venv(e)
+        if e.path == path.current_python_path then
+            return ""
+        end
+        return " "
+    end
+
+    return function(entry)
+        local icon = entry.icon or ""
+        local active_indicator = hl_active_venv(entry)
+        local type_icon = draw_icons_for_types(entry)
+        local source = config.user_settings.options.show_telescope_search_type and entry.source or ""
+
+        -- Store the raw entry data for selection handling
         return {
-            text = string.format(
-                "%s%s %s %s %s",
-                active_indicator,
-                icon,
-                entry.name,
-                search_type_indicator,
-                entry.path
-            ),
+            -- Simple tab-separated format for reliable selection parsing
+            text = string.format("%s%s\t%s\t%s\t%s", icon, active_indicator, entry.name, type_icon, source),
             entry = entry,
+            -- Store original values for selection matching
+            name = entry.name,
+            path = entry.path,
+            type = entry.type,
+            source = entry.source,
         }
     end
 end
@@ -53,17 +87,32 @@ function FzfLuaPicker:update_results()
     end
 end
 
---- FIXME: Currently will only show results after ctrl+r. search never "completes" and the spinner goes ad infinitum.
---- if you pick a venv after the ctrl + r refresh it will activate but if you try to refresh again it breaks
---- The ctrl + r doesn't actually refresh a new search either, it just shows the results from the previous search
 function FzfLuaPicker:open()
     local fzf_lua = require("fzf-lua")
-    local search = require("venv-selector.search")
+    local search = require("venv-selector.fzf_search")
+    local venv = require("venv-selector.venv")
+
+    search.run_search()
+
+    -- Store entries for selection lookup
+    local entries_map = {}
+
+    local function process_results(fzf_cb)
+        for _, result in ipairs(self.results) do
+            local entry = self:make_entry_maker()(result)
+            entries_map[entry.text] = entry
+            fzf_cb(entry.text)
+        end
+        fzf_cb(nil) -- EOF
+    end
 
     self.fzf_opts = {
         prompt = "Virtual environments > ",
         fzf_opts = {
-            ["--header"] = "Virtual environments (ctrl-r to refresh)",
+            ["--header"] = "Results (ctrl-r to refresh)",
+            ["--delimiter"] = "\t",
+            ["--with-nth"] = "1,2,3,4", -- Show all columns
+            ["--tabstop"] = "4",
         },
         winopts = {
             height = 0.4,
@@ -72,63 +121,23 @@ function FzfLuaPicker:open()
         },
         actions = {
             ["default"] = function(selected)
-                log.debug("Selected: " .. vim.inspect(selected))
                 if selected and #selected > 0 then
-                    local selection = selected[1]
-                    log.debug("Selection: " .. selection)
-
-                    local index = tonumber(selection:match("^(%d+)"))
-                    if index then
-                        local entry = self.results[index]
-                        if entry and entry.entry then
-                            log.debug("Activating venv: " .. entry.entry.path)
-                            venv.set_source(entry.entry.source)
-                            venv.activate(entry.entry.path, entry.entry.type, true)
-                        else
-                            log.error("Failed to retrieve valid entry data for index: " .. index)
-                        end
-                    else
-                        local path = selection:match("([^%s]+)$")
-                        if path then
-                            log.debug("Activating venv by path: " .. path)
-                            for _, entry in ipairs(self.results) do
-                                if entry.entry and entry.entry.path == path then
-                                    venv.set_source(entry.entry.source)
-                                    venv.activate(path, entry.entry.type, true)
-                                    return
-                                end
-                            end
-                            log.error("Failed to find entry data for path: " .. path)
-                        else
-                            log.error("Failed to extract path from selection: " .. selection)
-                        end
+                    local selected_entry = entries_map[selected[1]]
+                    if selected_entry then
+                        venv.set_source(selected_entry.source)
+                        venv.activate(selected_entry.path, selected_entry.type, true)
                     end
-                else
-                    log.error("No selection made")
                 end
             end,
             ["ctrl-r"] = function()
                 self.results = {}
+                search.run_search()
                 self:open()
             end,
         },
     }
 
-    fzf_lua.fzf_exec(function(fzf_cb)
-        search.New({
-            args = "",
-            on_result = function(result)
-                if result then
-                    local entry = self:make_entry_maker()(result)
-                    self:insert_result(entry)
-                    fzf_cb(string.format("%d\t%s", #self.results, entry.text))
-                end
-            end,
-            on_complete = function()
-                fzf_cb()
-            end,
-        })
-    end, self.fzf_opts)
+    fzf_lua.fzf_exec(process_results, self.fzf_opts)
 end
 
 return FzfLuaPicker

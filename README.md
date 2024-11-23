@@ -1,5 +1,5 @@
 <p align="center">
-  <h1 align="center">:tada: Python Venv Selector</h2>
+  <h1 align="center">:tada: Python Venv Selector</h1>
 </p>
 
 <p align="center">

@@ -5,11 +5,14 @@ local venv = require("venv-selector.venv")
 local path = require("venv-selector.path")
 local ws = require("venv-selector.workspace")
 
-local function on_lsp_attach()
+local function on_lsp_attach(args)
     if vim.bo.filetype == "python" then
         local cache = require("venv-selector.cached_venv")
         if config.user_settings.options.cached_venv_automatic_activation == true then
-            cache.retrieve()
+            local client = vim.lsp.get_client_by_id(args.data.client_id)
+            if client and config.user_settings.lsp_hooks[client.name] then
+                cache.retrieve()
+            end
         end
     end
 end

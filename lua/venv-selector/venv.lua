@@ -1,5 +1,6 @@
 local path = require("venv-selector.path")
 local config = require("venv-selector.config")
+local hooks = require("venv-selector.hooks")
 local log = require("venv-selector.logger")
 
 local M = {}
@@ -7,10 +8,7 @@ local M = {}
 M.current_source = nil -- contains the name of the search, like anaconda, pipx etc.
 
 function M.stop_lsp_servers()
-    local hooks = require("venv-selector.config").user_settings.hooks
-    for _, hook in pairs(hooks) do
-        hook(nil)
-    end
+    hooks.notify_lsp(nil)
 end
 
 function M.set_source(source)
@@ -43,15 +41,11 @@ function M.activate(python_path, type, check_lsp)
     path.current_venv_path = path.get_base(python_path)
 
     -- Inform lsp servers
-    local count = 0
-    local hooks = require("venv-selector.config").user_settings.hooks
-    for _, hook in pairs(hooks) do
-        count = count + hook(python_path)
-    end
+    local count = hooks.notify_lsp(python_path)
 
     if check_lsp and count == 0 and config.user_settings.options.require_lsp_activation == true then
         local message =
-            "No python lsp servers are running. Please open a python file and then select a venv to activate."
+            "No python lsp servers can be hooked. Please open a python file or check your settings."
         vim.notify(message, vim.log.levels.INFO, { title = "VenvSelect" })
         log.info(message)
         return false

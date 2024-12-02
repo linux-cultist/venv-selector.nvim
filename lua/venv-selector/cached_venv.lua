@@ -71,6 +71,9 @@ function M.retrieve()
             if venv_cache ~= nil and venv_cache[vim.fn.getcwd()] ~= nil then
                 local venv = require("venv-selector.venv")
                 local venv_info = venv_cache[vim.fn.getcwd()]
+                if venv_info.value == path.current_python_path then
+                    return
+                end
 
                 log.debug("Activating venv `" .. venv_info.value .. "` from cache.")
                 venv.activate(venv_info.value, venv_info.type, false)

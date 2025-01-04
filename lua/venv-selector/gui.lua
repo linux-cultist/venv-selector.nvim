@@ -26,7 +26,7 @@ local function resolve_picker()
 
         return "telescope"
     elseif picker == "fzf-lua" then
-        if not telescope_installed then
+        if not fzf_lua_installed then
             local message = "VenvSelect picker is set to fzf-lua, but fzf-lua is not installed."
             vim.notify(message, vim.log.levels.ERROR, { title = "VenvSelect" })
             log.error(message)

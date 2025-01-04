@@ -40,10 +40,9 @@ function M.new()
             end)
 
             map("i", "<C-r>", function()
-                M.results = {}
-                local search = require("venv-selector.search")
+                self.results = {}
                 -- FIXME: pass opts to run_search
-                search.run_search(self, nil)
+                require("venv-selector").run_search(self, nil)
             end)
 
             return true

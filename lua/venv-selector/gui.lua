@@ -6,10 +6,13 @@ local function resolve_picker()
     local picker = require("venv-selector.config").user_settings.options.picker
 
     local telescope_installed, _ = pcall(require, "telescope")
+    local fzf_lua_installed, _ = pcall(require, "fzf-lua")
 
     if picker == "auto" then
         if telescope_installed then
             return "telescope"
+        elseif fzf_lua_installed then
+            return "fzf-lua"
         else
             return "native"
         end
@@ -22,6 +25,15 @@ local function resolve_picker()
         end
 
         return "telescope"
+    elseif picker == "fzf-lua" then
+        if not telescope_installed then
+            local message = "VenvSelect picker is set to fzf-lua, but fzf-lua is not installed."
+            vim.notify(message, vim.log.levels.ERROR, { title = "VenvSelect" })
+            log.error(message)
+            return
+        end
+
+        return "fzf-lua"
     elseif picker == "native" then
         return "native"
     else

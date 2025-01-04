@@ -14,7 +14,7 @@ local function get_sorter()
     end
 end
 
-function M.new()
+function M.new(search_opts)
     local self = setmetatable({ results = {} }, M)
 
     local opts = {
@@ -41,8 +41,7 @@ function M.new()
 
             map("i", "<C-r>", function()
                 self.results = {}
-                -- FIXME: pass opts to run_search
-                require("venv-selector").run_search(self, nil)
+                require("venv-selector").run_search(self, search_opts)
             end)
 
             return true

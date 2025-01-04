@@ -3,7 +3,7 @@ local gui_utils = require("venv-selector.gui.utils")
 local M = {}
 M.__index = M
 
-function M.new()
+function M.new(search_opts)
     local self = setmetatable({ is_done = false, queue = {}, entries = {} }, M)
 
     local fzf_lua = require("fzf-lua")
@@ -30,8 +30,7 @@ function M.new()
                     self.fzf_cb = nil
                     self.queue = {}
                     self.entries = {}
-                    -- FIXME: pass opts to run_search
-                    require("venv-selector.search").run_search(self, nil)
+                    require("venv-selector.search").run_search(self, search_opts)
                 end,
                 fzf_lua.actions.resume,
             },

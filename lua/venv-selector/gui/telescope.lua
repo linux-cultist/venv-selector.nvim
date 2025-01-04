@@ -41,7 +41,7 @@ function M.new(search_opts)
 
             map("i", "<C-r>", function()
                 self.results = {}
-                require("venv-selector").run_search(self, search_opts)
+                require("venv-selector.search").run_search(self, search_opts)
             end)
 
             return true

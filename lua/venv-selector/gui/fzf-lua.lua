@@ -20,8 +20,8 @@ function M.new(search_opts)
         actions = {
             ["default"] = function(selected, _)
                 if selected and #selected > 0 then
-                    local result = self.entries[selected[1]]
-                    gui_utils.select(result)
+                    local selected_entry = self.entries[selected[1]]
+                    gui_utils.select(selected_entry)
                 end
             end,
             ["ctrl-r"] = {
@@ -43,10 +43,15 @@ end
 function M:consume_queue()
     if self.fzf_cb then
         for _, result in ipairs(self.queue) do
+            local fzf = require("fzf-lua")
+
             local hl = gui_utils.hl_active_venv(result)
-            local icon = hl and require("fzf-lua").utils.ansi_from_hl(hl, result.icon) or result.icon
+            local icon = hl and fzf.utils.ansi_from_hl(hl, result.icon) or result.icon
             local entry = gui_utils.format_result_as_string(icon, result.source, result.name)
-            self.entries[entry] = result
+
+            -- strip ansi colors from the entry, because fzf strips ansi colors
+            -- from the returned selection result
+            self.entries[hl and fzf.utils.strip_ansi_coloring(entry) or entry] = result
             self.fzf_cb(entry)
         end
         self.queue = {}

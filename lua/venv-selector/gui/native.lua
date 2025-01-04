@@ -24,9 +24,7 @@ function M:search_done()
             return gui_utils.format_result_as_string(result.icon, result.source, result.name)
         end,
     }, function(selected_entry)
-        if selected_entry ~= nil then
-            gui_utils.select(selected_entry)
-        end
+        gui_utils.select(selected_entry)
     end)
 end
 

@@ -33,9 +33,7 @@ function M.new(search_opts)
         attach_mappings = function(bufnr, map)
             map({ "i", "n" }, "<cr>", function()
                 local selected_entry = require("telescope.actions.state").get_selected_entry()
-                if selected_entry ~= nil then
-                    require("venv-selector.gui.utils").select(selected_entry)
-                end
+                gui_utils.select(selected_entry)
                 require("telescope.actions").close(bufnr)
             end)
 

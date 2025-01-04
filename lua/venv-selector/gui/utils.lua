@@ -130,6 +130,9 @@ function M.format_result_as_string(icon, source, name)
 end
 
 function M.select(entry)
+    if entry == nil then
+        return
+    end
     local venv = require("venv-selector.venv")
     venv.set_source(entry.source)
     venv.activate(entry.path, entry.type, true)

@@ -120,6 +120,15 @@ function M.hl_active_venv(entry)
     return nil
 end
 
+function M.format_result_as_string(icon, source, name)
+    local config = require("venv-selector.config")
+    if config.user_settings.options.show_telescope_search_type then
+        return string.format("%s %s %s %s", icon, M.draw_icons_for_types(source), source, name)
+    else
+        return string.format("%s %s", icon, name)
+    end
+end
+
 function M.select(entry)
     local venv = require("venv-selector.venv")
     venv.set_source(entry.source)

@@ -56,6 +56,7 @@ function M:consume_queue()
         end
         self.queue = {}
 
+        -- notify to fzf-lua that we are done generating results
         if self.is_done then
             self.fzf_cb(nil)
         end
@@ -63,18 +64,22 @@ function M:consume_queue()
 end
 
 function M:insert_result(result)
+    -- it is possible that the search might return results before fzf-lua gives
+    -- us the `fzf_cb`, so queue the results for processing until we have the fzf_cb
     self.queue[#self.queue + 1] = result
 
     self:consume_queue()
 end
 
 function M:search_done()
+    -- consume all remaining results and notify fzf-lua that we're done
+    -- generating results
     self.is_done = true
     self:consume_queue()
 
     -- results during the search are not deduplicated or sorted,
     -- so when the search is over, deduplicate and sort the results,
-    -- then refresh fzf-lua
+    -- re-queue them, then refresh fzf-lua
     local results = {}
     for _, result in pairs(self.entries) do
         results[#results + 1] = result

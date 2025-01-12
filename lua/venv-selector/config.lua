@@ -5,6 +5,10 @@ local M = {}
 
 M.user_settings = {}
 
+--- Health check tracking of legacy settings
+---@type boolean
+M.has_legacy_settings = false
+
 function M.get_default_searches()
     local systems = {
         ["Linux"] = function()
@@ -154,8 +158,12 @@ function M.get_default_searches()
 end
 
 function M.merge_user_settings(user_settings)
-    log.debug("User plugin settings: ", user_settings.settings, "")
-    M.user_settings = vim.tbl_deep_extend("force", M.default_settings, user_settings.settings or {})
+    if user_settings.settings ~= nil then
+        user_settings = user_settings.settings
+        M.has_legacy_settings = true
+    end
+    log.debug("User plugin settings: ", user_settings, "")
+    M.user_settings = vim.tbl_deep_extend("force", M.default_settings, user_settings or {})
 
     M.user_settings.detected = {
         system = vim.loop.os_uname().sysname,

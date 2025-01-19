@@ -44,13 +44,13 @@ function M.get_default_searches()
                     command = "$FD '/bin/python$' ~/.local/share/pipx/venvs ~/.local/pipx/venvs --full-path --color never",
                 },
                 cwd = {
-                    command = "$FD '/bin/python$' $CWD --full-path --color never -HI -a -L -E /proc -E .git/ -E .wine/ -E .steam/ -E Steam/ -E site-packages/",
+                    command = "$FD '/bin/python$' '$CWD' --full-path --color never -HI -a -L -E /proc -E .git/ -E .wine/ -E .steam/ -E Steam/ -E site-packages/",
                 },
                 workspace = {
-                    command = "$FD '/bin/python$' $WORKSPACE_PATH --full-path --color never -E /proc -HI -a -L",
+                    command = "$FD '/bin/python$' '$WORKSPACE_PATH' --full-path --color never -E /proc -HI -a -L",
                 },
                 file = {
-                    command = "$FD '/bin/python$' $FILE_DIR --full-path --color never -E /proc -HI -a -L",
+                    command = "$FD '/bin/python$' '$FILE_DIR' --full-path --color never -E /proc -HI -a -L",
                 },
             }
         end,
@@ -91,13 +91,13 @@ function M.get_default_searches()
                     command = "$FD '/bin/python$' ~/.local/share/pipx/venvs ~/.local/pipx/venvs --full-path --color never",
                 },
                 cwd = {
-                    command = "$FD '/bin/python$' $CWD --full-path --color never -HI -a -L -E /proc -E .git/ -E .wine/ -E .steam/ -E Steam/ -E site-packages/",
+                    command = "$FD '/bin/python$' '$CWD' --full-path --color never -HI -a -L -E /proc -E .git/ -E .wine/ -E .steam/ -E Steam/ -E site-packages/",
                 },
                 workspace = {
-                    command = "$FD '/bin/python$' $WORKSPACE_PATH --full-path --color never -E /proc -HI -a -L",
+                    command = "$FD '/bin/python$' '$WORKSPACE_PATH' --full-path --color never -E /proc -HI -a -L",
                 },
                 file = {
-                    command = "$FD '/bin/python$' $FILE_DIR --full-path --color never -E /proc -HI -a -L",
+                    command = "$FD '/bin/python$' '$FILE_DIR' --full-path --color never -E /proc -HI -a -L",
                 },
             }
         end,
@@ -137,13 +137,13 @@ function M.get_default_searches()
                     command = "$FD Scripts//python.exe$ $HOME/pipx/venvs --full-path -a --color never",
                 },
                 cwd = {
-                    command = "$FD Scripts//python.exe$ $CWD --full-path --color never -HI -a -L",
+                    command = "$FD Scripts//python.exe$ '$CWD' --full-path --color never -HI -a -L",
                 },
                 workspace = {
-                    command = "$FD Scripts//python.exe$ $WORKSPACE_PATH --full-path --color never -HI -a -L",
+                    command = "$FD Scripts//python.exe$ '$WORKSPACE_PATH' --full-path --color never -HI -a -L",
                 },
                 file = {
-                    command = "$FD Scripts//python.exe$ $FILE_DIR --full-path --color never -HI -a -L",
+                    command = "$FD Scripts//python.exe$ '$FILE_DIR' --full-path --color never -HI -a -L",
                 },
             }
         end,

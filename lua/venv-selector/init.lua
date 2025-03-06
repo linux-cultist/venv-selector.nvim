@@ -64,6 +64,22 @@ function M.deactivate()
     venv.unset_env_variables()
 end
 
+function M.on_lsp_init(_, _)
+    -- for use with lspconfig
+    -- provide to lspconfig.setup({
+    --     on_init=require("venv-selector").on_lsp_init
+    -- })
+    -- Run the cached venv activate only once on init
+    local cache = require("venv-selector.cached_venv")
+    cache.retrieve()
+    local venv_python = require("venv-selector").python()
+    if venv_python ~= nil then
+        require("venv-selector.hooks").pylsp_hook(venv_python)
+    else
+        log.debug("No venv selected, skipping on_lsp_init")
+    end
+end
+
 function M.setup(plugin_settings)
     config.merge_user_settings(plugin_settings or {})
     vim.api.nvim_command("hi VenvSelectActiveVenv guifg=" .. config.user_settings.options.telescope_active_venv_color)

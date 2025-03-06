@@ -427,6 +427,26 @@ settings = {
 
 ```
 
+## Automatic venv support with lspconfig
+
+Lspconfig caches lsp clients and ideally would only receieve LSP config setting updates for changes
+in virtual env, or for new LSP clients.  To do this, set
+
+```
+cached_venv_automatic_activation = false
+```
+
+for `venv-selector` and configure an `on_init` callback for `lspconfig` like so:
+
+```
+    require("lspconfig").pylsp.setup({
+        on_init=require("venv-selector").on_lsp_init,
+        -- ...
+    })
+```
+
+This will cause venv activation (if one is cached) when the first client starts up.
+
 ## Exposed functions
 
 These functions can be used to easily get the selected python interpreter and the active venv.
@@ -440,5 +460,6 @@ These functions can be used to easily get the selected python interpreter and th
 - `require("venv-selector").deactivate()`       -- Removes the venv from terminal path and unsets environment variables
 - `require("venv-selector").stop_lsp_servers()` -- Stops the lsp servers used by the plugin
 - `require("venv-selector").activate_from_path(python_path)` -- Activates a python interpreter given a path to it
+- `require("venv-selector").on_lsp_init(client, result)` -- For use with lspconfig on_init, allows automatic venv selection
 
 IMPORTANT: The last function, `activate_from_path`, is only intended as a way to select a virtual environment python without using the telescope picker. Trying to activate the system python this way is not supported and will set environment variables like `VIRTUAL_ENV` to the wrong values, since the plugin expects the path to be a virtual environment.

@@ -74,6 +74,10 @@ function M.pylsp_hook(venv_python)
                     jedi = {
                         environment = venv_python,
                     },
+                    pylsp_mypy = {
+                        overrides = {true, "--python-executable", venv_python},
+                        mypy_command = (vim.fs.dirname(venv_python) .. "/mypy"),
+                    }
                 },
             },
         })

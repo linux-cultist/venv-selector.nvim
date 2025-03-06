@@ -48,7 +48,7 @@ function M.save(python_path, venv_type)
     log.debug("Wrote cache content to " .. cache_file)
 end
 
-function M.retrieve()
+function _retrieve(project_path)
     if config.user_settings.options.enable_cached_venvs ~= true then
         log.debug("Option 'enable_cached_venvs' is false so will not use cache.")
         return
@@ -60,15 +60,27 @@ function M.retrieve()
 
         if cache_file_content ~= nil and cache_file_content[1] ~= nil then
             local venv_cache = vim.fn.json_decode(cache_file_content[1])
-            if venv_cache ~= nil and venv_cache[vim.fn.getcwd()] ~= nil then
+            if venv_cache ~= nil and venv_cache[project_path] ~= nil then
                 local venv = require("venv-selector.venv")
-                local venv_info = venv_cache[vim.fn.getcwd()]
+                local venv_info = venv_cache[project_path]
 
                 log.debug("Activating venv `" .. venv_info.value .. "` from cache.")
                 venv.activate(venv_info.value, venv_info.type, false)
                 return
             end
         end
+    end
+end
+
+function M.retrieve()
+    _retrieve(vim.fn.getcwd())
+end
+
+function M.retrieve_lspconfig(root_dir)
+    if root_dir ~= nil then
+        _retrieve(root_dir)
+    else
+        _retrieve(vim.fn.getcwd())
     end
 end
 

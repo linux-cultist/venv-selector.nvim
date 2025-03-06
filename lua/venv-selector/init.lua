@@ -64,14 +64,18 @@ function M.deactivate()
     venv.unset_env_variables()
 end
 
-function M.on_lsp_init(_, _)
+function M.on_lsp_init(client, _)
     -- for use with lspconfig
     -- provide to lspconfig.setup({
     --     on_init=require("venv-selector").on_lsp_init
     -- })
     -- Run the cached venv activate only once on init
     local cache = require("venv-selector.cached_venv")
-    cache.retrieve()
+    local root_dir = nil
+    if client ~= nil then
+        root_dir = client.root_dir
+    end
+    cache.retrieve_lspconfig(root_dir)
     local venv_python = require("venv-selector").python()
     if venv_python ~= nil then
         require("venv-selector.hooks").pylsp_hook(venv_python)

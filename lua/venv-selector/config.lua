@@ -1,9 +1,47 @@
 local hooks = require("venv-selector.hooks")
 local log = require("venv-selector.logger")
 
+---@class venv-selector.Options
+---@field on_venv_activate_callback? fun(): nil callback function for after a venv activates
+---@field enable_default_searches boolean switches all default searches on/off
+---@field enable_cached_venvs boolean use cached venvs that are activated automatically when a python file is registered with the LSP.
+---@field cached_venv_automatic_activation boolean if set to false, the VenvSelectCached command becomes available to manually activate them.
+---@field activate_venv_in_terminal boolean activate the selected python interpreter in terminal windows opened from neovim
+---@field set_environment_variables boolean sets VIRTUAL_ENV or CONDA_PREFIX environment variables
+---@field notify_user_on_venv_activation boolean notifies user on activation of the virtual env
+---@field search_timeout integer if a search takes longer than this many seconds, stop it and alert the user
+---@field debug boolean enables you to run the VenvSelectLog command to view debug logs
+---@field fd_binary_name string plugin looks for `fd` or `fdfind` but you can set something else here
+---@field require_lsp_activation boolean require activation of an lsp before setting env variables
+---@field on_telescope_result_callback? fun(filename: string): string callback function for modifying telescope results
+---@field show_telescope_search_type boolean Shows which of the searches found which venv in telescope
+---@field telescope_filter_type "substring" | "character" When you type something in telescope, filter by "substring" or "character"
+---@field telescope_active_venv_color string The color of the active venv in telescope
+
+---@class venv-selector.Settings
+---@field cache venv-selector.CacheSettings
+---@field hooks venv-selector.Hook[]
+---@field options venv-selector.Options
+---@field search venv-selector.Searches set or override search commands
+
+---@class (partial) venv-selector.Config: venv-selector.Settings
+
+---@class venv-selector.Detected
+---@field system string the detected system name
+
+---@class (partial) venv-selector.UserSettings: venv-selector.Settings
+---@field detected venv-selector.Detected
+
+
 local M = {}
 
+---@type venv-selector.UserSettings
+---@diagnostic disable-next-line: missing-fields
 M.user_settings = {}
+
+--- Health check tracking of legacy settings
+---@type boolean
+M.has_legacy_settings = false
 
 function M.get_default_searches()
     local systems = {
@@ -153,9 +191,17 @@ function M.get_default_searches()
     return systems[name] or systems["Linux"]
 end
 
+---@param user_settings venv-selector.Settings
 function M.merge_user_settings(user_settings)
-    log.debug("User plugin settings: ", user_settings.settings, "")
-    M.user_settings = vim.tbl_deep_extend("force", M.default_settings, user_settings.settings or {})
+    ---@diagnostic disable-next-line: undefined-field
+    if user_settings.settings ~= nil then
+        ---@diagnostic disable-next-line: undefined-field
+        user_settings = user_settings.settings
+        M.has_legacy_settings = true
+    end
+    log.debug("User plugin settings: ", user_settings, "")
+    ---@diagnostic disable-next-line: assign-type-mismatch
+    M.user_settings = vim.tbl_deep_extend("force", M.default_settings, user_settings or {})
 
     M.user_settings.detected = {
         system = vim.loop.os_uname().sysname,
@@ -173,6 +219,7 @@ function M.find_fd_command_name()
     end
 end
 
+---@type venv-selector.Settings
 M.default_settings = {
     cache = {
         file = "~/.cache/venv-selector/venvs2.json",

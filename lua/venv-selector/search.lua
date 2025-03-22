@@ -3,6 +3,17 @@ local path = require("venv-selector.path")
 local utils = require("venv-selector.utils")
 local log = require("venv-selector.logger")
 
+
+---@alias venv-selector.SearchType
+---| '"anaconda"' # an anaconda/minconda search
+
+---@class venv-selector.Search
+---@field command string The serch commnd to be executed
+---@field type? venv-selector.SearchType set for special venv types
+
+---@alias venv-selector.Searches table<string, venv-selector.Search|false>
+
+
 local function is_workspace_search(str)
     return string.find(str, "$WORKSPACE_PATH") ~= nil
 end

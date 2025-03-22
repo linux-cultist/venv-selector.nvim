@@ -64,6 +64,7 @@ function M.deactivate()
     venv.unset_env_variables()
 end
 
+---@param plugin_settings venv-selector.Config
 function M.setup(plugin_settings)
     config.merge_user_settings(plugin_settings or {})
     vim.api.nvim_command("hi VenvSelectActiveVenv guifg=" .. config.user_settings.options.telescope_active_venv_color)

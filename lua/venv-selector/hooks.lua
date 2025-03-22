@@ -1,5 +1,7 @@
 local log = require("venv-selector.logger")
 
+---@alias venv-selector.Hook fun(venv_python: string): nil
+
 local M = {}
 
 M.notifications_memory = {}

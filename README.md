@@ -422,6 +422,7 @@ settings = {
         show_telescope_search_type = true,         -- shows which of the searches found which venv in telescope
         telescope_filter_type = "substring"        -- when you type something in telescope, filter by "substring" or "character"
         telescope_active_venv_color = "#00FF00"    -- The color of the active venv in telescope
+        picker = "auto", -- The picker to use. Valid options are "telescope", "fzf-lua", "native", or "auto"
   }
 }
 

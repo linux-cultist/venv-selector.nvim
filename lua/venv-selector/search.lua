@@ -1,4 +1,3 @@
-local gui = require("venv-selector.gui")
 local workspace = require("venv-selector.workspace")
 local path = require("venv-selector.path")
 local utils = require("venv-selector.utils")
@@ -44,7 +43,7 @@ local function set_interactive_search(opts)
     return nil
 end
 
-local function run_search(opts)
+function M.run_search(picker, opts)
     local user_settings = require("venv-selector.config").user_settings
     local options = require("venv-selector.config").user_settings.options
 
@@ -91,7 +90,9 @@ local function run_search(opts)
                         rv.name = callback(line, rv.source)
                     end
 
-                    gui.insert_result(rv)
+                    log.debug("Result:")
+                    log.debug(rv)
+                    picker:insert_result(rv)
                 end
             end
         elseif event == "stderr" and data then
@@ -106,9 +107,7 @@ local function run_search(opts)
             job_count = job_count - 1
             if job_count == 0 then
                 log.info("Searching finished.")
-                gui.remove_dups()
-                gui.sort_results()
-                gui.update_results()
+                picker:search_done()
                 M.search_in_progress = false
             end
         end
@@ -201,23 +200,6 @@ local function run_search(opts)
                 job_count = start_search_job(job_name, search, job_count)
             end
         end
-    end
-end
-
-function M.New(opts)
-    local options = require("venv-selector.config").user_settings.options
-    if options.fd_binary_name == nil then
-        local message =
-            "Cannot find any fd binary on your system. If its installed under a different name, you can set options.fd_binary_name to its name."
-        log.error(message)
-        vim.notify(message, vim.log.levels.ERROR, { title = "VenvSelect" })
-    elseif utils.check_dependencies_installed() == false then
-        local message = "Not all required modules are installed."
-        log.error(message)
-        vim.notify(message, vim.log.levels.ERROR, { title = "VenvSelect" })
-    elseif utils.table_has_content(gui.results) == false then
-        run_search(opts)
-    else
     end
 end
 

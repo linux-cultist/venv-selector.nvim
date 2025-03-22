@@ -77,18 +77,6 @@ function M.try(table, ...)
     return result
 end
 
-function M.check_dependencies_installed()
-    local installed, telescope = pcall(require, "telescope")
-    if installed == false then
-        local message = "VenvSelect requires telescope to be installed."
-        vim.notify(message, vim.log.levels.ERROR, { title = "VenvSelect" })
-        log.error(message)
-        return false
-    end
-
-    return true
-end
-
 function M.print_table(tbl, indent)
     if not indent then
         indent = 0

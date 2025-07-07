@@ -381,7 +381,8 @@ You also need `debugpy` installed in the venv you are switching to.
         show_telescope_search_type = true,         -- shows which of the searches found which venv in telescope
         telescope_filter_type = "substring"        -- when you type something in telescope, filter by "substring" or "character"
         telescope_active_venv_color = "#00FF00"    -- The color of the active venv in telescope
-        picker = "auto", -- The picker to use. Valid options are "telescope", "fzf-lua", "native", or "auto"
+        picker = "auto",                           -- The picker to use. Valid options are "telescope", "fzf-lua", "native", or "auto"
+        icon = "",                                -- The icon to use in the picker for each item
   }
 }
 ```
@@ -402,5 +403,5 @@ These functions can be used to easily get the selected python interpreter and th
 
 > [!IMPORTANT]
 > The last function, `activate_from_path`, is only intended as a way to select a virtual environment python without using the telescope picker.
-> Trying to activate the system python this way is not supported and will set environment variables like `VIRTUAL_ENV` to the wrong values, 
+> Trying to activate the system python this way is not supported and will set environment variables like `VIRTUAL_ENV` to the wrong values,
 > since the plugin expects the path to be a virtual environment.

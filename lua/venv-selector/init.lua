@@ -66,12 +66,13 @@ end
 
 ---@param plugin_settings venv-selector.Config
 function M.setup(plugin_settings)
-    config.merge_user_settings(plugin_settings or {})
+    local all_settings = config.merge_user_settings(plugin_settings or {})
     vim.api.nvim_command("hi VenvSelectActiveVenv guifg=" .. config.user_settings.options.telescope_active_venv_color)
     if config.user_settings.options.debug == true then
         log.enabled = true
     end
     user_commands.register()
+    log.debug("Active settings: ", all_settings, "")
 end
 
 return M

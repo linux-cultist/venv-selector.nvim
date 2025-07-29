@@ -206,8 +206,8 @@ function M.merge_user_settings(user_settings)
     M.user_settings.detected = {
         system = vim.loop.os_uname().sysname,
     }
-
-    log.debug("Complete user settings:", M.user_settings, "")
+    
+    return M.user_settings
 end
 
 function M.find_fd_command_name()

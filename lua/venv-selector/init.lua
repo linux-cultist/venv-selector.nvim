@@ -66,7 +66,7 @@ end
 
 ---@param plugin_settings venv-selector.Config
 function M.setup(conf)
-    if conf.options.debug then
+    if vim.tbl_get(conf, "options", "debug") then
         log.enabled = true
     end
 

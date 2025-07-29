@@ -93,7 +93,7 @@ end
 
 function M.execute_for_client(name, callback)
     -- get_active_clients deprecated in neovim v0.10
-    local client = (vim.lsp.get_clients or vim.lsp.get_active_clients)({ name = name })[1]
+    local client = vim.lsp.get_clients({ name = name })[1]
 
     if not client then
         --print('No client named: ' .. name .. ' found')

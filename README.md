@@ -381,8 +381,9 @@ You also need `debugpy` installed in the venv you are switching to.
         show_telescope_search_type = true,         -- shows which of the searches found which venv in telescope
         telescope_filter_type = "substring"        -- when you type something in telescope, filter by "substring" or "character"
         telescope_active_venv_color = "#00FF00"    -- The color of the active venv in telescope
-        picker = "auto",                           -- The picker to use. Valid options are "telescope", "fzf-lua", "native", or "auto"
+        picker = "auto",                           -- The picker to use. Valid options are "telescope", "fzf-lua", "snacks", "native", or "auto"
         icon = "",                                -- The icon to use in the picker for each item
+
   }
 }
 ```

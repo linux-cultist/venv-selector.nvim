@@ -17,6 +17,7 @@ local log = require("venv-selector.logger")
 ---@field show_telescope_search_type boolean Shows which of the searches found which venv in telescope
 ---@field telescope_filter_type "substring" | "character" When you type something in telescope, filter by "substring" or "character"
 ---@field telescope_active_venv_color string The color of the active venv in telescope
+---@field icon string The icon used for each item in the picker
 
 ---@class venv-selector.Settings
 ---@field cache venv-selector.CacheSettings
@@ -31,7 +32,6 @@ local log = require("venv-selector.logger")
 
 ---@class (partial) venv-selector.UserSettings: venv-selector.Settings
 ---@field detected venv-selector.Detected
-
 
 local M = {}
 
@@ -243,6 +243,8 @@ M.default_settings = {
         telescope_filter_type = "substring", -- When you type something in telescope, filter by "substring" or "character"
         telescope_active_venv_color = "#00FF00", -- The color of the active venv in telescope
         picker = "auto", -- The picker to use. Valid options are "telescope", "fzf-lua", "snacks", "native", or "auto"
+        icon = "", -- The icon to use in the picker for each item
+
     },
     search = M.get_default_searches()(),
 }

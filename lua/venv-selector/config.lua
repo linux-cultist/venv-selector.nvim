@@ -57,7 +57,8 @@ function M.get_default_searches()
                     command = "$FD '/bin/python$' ~/.cache/pypoetry/virtualenvs --no-ignore-vcs --full-path",
                 },
                 pyenv = {
-                    command = "$FD '/bin/python$' ~/.pyenv/versions --no-ignore-vcs --full-path --color never -E pkgs/ -E envs/ -L",
+                    command =
+                    "$FD '/bin/python$' ~/.pyenv/versions --no-ignore-vcs --full-path --color never -E pkgs/ -E envs/ -L",
                 },
                 pipenv = {
                     command = "$FD '/bin/python$' ~/.local/share/virtualenvs --no-ignore-vcs --full-path --color never",
@@ -79,10 +80,12 @@ function M.get_default_searches()
                     type = "anaconda",
                 },
                 pipx = {
-                    command = "$FD '/bin/python$' ~/.local/share/pipx/venvs ~/.local/pipx/venvs --no-ignore-vcs --full-path --color never",
+                    command =
+                    "$FD '/bin/python$' ~/.local/share/pipx/venvs ~/.local/pipx/venvs --no-ignore-vcs --full-path --color never",
                 },
                 cwd = {
-                    command = "$FD '/bin/python$' $CWD --full-path --color never -HI -a -L -E /proc -E .git/ -E .wine/ -E .steam/ -E Steam/ -E site-packages/",
+                    command =
+                    "$FD '/bin/python$' $CWD --full-path --color never -HI -a -L -E /proc -E .git/ -E .wine/ -E .steam/ -E Steam/ -E site-packages/",
                 },
                 workspace = {
                     command = "$FD '/bin/python$' $WORKSPACE_PATH --full-path --color never -E /proc -HI -a -L",
@@ -98,13 +101,15 @@ function M.get_default_searches()
                     command = "$FD 'python$' ~/.virtualenvs --no-ignore-vcs --color never",
                 },
                 hatch = {
-                    command = "$FD 'python$' ~/Library/Application\\\\ Support/hatch/env/virtual --no-ignore-vcs --color never -E '*-build*'",
+                    command =
+                    "$FD 'python$' ~/Library/Application\\\\ Support/hatch/env/virtual --no-ignore-vcs --color never -E '*-build*'",
                 },
                 poetry = {
                     command = "$FD '/bin/python$' ~/Library/Caches/pypoetry/virtualenvs --no-ignore-vcs --full-path",
                 },
                 pyenv = {
-                    command = "$FD '/bin/python$' ~/.pyenv/versions --no-ignore-vcs --full-path --color never -E pkgs/ -E envs/ -L",
+                    command =
+                    "$FD '/bin/python$' ~/.pyenv/versions --no-ignore-vcs --full-path --color never -E pkgs/ -E envs/ -L",
                 },
                 pipenv = {
                     command = "$FD '/bin/python$' ~/.local/share/virtualenvs --no-ignore-vcs --full-path --color never",
@@ -126,10 +131,12 @@ function M.get_default_searches()
                     type = "anaconda",
                 },
                 pipx = {
-                    command = "$FD '/bin/python$' ~/.local/share/pipx/venvs ~/.local/pipx/venvs --no-ignore-vcs --full-path --color never",
+                    command =
+                    "$FD '/bin/python$' ~/.local/share/pipx/venvs ~/.local/pipx/venvs --no-ignore-vcs --full-path --color never",
                 },
                 cwd = {
-                    command = "$FD '/bin/python$' $CWD --full-path --color never -HI -a -L -E /proc -E .git/ -E .wine/ -E .steam/ -E Steam/ -E site-packages/",
+                    command =
+                    "$FD '/bin/python$' $CWD --full-path --color never -HI -a -L -E /proc -E .git/ -E .wine/ -E .steam/ -E Steam/ -E site-packages/",
                 },
                 workspace = {
                     command = "$FD '/bin/python$' $WORKSPACE_PATH --full-path --color never -E /proc -HI -a -L",
@@ -144,13 +151,16 @@ function M.get_default_searches()
             -- a lot of escaping of the strings to get right.
             return {
                 hatch = {
-                    command = "$FD python.exe $HOME/AppData/Local/hatch/env/virtual --no-ignore-vcs --full-path --color never",
+                    command =
+                    "$FD python.exe $HOME/AppData/Local/hatch/env/virtual --no-ignore-vcs --full-path --color never",
                 },
                 poetry = {
-                    command = "$FD python.exe$ $HOME/AppData/Local/pypoetry/Cache/virtualenvs --no-ignore-vcs --full-path --color never",
+                    command =
+                    "$FD python.exe$ $HOME/AppData/Local/pypoetry/Cache/virtualenvs --no-ignore-vcs --full-path --color never",
                 },
                 pyenv = {
-                    command = "$FD python.exe$ $HOME/.pyenv/pyenv-win/versions $HOME/.pyenv-win-venv/envs --no-ignore-vcs -E Lib",
+                    command =
+                    "$FD python.exe$ $HOME/.pyenv/pyenv-win/versions $HOME/.pyenv-win-venv/envs --no-ignore-vcs -E Lib",
                 },
                 pipenv = {
                     command = "$FD python.exe$ $HOME/.virtualenvs --no-ignore-vcs --full-path --color never",
@@ -192,22 +202,20 @@ function M.get_default_searches()
 end
 
 ---@param user_settings venv-selector.Settings
-function M.merge_user_settings(user_settings)
-    ---@diagnostic disable-next-line: undefined-field
-    if user_settings.settings ~= nil then
-        ---@diagnostic disable-next-line: undefined-field
-        user_settings = user_settings.settings
+function M.merge_user_settings(conf)
+    if conf.settings ~= nil then
+        conf = conf.settings
         M.has_legacy_settings = true
     end
-    log.debug("User plugin settings: ", user_settings, "")
-    ---@diagnostic disable-next-line: assign-type-mismatch
-    M.user_settings = vim.tbl_deep_extend("force", M.default_settings, user_settings or {})
+    log.debug("User plugin settings: ", conf, "")
+
+    M.user_settings = vim.tbl_deep_extend("force", M.default_settings, conf or {})
 
     M.user_settings.detected = {
         system = vim.loop.os_uname().sysname,
     }
-    
-    return M.user_settings
+
+    log.debug("Complete user settings:", M.user_settings, "")
 end
 
 function M.find_fd_command_name()

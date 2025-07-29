@@ -17,7 +17,7 @@ local function resolve_picker()
         elseif snacks_installed then
             return "snacks"
         else
-            return "native"
+            return "telescope"
         end
     elseif picker == "telescope" then
         if not telescope_installed then
@@ -38,7 +38,7 @@ local function resolve_picker()
 
         return "fzf-lua"
     elseif picker == "snacks" then
-        if not fzf_lua_installed then
+        if not snacks_installed then
             local message = "VenvSelect picker is set to snacks, but snacks is not installed."
             vim.notify(message, vim.log.levels.ERROR, { title = "VenvSelect" })
             log.error(message)
@@ -60,7 +60,7 @@ function M.open(opts)
     local options = require("venv-selector.config").user_settings.options
     if options.fd_binary_name == nil then
         local message =
-            "Cannot find any fd binary on your system. If its installed under a different name, you can set options.fd_binary_name to its name."
+        "Cannot find any fd binary on your system. If its installed under a different name, you can set options.fd_binary_name to its name."
         log.error(message)
         vim.notify(message, vim.log.levels.ERROR, { title = "VenvSelect" })
         return

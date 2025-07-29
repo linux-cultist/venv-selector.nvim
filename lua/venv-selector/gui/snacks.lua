@@ -21,7 +21,7 @@ function M:pick()
             return {
                 { item.icon, gui_utils.hl_active_venv(item) },
                 { " " },
-                { string.format("%10s", item.source) },
+                { string.format("%20s", item.source) },
                 { "  " },
                 { item.name },
             }

@@ -74,7 +74,6 @@ function M.setup(conf)
     user_commands.register()
 
     vim.api.nvim_command("hi VenvSelectActiveVenv guifg=" .. config.user_settings.options.telescope_active_venv_color)
-    log.debug("Active plugin settings: ", config.user_settings, "")
 end
 
 return M

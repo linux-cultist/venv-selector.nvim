@@ -72,6 +72,8 @@ function M.run_search(picker, opts)
     local function on_event(job_id, data, event)
         local callback = jobs[job_id].on_telescope_result_callback
             or utils.try(search_settings, "options", "on_telescope_result_callback")
+            or jobs[job_id].on_fd_result_callback
+            or utils.try(search_settings, "options", "on_fd_result_callback")
 
         if event == "stdout" and data then
             local search = jobs[job_id]
@@ -91,10 +93,10 @@ function M.run_search(picker, opts)
                     if callback then
                         log.debug(
                             "Calling on_telescope_result() callback function with line '"
-                                .. line
-                                .. "' and source '"
-                                .. rv.source
-                                .. "'"
+                            .. line
+                            .. "' and source '"
+                            .. rv.source
+                            .. "'"
                         )
                         rv.name = callback(line, rv.source)
                     end
@@ -153,7 +155,8 @@ function M.run_search(picker, opts)
                     .. jobs[job_id].name
                     .. "' took more than "
                     .. search_timeout
-                    .. " seconds and was stopped. Avoid using VenvSelect in your $HOME directory since it searches all hidden files by default."
+                    ..
+                    " seconds and was stopped. Avoid using VenvSelect in your $HOME directory since it searches all hidden files by default."
                 log.warning(message)
                 vim.notify(message, vim.log.levels.ERROR, {
                     title = "VenvSelect",

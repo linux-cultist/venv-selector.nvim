@@ -52,7 +52,6 @@
   keys = {
     { ",v", "<cmd>VenvSelect<cr>" },
   },
-  ---@type venv-selector.Config
   opts = {
     -- Your settings go here
   },

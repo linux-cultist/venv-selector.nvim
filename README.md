@@ -1,5 +1,5 @@
 <p align="center">
-  <h1 align="center">:tada: Python Venv Selector</h2>
+  <h1 align="center">:tada: Python Venv Selector</h1>
 </p>
 
 <p align="center">
@@ -10,12 +10,26 @@
     <img src="venvselect-2024.png" />
 </p>
 
+# 2024-05-14 - New version of VenvSelect
+
+There is a rewrite of the plugin in the [regexp branch](https://github.com/linux-cultist/venv-selector.nvim/tree/regexp).
+
+Use that version if you are a new user `VenvSelect`.
+
+It has eliminated many bugs and allows users to easily add their own searches, if the plugin doesnt find them automatically.
+
+All future development will happen in this branch as well, since the rewrite allows for much easier development of new features.
+
+
+
 # ⚡️ Features
 
 - Switch back and forth between virtual environments without restarting neovim
+
 - New and much more flexible configuration to support finding the exact venvs you want.
 - Browse existing python virtual environments on your computer and select one to activate inside neovim.
 - Supports **all** virtual environments using configurable **regular expressions**. The default ones are:
+
   - [Python](https://www.python.org/) (`python3 -m venv venv`)
   - [Poetry](https://python-poetry.org)
   - [Pipenv](https://pipenv.pypa.io/en/latest/)
@@ -35,6 +49,7 @@
 - Requires [fd](https://github.com/sharkdp/fd) and [Telescope](https://github.com/nvim-telescope/telescope.nvim) for fast searches, and visual pickers.
 - Requires [nvim-dap-python](https://github.com/mfussenegger/nvim-dap-python), [debugpy](https://github.com/microsoft/debugpy) and [nvim-dap](https://github.com/mfussenegger/nvim-dap) for debugger support
 - Requires a terminal [nerd font](https://www.nerdfonts.com/) to be configured for the icons to look correct.
+
 
 
 ## Configuration snippet for [lazy.nvim](https://github.com/folke/lazy.nvim)
@@ -86,7 +101,6 @@ If you want to see the values that the plugin will insert in place of these spec
 
 There wont be any workspace paths before your LSP has detected a workspace (normally happens when you open a python project).
 
-
 ### The current default searches are for:
 
 - Venvs created by [Virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest)
@@ -108,8 +122,6 @@ If your venvs are not being found because they are in a custom location, you can
 
 You create a search for python venvs with `fd` and you put that into the plugin config. You can also use `find` or any other command as long as its output lists your venvs.
 
-The best way to craft a search is to run `fd` with your desired parameters on the command line before you put it into the plugin config.
-
 The configuration looks like this:
 
 ```lua
@@ -129,7 +141,6 @@ The example command above launches a search for any path ending with `python` in
 /home/cado/Code/Personal/fastapi_learning/venv/bin/python
 /home/cado/Code/Personal/helix/venv/bin/python
 ```
-
 
 These results will be shown in the telescope viewer and if they are a python virtual environment, they can be activated by pressing enter.
 

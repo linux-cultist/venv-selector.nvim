@@ -70,7 +70,6 @@ function M.open(opts)
 	end
 
 	local selected_picker = resolve_picker()
-	print("Selected picker: " .. selected_picker)
 	if selected_picker ~= nil then
 		local picker = require("venv-selector.gui." .. selected_picker).new(opts)
 		require("venv-selector.search").run_search(picker, opts)

@@ -23,6 +23,9 @@ function M:search_done()
 		source = {
 			name = "Virtual environments",
 			items = self.results,
+			show = function(item)
+				return gui_utils.format_result_as_string(item.icon, item.source, item.name)
+			end,
 			choose = function(item)
 				gui_utils.select(item)
 			end,

@@ -46,20 +46,17 @@ function M:search_done()
 			show = function(buf_id, items_arr, query)
 				local lines = {}
 				for _, item in ipairs(items_arr) do
-					local hl = gui_utils.hl_active_venv(item)
-					table.insert(lines, { gui_utils.format_result_as_string(item.icon, item.source, item.name), hl })
+					table.insert(lines, gui_utils.format_result_as_string(item.icon, item.source, item.name))
 				end
 				vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
-				local icon_extmark_opts = { hl_mode = 'combine', priority = 200 }
-				-- Remove previous extmarks
+				-- -- Remove previous extmarks
 				pcall(vim.api.nvim_buf_clear_namespace, buf_id, H.ns_id, 0, -1)
 				-- Add new extmarks for icons
 				for i, item in ipairs(items_arr) do
 					local hl = gui_utils.hl_active_venv(item)
 					if hl ~= nil then
-						pcall(vim.api.nvim_buf_set_extmark, buf_id, H.ns_id, i - 1, 0, {
-							end_row = #lines[i] - 1,
-							hl_mode = "combine",
+						pcall(vim.api.nvim_buf_set_extmark, buf_id, H.ns_id, i, 0, {
+							end_row = 5,
 							hl_group = hl,
 							priority = 200,
 						})

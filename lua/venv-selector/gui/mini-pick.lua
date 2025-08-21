@@ -25,7 +25,10 @@ function M:search_done()
 			items = self.results,
 			show = function(buf_id, items_arr, query)
 				local lines = vim.tbl_map(
-					function(item) return gui_utils.format_result_as_string(item.icon, item.source, item.name) end, items_arr)
+					function(item)
+						local hl = gui_utils.hl_active_venv(item) or item.icon
+						return gui_utils.format_result_as_string(hl, item.source, item.name)
+					end, items_arr)
 				vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
 			end,
 			choose = function(item)

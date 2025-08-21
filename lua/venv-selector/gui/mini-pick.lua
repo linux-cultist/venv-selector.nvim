@@ -56,7 +56,7 @@ function M:search_done()
 					local hl = gui_utils.hl_active_venv(item)
 					if hl ~= nil then
 						local succ, err = pcall(vim.api.nvim_buf_set_extmark, buf_id, H.ns_id, i - 1, 0, {
-							end_col = 5,
+							end_col = 1,
 							hl_group = hl,
 							priority = 200,
 						})

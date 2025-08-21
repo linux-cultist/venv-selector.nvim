@@ -49,6 +49,14 @@ local function resolve_picker()
 		end
 
 		return "snacks"
+	elseif picker == "mini-pick" then
+		if not mini_pick_installed then
+			local message = "VenvSelect picker is set to mini-pick, but mini.pick is not installed."
+			vim.notify(message, vim.log.levels.ERROR, { title = "VenvSelect" })
+			log.error(message)
+			return
+		end
+		return "mini-pick"
 	elseif picker == "native" then
 		return "native"
 	else

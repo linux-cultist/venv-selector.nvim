@@ -27,10 +27,10 @@ function M:search_done()
 				local lines = {}
 				local highlights = {}
 
-				for index, item in ipairs(items_arr) do
+				for _, item in ipairs(items_arr) do
 					local hl = gui_utils.hl_active_venv(item)
-					highlights.insert(hl)
-					lines.insert(gui_utils.format_result_as_string(item.icon, item.source, item.name))
+					table.insert(highlights, hl)
+					table.insert(lines, gui_utils.format_result_as_string(item.icon, item.source, item.name))
 				end
 
 				vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)

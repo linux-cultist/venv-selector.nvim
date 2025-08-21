@@ -28,9 +28,9 @@ function M:search_done()
 					"Source: " .. item.source,
 					"Name: " .. item.name,
 				}
-				print(vim.inspect(item))
+				-- Get pyvenv.cfg file if it exists
+				-- To add more information to the preview
 				local pyenv_file = vim.fs.normalize(vim.fs.joinpath(item.path, "../../pyvenv.cfg"))
-				print(pyenv_file)
 				if vim.fn.filereadable(pyenv_file) == 1 then
 					local content = vim.fn.readfile(pyenv_file)
 					for _, line in ipairs(content) do

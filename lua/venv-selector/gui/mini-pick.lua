@@ -3,6 +3,10 @@ local gui_utils = require("venv-selector.gui.utils")
 local M = {}
 M.__index = M
 
+local H = {}
+
+H.ns_id = vim.api.nvim_create_namespace("MiniPickVenvSelect")
+
 function M.new()
 	local self = setmetatable({ results = {} }, M)
 
@@ -45,6 +49,27 @@ function M:search_done()
 					table.insert(lines, gui_utils.format_result_as_string(item.icon, item.source, item.name))
 				end
 				vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
+				local icon_extmark_opts = { hl_mode = 'combine', priority = 200 }
+				-- Remove previous extmarks
+				pcall(vim.api.nvim_buf_clear_namespace, buf_id, H.ns_id, 0, -1)
+				-- Add new extmarks for icons
+				for i, item in ipairs(items_arr) do
+					local icon = item.icon or ""
+					local hl = gui_utils.hl_active_venv(item)
+					if icon ~= "" and hl ~= nil then
+						local line = lines[i - 1] or ""
+						local icon_pos = line:find(icon)
+						if icon_pos then
+							local icon_extmark = {
+								virt_text = { { icon, hl } },
+								virt_text_pos = "eol",
+								hl_mode = "combine",
+								priority = 200,
+							}
+							vim.api.nvim_buf_set_extmark(buf_id, H.ns_id, i - 1, icon_pos - 1, icon_extmark)
+						end
+					end
+				end
 			end,
 			choose = function(item)
 				gui_utils.select(item)

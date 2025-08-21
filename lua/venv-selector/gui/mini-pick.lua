@@ -23,6 +23,20 @@ function M:search_done()
 		source = {
 			name = "Virtual environments",
 			items = self.results,
+			preview = function(item)
+				local lines = {
+					"Source: " .. item.source,
+					"Name: " .. item.name,
+				}
+				local pyenv_file = vim.fs.joinpath(item.path, "pyvenv.cfg")
+				if vim.fn.filereadable(pyenv_file) == 1 then
+					local content = vim.fn.readfile(pyenv_file)
+					for _, line in ipairs(content) do
+						table.insert(lines, line)
+					end
+				end
+				vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
+			end,
 			show = function(buf_id, items_arr, query)
 				local lines = {}
 				for _, item in ipairs(items_arr) do

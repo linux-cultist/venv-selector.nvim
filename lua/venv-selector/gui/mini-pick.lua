@@ -25,15 +25,9 @@ function M:search_done()
 			items = self.results,
 			show = function(buf_id, items_arr, query)
 				local lines = {}
-
 				for _, item in ipairs(items_arr) do
-					local hl = gui_utils.hl_active_venv(item)
-					if hl ~= nil then
-						vim.api.nvim_buf_add_highlight(buf_id, -1, hl, #lines, 0, -1)
-					end
 					table.insert(lines, gui_utils.format_result_as_string(item.icon, item.source, item.name))
 				end
-
 				vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
 			end,
 			choose = function(item)

@@ -55,11 +55,14 @@ function M:search_done()
 				for i, item in ipairs(items_arr) do
 					local hl = gui_utils.hl_active_venv(item)
 					if hl ~= nil then
-						pcall(vim.api.nvim_buf_set_extmark, buf_id, H.ns_id, i, 0, {
-							end_row = 5,
+						local succ, err = pcall(vim.api.nvim_buf_set_extmark, buf_id, H.ns_id, i - 1, 0, {
+							end_col = 5,
 							hl_group = hl,
 							priority = 200,
 						})
+						if not succ then
+							print("Error setting extmark: " .. err)
+						end
 					end
 				end
 			end,

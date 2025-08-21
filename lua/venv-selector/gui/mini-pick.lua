@@ -23,7 +23,8 @@ function M:search_done()
 		source = {
 			name = "Virtual environments",
 			items = self.results,
-			preview = function(item)
+			preview = function(index)
+				local item = self.results[index]
 				local lines = {
 					"Source: " .. item.source,
 					"Name: " .. item.name,

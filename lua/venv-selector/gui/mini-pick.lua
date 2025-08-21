@@ -34,9 +34,15 @@ function M:search_done()
 				end
 
 				vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
+
 				for index, hl in ipairs(highlights) do
 					if hl ~= nil then
-						vim.api.nvim_buf_set_extmark(buf_id, 0, index, 0, { end_col = 1, hl_group = hl })
+						vim.hl.range(buf_id, 0, hl, {
+								{ index, 0 },
+								{ index, 1 },
+							},
+							{ priority = 1000 }
+						)
 					end
 				end
 			end,

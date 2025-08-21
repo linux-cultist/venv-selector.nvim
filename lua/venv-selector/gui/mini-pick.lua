@@ -57,17 +57,12 @@ function M:search_done()
 					local icon = item.icon or ""
 					local hl = gui_utils.hl_active_venv(item)
 					if icon ~= "" and hl ~= nil then
-						local line = lines[i - 1] or ""
-						local icon_pos = line:find(icon)
-						if icon_pos then
-							local icon_extmark = {
-								virt_text = { { icon, hl } },
-								virt_text_pos = "eol",
-								hl_mode = "combine",
-								priority = 200,
-							}
-							vim.api.nvim_buf_set_extmark(buf_id, H.ns_id, i - 1, icon_pos - 1, icon_extmark)
-						end
+						pcall(vim.api.nvim_buf_set_extmark, buf_id, H.ns_id, i - 1, 0, {
+							end_row = 1,
+							hl_mode = "combine",
+							hl_group = hl,
+							priority = 200,
+						})
 					end
 				end
 			end,

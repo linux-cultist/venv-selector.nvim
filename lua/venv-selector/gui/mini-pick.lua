@@ -54,11 +54,10 @@ function M:search_done()
 				pcall(vim.api.nvim_buf_clear_namespace, buf_id, H.ns_id, 0, -1)
 				-- Add new extmarks for icons
 				for i, item in ipairs(items_arr) do
-					local icon = item.icon or ""
 					local hl = gui_utils.hl_active_venv(item)
-					if icon ~= "" and hl ~= nil then
+					if hl ~= nil then
 						pcall(vim.api.nvim_buf_set_extmark, buf_id, H.ns_id, i - 1, 0, {
-							end_row = 1,
+							end_row = #lines[i] - 1,
 							hl_mode = "combine",
 							hl_group = hl,
 							priority = 200,

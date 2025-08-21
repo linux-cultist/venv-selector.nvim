@@ -23,8 +23,10 @@ function M:search_done()
 		source = {
 			name = "Virtual environments",
 			items = self.results,
-			show = function(item)
-				return gui_utils.format_result_as_string(item.icon, item.source, item.name)
+			show = function(buf_id, items_arr, query)
+				local lines = vim.tbl_map(
+					function(item) return gui_utils.format_result_as_string(item.icon, item.source, item.name) end, items_arr)
+				vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
 			end,
 			choose = function(item)
 				gui_utils.select(item)

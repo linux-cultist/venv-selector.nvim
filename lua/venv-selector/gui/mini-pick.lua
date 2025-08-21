@@ -34,17 +34,6 @@ function M:search_done()
 				end
 
 				vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
-
-				for index, hl in ipairs(highlights) do
-					if hl ~= nil then
-						vim.hl.range(buf_id, 0, hl, {
-								{ index, 0 },
-								{ index, 1 },
-							},
-							{ priority = 1000 }
-						)
-					end
-				end
 			end,
 			choose = function(item)
 				gui_utils.select(item)

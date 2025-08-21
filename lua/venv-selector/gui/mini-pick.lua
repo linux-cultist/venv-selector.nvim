@@ -29,7 +29,7 @@ function M:search_done()
 					"Name: " .. item.name,
 				}
 				print(vim.inspect(item))
-				local pyenv_file = vim.fs.joinpath(item.path, "../../pyvenv.cfg")
+				local pyenv_file = vim.fs.normalize(vim.fs.joinpath(item.path, "../../pyvenv.cfg"))
 				print(pyenv_file)
 				if vim.fn.filereadable(pyenv_file) == 1 then
 					local content = vim.fn.readfile(pyenv_file)

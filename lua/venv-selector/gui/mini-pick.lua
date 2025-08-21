@@ -46,7 +46,8 @@ function M:search_done()
 			show = function(buf_id, items_arr, query)
 				local lines = {}
 				for _, item in ipairs(items_arr) do
-					table.insert(lines, gui_utils.format_result_as_string(item.icon, item.source, item.name))
+					local hl = gui_utils.hl_active_venv(item)
+					table.insert(lines, { gui_utils.format_result_as_string(item.icon, item.source, item.name), hl })
 				end
 				vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
 				local icon_extmark_opts = { hl_mode = 'combine', priority = 200 }

@@ -1,5 +1,5 @@
 local hooks = require("venv-selector.hooks")
-local log = require("venv-selector.logger")
+-- local log = require("venv-selector.logger")
 
 ---@class venv-selector.Options
 ---@field on_venv_activate_callback? fun(): nil callback function for after a venv activates
@@ -207,6 +207,7 @@ function M.merge_user_settings(conf)
         conf = conf.settings
         M.has_legacy_settings = true
     end
+    local log = require("venv-selector.logger")
     log.debug("User plugin settings: ", conf, "")
 
     M.user_settings = vim.tbl_deep_extend("force", M.default_settings, conf or {})

@@ -8,6 +8,7 @@ local function resolve_picker()
     local telescope_installed, _ = pcall(require, "telescope")
     local fzf_lua_installed, _ = pcall(require, "fzf-lua")
     local snacks_installed, _ = pcall(require, "snacks")
+    local mini_pick_installed, _ = pcall(require, "mini.pick")
 
     if picker == "auto" then
         if telescope_installed then
@@ -16,6 +17,8 @@ local function resolve_picker()
             return "fzf-lua"
         elseif snacks_installed then
             return "snacks"
+        elseif mini_pick_installed then
+            return "mini-pick"
         else
             return "telescope"
         end
@@ -46,6 +49,14 @@ local function resolve_picker()
         end
 
         return "snacks"
+    elseif picker == "mini-pick" then
+        if not mini_pick_installed then
+            local message = "VenvSelect picker is set to mini-pick, but mini.pick is not installed."
+            vim.notify(message, vim.log.levels.ERROR, { title = "VenvSelect" })
+            log.error(message)
+            return
+        end
+        return "mini-pick"
     elseif picker == "native" then
         return "native"
     else
@@ -60,7 +71,7 @@ function M.open(opts)
     local options = require("venv-selector.config").user_settings.options
     if options.fd_binary_name == nil then
         local message =
-        "Cannot find any fd binary on your system. If its installed under a different name, you can set options.fd_binary_name to its name."
+            "Cannot find any fd binary on your system. If its installed under a different name, you can set options.fd_binary_name to its name."
         log.error(message)
         vim.notify(message, vim.log.levels.ERROR, { title = "VenvSelect" })
         return

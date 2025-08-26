@@ -2,7 +2,6 @@ local config = require("venv-selector.config")
 local path = require("venv-selector.path")
 local log = require("venv-selector.logger")
 
-
 local cache_file
 if config.user_settings and config.user_settings.cache and config.user_settings.cache.file then
     cache_file = path.expand(config.user_settings.cache.file)

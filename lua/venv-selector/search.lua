@@ -93,10 +93,10 @@ function M.run_search(picker, opts)
                     if callback then
                         log.debug(
                             "Calling on_telescope_result() callback function with line '"
-                            .. line
-                            .. "' and source '"
-                            .. rv.source
-                            .. "'"
+                                .. line
+                                .. "' and source '"
+                                .. rv.source
+                                .. "'"
                         )
                         rv.name = callback(line, rv.source)
                     end
@@ -155,8 +155,7 @@ function M.run_search(picker, opts)
                     .. jobs[job_id].name
                     .. "' took more than "
                     .. search_timeout
-                    ..
-                    " seconds and was stopped. Avoid using VenvSelect in your $HOME directory since it searches all hidden files by default."
+                    .. " seconds and was stopped. Avoid using VenvSelect in your $HOME directory since it searches all hidden files by default."
                 log.warning(message)
                 vim.notify(message, vim.log.levels.ERROR, {
                     title = "VenvSelect",

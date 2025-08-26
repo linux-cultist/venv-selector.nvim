@@ -5,7 +5,6 @@
 -- local path = require("venv-selector.path")
 -- local ws = require("venv-selector.workspace")
 
-
 local function on_lsp_attach()
     if vim.bo.filetype == "python" then
         local config = require("venv-selector.config")
@@ -20,7 +19,6 @@ vim.api.nvim_create_autocmd("LspAttach", {
     pattern = "*",
     callback = on_lsp_attach,
 })
-
 
 local M = {}
 

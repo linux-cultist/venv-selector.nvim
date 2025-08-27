@@ -1,5 +1,7 @@
+
 local hooks = require("venv-selector.hooks")
 -- local log = require("venv-selector.logger")
+
 
 ---@class venv-selector.Options
 ---@field on_venv_activate_callback? fun(): nil callback function for after a venv activates
@@ -21,7 +23,7 @@ local hooks = require("venv-selector.hooks")
 
 ---@class venv-selector.Settings
 ---@field cache venv-selector.CacheSettings
----@field hooks venv-selector.Hook[]
+---@field lsp_hooks { basedpyright: boolean, pyright: boolean, pylance: boolean, pylsp: boolean}
 ---@field options venv-selector.Options
 ---@field search venv-selector.Searches set or override search commands
 
@@ -224,7 +226,7 @@ M.default_settings = {
     cache = {
         file = "~/.cache/venv-selector/venvs2.json",
     },
-    hooks = { hooks.basedpyright_hook, hooks.pyright_hook, hooks.pylance_hook, hooks.pylsp_hook },
+    lsp_hooks = { basedpyright = true, pyright = true, pylance = true, pylsp = true },
     options = {
         on_venv_activate_callback = nil, -- callback function for after a venv activates
         enable_default_searches = true, -- switches all default searches on/off

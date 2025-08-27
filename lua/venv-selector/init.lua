@@ -1,12 +1,13 @@
-local log = require("venv-selector.logger")
-local user_commands = require("venv-selector.user_commands")
-local config = require("venv-selector.config")
-local venv = require("venv-selector.venv")
-local path = require("venv-selector.path")
-local ws = require("venv-selector.workspace")
+-- local log = require("venv-selector.logger")
+-- local user_commands = require("venv-selector.user_commands")
+-- local config = require("venv-selector.config")
+-- local venv = require("venv-selector.venv")
+-- local path = require("venv-selector.path")
+-- local ws = require("venv-selector.workspace")
 
 local function on_lsp_attach(args)
     if vim.bo.filetype == "python" then
+        local config = require("venv-selector.config")
         local cache = require("venv-selector.cached_venv")
         if config.user_settings.options.cached_venv_automatic_activation == true then
             local client = vim.lsp.get_client_by_id(args.data.client_id)
@@ -24,20 +25,22 @@ vim.api.nvim_create_autocmd("LspAttach", {
 
 local M = {}
 
+
 function M.python()
-    return path.current_python_path
+    return require("venv-selector.path").current_python_path
 end
 
+
 function M.venv()
-    return path.current_venv_path
+    return require("venv-selector.path").current_venv_path
 end
 
 function M.source()
-    return venv.current_source
+    return require("venv-selector.path").current_source
 end
 
 function M.workspace_paths()
-    return ws.list_folders()
+    return require("venv-selector.workspace").list_folders()
 end
 
 function M.cwd()
@@ -45,16 +48,17 @@ function M.cwd()
 end
 
 function M.file_dir()
-    return path.get_current_file_directory()
+    return require("venv-selector.path").get_current_file_directory()
 end
 
 function M.stop_lsp_servers()
-    venv.stop_lsp_servers()
+    require("venv-selector.venv").stop_lsp_servers()
 end
 
 function M.activate_from_path(python_path)
-    venv.activate(python_path, "activate_from_path", true)
+    require("venv-selector.venv").activate(python_path, "activate_from_path", true)
 end
+
 
 -- Temporary, will be removed later.
 function M.split_command(str)
@@ -63,18 +67,24 @@ function M.split_command(str)
 end
 
 function M.deactivate()
-    path.remove_current()
-    venv.unset_env_variables()
+    require("venv-selector.path").remove_current()
+    require("venv-selector.path").unset_env_variables()
 end
 
 ---@param plugin_settings venv-selector.Config
-function M.setup(plugin_settings)
-    config.merge_user_settings(plugin_settings or {})
-    vim.api.nvim_command("hi VenvSelectActiveVenv guifg=" .. config.user_settings.options.telescope_active_venv_color)
-    if config.user_settings.options.debug == true then
+function M.setup(conf)
+    if vim.tbl_get(conf, "options", "debug") then
+        local log = require("venv-selector.logger")
         log.enabled = true
     end
+
+    local config = require("venv-selector.config")
+    config.merge_user_settings(conf or {}) -- creates config.user_settings variable with configuration
+    local user_commands = require("venv-selector.user_commands")
     user_commands.register()
+
+    vim.api.nvim_command("hi VenvSelectActiveVenv guifg=" .. config.user_settings.options.telescope_active_venv_color)
 end
+
 
 return M

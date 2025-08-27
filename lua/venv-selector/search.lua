@@ -3,7 +3,6 @@ local path = require("venv-selector.path")
 local utils = require("venv-selector.utils")
 local log = require("venv-selector.logger")
 
-
 ---@alias venv-selector.SearchType
 ---| '"anaconda"' # an anaconda/minconda search
 
@@ -12,7 +11,6 @@ local log = require("venv-selector.logger")
 ---@field type? venv-selector.SearchType set for special venv types
 
 ---@alias venv-selector.Searches table<string, venv-selector.Search|false>
-
 
 local function is_workspace_search(str)
     return string.find(str, "$WORKSPACE_PATH") ~= nil
@@ -74,6 +72,8 @@ function M.run_search(picker, opts)
     local function on_event(job_id, data, event)
         local callback = jobs[job_id].on_telescope_result_callback
             or utils.try(search_settings, "options", "on_telescope_result_callback")
+            or jobs[job_id].on_fd_result_callback
+            or utils.try(search_settings, "options", "on_fd_result_callback")
 
         if event == "stdout" and data then
             local search = jobs[job_id]
@@ -86,7 +86,7 @@ function M.run_search(picker, opts)
                     local rv = {}
                     rv.path = line
                     rv.name = line
-                    rv.icon = ""
+                    rv.icon = options.icon or ""
                     rv.type = search.type or "venv"
                     rv.source = search.name
 

@@ -7,14 +7,20 @@ local function resolve_picker()
 
     local telescope_installed, _ = pcall(require, "telescope")
     local fzf_lua_installed, _ = pcall(require, "fzf-lua")
+    local snacks_installed, _ = pcall(require, "snacks")
+    local mini_pick_installed, _ = pcall(require, "mini.pick")
 
     if picker == "auto" then
         if telescope_installed then
             return "telescope"
         elseif fzf_lua_installed then
             return "fzf-lua"
+        elseif snacks_installed then
+            return "snacks"
+        elseif mini_pick_installed then
+            return "mini-pick"
         else
-            return "native"
+            return "telescope"
         end
     elseif picker == "telescope" then
         if not telescope_installed then
@@ -34,6 +40,23 @@ local function resolve_picker()
         end
 
         return "fzf-lua"
+    elseif picker == "snacks" then
+        if not snacks_installed then
+            local message = "VenvSelect picker is set to snacks, but snacks is not installed."
+            vim.notify(message, vim.log.levels.ERROR, { title = "VenvSelect" })
+            log.error(message)
+            return
+        end
+
+        return "snacks"
+    elseif picker == "mini-pick" then
+        if not mini_pick_installed then
+            local message = "VenvSelect picker is set to mini-pick, but mini.pick is not installed."
+            vim.notify(message, vim.log.levels.ERROR, { title = "VenvSelect" })
+            log.error(message)
+            return
+        end
+        return "mini-pick"
     elseif picker == "native" then
         return "native"
     else

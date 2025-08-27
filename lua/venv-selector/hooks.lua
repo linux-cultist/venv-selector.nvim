@@ -15,6 +15,7 @@ function M.send_notification(message)
         log.info(message)
         vim.notify(message, vim.log.levels.INFO, { title = "VenvSelect" })
         M.notifications_memory[message] = now
+
     else
         -- Less than one second since last notification with same message
         log.debug("Below message was NOT sent to user since we notified about the same message less than a second ago.")
@@ -101,7 +102,7 @@ end
 
 function M.execute_for_client(name, callback)
     -- get_active_clients deprecated in neovim v0.10
-    local client = (vim.lsp.get_clients or vim.lsp.get_active_clients)({ name = name })[1]
+    local client = vim.lsp.get_clients({ name = name })[1]
 
     if not client then
         --print('No client named: ' .. name .. ' found')

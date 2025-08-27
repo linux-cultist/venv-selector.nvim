@@ -1,4 +1,7 @@
-local log = require("venv-selector.logger")
+
+local hooks = require("venv-selector.hooks")
+-- local log = require("venv-selector.logger")
+
 
 ---@class venv-selector.Options
 ---@field on_venv_activate_callback? fun(): nil callback function for after a venv activates
@@ -16,6 +19,7 @@ local log = require("venv-selector.logger")
 ---@field show_telescope_search_type boolean Shows which of the searches found which venv in telescope
 ---@field telescope_filter_type "substring" | "character" When you type something in telescope, filter by "substring" or "character"
 ---@field telescope_active_venv_color string The color of the active venv in telescope
+---@field icon string The icon used for each item in the picker
 
 ---@class venv-selector.Settings
 ---@field cache venv-selector.CacheSettings
@@ -31,12 +35,12 @@ local log = require("venv-selector.logger")
 ---@class (partial) venv-selector.UserSettings: venv-selector.Settings
 ---@field detected venv-selector.Detected
 
-
 local M = {}
 
 ---@type venv-selector.UserSettings
 ---@diagnostic disable-next-line: missing-fields
 M.user_settings = {}
+
 
 --- Health check tracking of legacy settings
 ---@type boolean
@@ -191,16 +195,15 @@ function M.get_default_searches()
 end
 
 ---@param user_settings venv-selector.Settings
-function M.merge_user_settings(user_settings)
-    ---@diagnostic disable-next-line: undefined-field
-    if user_settings.settings ~= nil then
-        ---@diagnostic disable-next-line: undefined-field
-        user_settings = user_settings.settings
+function M.merge_user_settings(conf)
+    if conf.settings ~= nil then
+        conf = conf.settings
         M.has_legacy_settings = true
     end
-    log.debug("User plugin settings: ", user_settings, "")
-    ---@diagnostic disable-next-line: assign-type-mismatch
-    M.user_settings = vim.tbl_deep_extend("force", M.default_settings, user_settings or {})
+    local log = require("venv-selector.logger")
+    log.debug("User plugin settings: ", conf, "")
+
+    M.user_settings = vim.tbl_deep_extend("force", M.default_settings, conf or {})
 
     M.user_settings.detected = {
         system = vim.loop.os_uname().sysname,
@@ -241,7 +244,8 @@ M.default_settings = {
         show_telescope_search_type = true, -- Shows which of the searches found which venv in telescope
         telescope_filter_type = "substring", -- When you type something in telescope, filter by "substring" or "character"
         telescope_active_venv_color = "#00FF00", -- The color of the active venv in telescope
-        picker = "auto", -- The picker to use. Valid options are "telescope", "fzf-lua", "native", or "auto"
+        picker = "auto", -- The picker to use. Valid options are "telescope", "fzf-lua", "snacks", "native", "mini-pick" or "auto"
+        icon = "", -- The icon to use in the picker for each item
     },
     search = M.get_default_searches()(),
 }

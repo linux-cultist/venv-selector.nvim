@@ -1,5 +1,5 @@
 <p align="center">
-  <h1 align="center">:tada: Python Venv Selector</h2>
+  <h1 align="center">:tada: Python Venv Selector</h1>
 </p>
 
 <p align="center">
@@ -10,12 +10,25 @@
     <img src="venvselect-2024.png" />
 </p>
 
+
+# 📰 Recent News
+
+- *2025-08-27*: The new version of VenvSelect (from the `regexp` branch) has been merged into the `main` branch. This updates the plugin with the last 9 months of changes from the `regexp` branch. Users who prefer the old version can set their branch to `v1`, but its not updated anymore.
+
+- *2025-08-26*: Support for [mini-pick](https://github.com/echasnovski/mini.pick) added.
+
+- *2025-08-26*: The plugin can now be lazy loaded. Remove `lazy = false` from your config and neovim will start faster. Readme has also been updated with how you load the plugin automatically when opening python files.
+
+
+
 # ⚡️ Features
 
 - Switch back and forth between virtual environments without restarting neovim
+
 - New and much more flexible configuration to support finding the exact venvs you want.
 - Browse existing python virtual environments on your computer and select one to activate inside neovim.
 - Supports **all** virtual environments using configurable **regular expressions**. The default ones are:
+
   - [Python](https://www.python.org/) (`python3 -m venv venv`)
   - [Poetry](https://python-poetry.org)
   - [Pipenv](https://pipenv.pypa.io/en/latest/)
@@ -37,6 +50,7 @@
 - Requires a terminal [nerd font](https://www.nerdfonts.com/) to be configured for the icons to look correct.
 
 
+
 ## Configuration snippet for [lazy.nvim](https://github.com/folke/lazy.nvim)
 
 ```lua
@@ -47,14 +61,13 @@
     "mfussenegger/nvim-dap", "mfussenegger/nvim-dap-python", --optional
     { "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } },
   },
-  lazy = false,
-  branch = "regexp", -- This is the regexp branch, use this for the new version
+  ft = "python", -- Load when opening Python files
   keys = {
-    { ",v", "<cmd>VenvSelect<cr>" },
+    { ",v", "<cmd>VenvSelect<cr>" }, -- Open picker on keymap
   },
-  ---@type venv-selector.Config
-  opts = {
-    -- Your settings go here
+  opts = { -- this can be an empty lua table - just showing below for clarity.
+      search = {}, -- if you add your own searches, they go here.
+      options = {} -- if you add plugin options, they go here.
   },
 },
 ```
@@ -87,7 +100,6 @@ If you want to see the values that the plugin will insert in place of these spec
 
 There wont be any workspace paths before your LSP has detected a workspace (normally happens when you open a python project).
 
-
 ### The current default searches are for:
 
 - Venvs created by [Virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest)
@@ -109,8 +121,6 @@ If your venvs are not being found because they are in a custom location, you can
 
 You create a search for python venvs with `fd` and you put that into the plugin config. You can also use `find` or any other command as long as its output lists your venvs.
 
-The best way to craft a search is to run `fd` with your desired parameters on the command line before you put it into the plugin config.
-
 The configuration looks like this:
 
 ```lua
@@ -130,7 +140,6 @@ The example command above launches a search for any path ending with `python` in
 /home/cado/Code/Personal/fastapi_learning/venv/bin/python
 /home/cado/Code/Personal/helix/venv/bin/python
 ```
-
 
 These results will be shown in the telescope viewer and if they are a python virtual environment, they can be activated by pressing enter.
 
@@ -287,10 +296,9 @@ return {
     "mfussenegger/nvim-dap", "mfussenegger/nvim-dap-python", --both are optionals for debugging
     { "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } },
   },
-  lazy = false,
-  branch = "regexp", -- This is the regexp branch, use this for the new version
+  ft = "python", -- Load when opening Python files
   keys = {
-    { ",v", "<cmd>VenvSelect<cr>" },
+    { ",v", "<cmd>VenvSelect<cr>" }, -- Open picker on keymap
   },
   opts = {
     options = {
@@ -381,7 +389,9 @@ You also need `debugpy` installed in the venv you are switching to.
         show_telescope_search_type = true,         -- shows which of the searches found which venv in telescope
         telescope_filter_type = "substring"        -- when you type something in telescope, filter by "substring" or "character"
         telescope_active_venv_color = "#00FF00"    -- The color of the active venv in telescope
-        picker = "auto", -- The picker to use. Valid options are "telescope", "fzf-lua", "native", or "auto"
+        picker = "auto",                           -- The picker to use. Valid options are "telescope", "fzf-lua", "snacks", "native", "mini-pick" or "auto"
+        icon = "",                                -- The icon to use in the picker for each item
+
   }
 }
 ```
@@ -402,5 +412,5 @@ These functions can be used to easily get the selected python interpreter and th
 
 > [!IMPORTANT]
 > The last function, `activate_from_path`, is only intended as a way to select a virtual environment python without using the telescope picker.
-> Trying to activate the system python this way is not supported and will set environment variables like `VIRTUAL_ENV` to the wrong values, 
+> Trying to activate the system python this way is not supported and will set environment variables like `VIRTUAL_ENV` to the wrong values,
 > since the plugin expects the path to be a virtual environment.

@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-    <img src="venv-selector.png" />
+    <img src="venvselect-2024.png" />
 </p>
 
 # 2024-05-14 - New version of VenvSelect
@@ -24,345 +24,395 @@ All future development will happen in this branch as well, since the rewrite all
 
 # ⚡️ Features
 
-Browse existing python virtual environments on your computer and select one to activate inside neovim.
-
-- Plug and play, no configuration required
 - Switch back and forth between virtual environments without restarting neovim
-- Support [Basedpyright](https://github.com/detachhead/basedpyright), [Pyright](https://github.com/microsoft/pyright), [Pylance](https://github.com/microsoft/pylance-release) and [Pylsp](https://github.com/python-lsp/python-lsp-server) lsp servers with ability to config hooks for others.
-- Currently supports virtual environments created in:
+
+- New and much more flexible configuration to support finding the exact venvs you want.
+- Browse existing python virtual environments on your computer and select one to activate inside neovim.
+- Supports **all** virtual environments using configurable **regular expressions**. The default ones are:
+
   - [Python](https://www.python.org/) (`python3 -m venv venv`)
   - [Poetry](https://python-poetry.org)
-  - [PDM](https://github.com/pdm-project/pdm)
   - [Pipenv](https://pipenv.pypa.io/en/latest/)
   - [Anaconda](https://www.anaconda.com)
-  - [Pyenv](https://github.com/pyenv/pyenv)
+  - [Miniconda](https://docs.anaconda.com/miniconda/)
+  - [Pyenv](https://github.com/pyenv/pyenv) (including `pyenv-virtualenv` and `pyenv-win-venv` plugins)
   - [Virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/)
   - [Hatch](https://hatch.pypa.io/latest/)
-- Cached virtual environment that ties to your workspace for easy activation subsequently
+  - [Pipx](https://github.com/pypa/pipx)
+- Supports callbacks to further filter or rename telescope results as they are found.
+- Supports using any program to find virtual environments (`fd`, `find`, `ls`, `dir` etc)
+- Supports running any interactive command to populate the telescope viewer:
+  - `:VenvSelect fd 'python$' . --full-path -IH -a`
+
+- Support [Pyright](https://github.com/microsoft/pyright), [Pylance](https://github.com/microsoft/pylance-release) and [Pylsp](https://github.com/python-lsp/python-lsp-server) lsp servers with ability to config hooks for others.
+- Virtual environments are remembered for each specific working directory and automatically activated the next time.
 - Requires [fd](https://github.com/sharkdp/fd) and [Telescope](https://github.com/nvim-telescope/telescope.nvim) for fast searches, and visual pickers.
 - Requires [nvim-dap-python](https://github.com/mfussenegger/nvim-dap-python), [debugpy](https://github.com/microsoft/debugpy) and [nvim-dap](https://github.com/mfussenegger/nvim-dap) for debugger support
+- Requires a terminal [nerd font](https://www.nerdfonts.com/) to be configured for the icons to look correct.
 
-## 📋 Installation and Configuration
 
-The plugin works with **basedpyright**, **pyright**, **pylance**, or **pylsp** lsp servers. If you want to take advantage of this plugin's default behaviour, you need to have either of them installed
-and configured using [lspconfig](https://github.com/neovim/nvim-lspconfig). If you want to use custom integration, see [hooks section](#hooks)
-before using this plugin. You can see example setup instructions here: https://github.com/neovim/nvim-lspconfig/blob/master/doc/server_configurations.md#pyright
 
-You configure `VenvSelect` by sending in a lua table to the setup() function.
-
-Easiest way if you use [Lazy.nvim](https://github.com/folke/lazy.nvim) is to use the opts function like this:
+## Configuration snippet for [lazy.nvim](https://github.com/folke/lazy.nvim)
 
 ```lua
-return {
-  'linux-cultist/venv-selector.nvim',
-  dependencies = { 'neovim/nvim-lspconfig', 'nvim-telescope/telescope.nvim', 'mfussenegger/nvim-dap-python' },
+{
+  "linux-cultist/venv-selector.nvim",
+  dependencies = {
+    "neovim/nvim-lspconfig",
+    "mfussenegger/nvim-dap", "mfussenegger/nvim-dap-python", --optional
+    { "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } },
+  },
+  ft = "python", -- Load when opening Python files
+  branch = "regexp", -- This is the regexp branch, use this for the new version
+  keys = {
+    { ",v", "<cmd>VenvSelect<cr>" }, -- Open picker on keymap
+  },
   opts = {
-    -- Your options go here
-    -- name = "venv",
-    -- auto_refresh = false
+    -- Your settings go here
   },
-  event = 'VeryLazy', -- Optional: needed only if you want to type `:VenvSelect` without a keymapping
-  keys = {
-    -- Keymap to open VenvSelector to pick a venv.
-    { '<leader>vs', '<cmd>VenvSelect<cr>' },
-    -- Keymap to retrieve the venv from a cache (the one previously used for the same project directory).
-    { '<leader>vc', '<cmd>VenvSelectCached<cr>' },
+},
+```
+
+## Why did you rewrite the plugin?
+
+Because the current code has grown from supporting only simple venvs to lots of different venv managers. Each one works in a slightly different way, and the current code has lots of conditional logic to try and figure out what to do in certain situations. It made it difficult to change something without breaking something else. And it made it difficult to add features in a clean way.
+
+This rewrite is about giving you as a user the option to add your own searches, and have anything you want show up in the telescope viewer. If its the path to a python executable, the plugin will attempt to activate it. Note that your LSP server must be running for this to happen, so you need to have a python file opened in the editor.
+
+## Default searches
+
+A default search is one that the plugin does automatically.
+
+These are designed to find venvs in your current working directory and from different venv managers in their default paths.
+
+Some of them use special variables in the `fd` search query (these are not environment variables but look like they are):
+
+- `$CWD` - Current working directory. The directory where you start neovim.
+- `$WORKSPACE_PATH` - The workspace directories found by your LSP when you have an opened python file.
+- `$FILE_DIR` - The directory of the file in the neovim buffer.
+
+You can use these in your own queries as well. Maybe you want to search the parent directories of your opened file for example.
+
+If you want to see the values that the plugin will insert in place of these special variables, you can use these functions:
+
+- `require("venv-selector").workspace_paths()`
+- `require("venv-selector").cwd()`
+- `require("venv-selector").file_dir()`
+
+There wont be any workspace paths before your LSP has detected a workspace (normally happens when you open a python project).
+
+### The current default searches are for:
+
+- Venvs created by [Virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest)
+- Venvs created by [Poetry](https://python-poetry.org)
+- Venvs created by [Hatch](https://hatch.pypa.io/latest)
+- Venvs created by [Pyenv](https://github.com/pyenv/pyenv)
+- Venvs created by [Anaconda](https://www.anaconda.com)
+- Venvs created by [Miniconda](https://docs.anaconda.com/miniconda/)
+- Venvs created by [Pipx](https://github.com/pypa/pipx)
+- Venvs in the current working directory (uses the `cwd` search pattern)
+- Venvs in the lsp workspace directories (uses the `workspace` search pattern)
+- Venvs in the directory of your opened file (uses the `file` search pattern)
+
+The search patterns are defined here: https://github.com/linux-cultist/venv-selector.nvim/blob/regexp/lua/venv-selector/config.lua
+
+If your venvs are not being found because they are in a custom location, you can easily add your own searches to your configuration.
+
+## My venvs dont show up - how can i create my own search?
+
+You create a search for python venvs with `fd` and you put that into the plugin config. You can also use `find` or any other command as long as its output lists your venvs.
+
+The configuration looks like this:
+
+```lua
+{
+  search = {
+    my_venvs = {
+      command = "fd python$ ~/Code",
+    },
+  },
+}
+```
+The example command above launches a search for any path ending with `python` in the `~/Code` folder. Its using a regular expression where `python$` means the path must end with the word python. For windows we would need to use `python.exe$` instead. Here are the results:
+
+```
+/home/cado/Code/Personal/databricks-cli/venv/bin/python
+/home/cado/Code/Personal/dbt/venv/bin/python
+/home/cado/Code/Personal/fastapi_learning/venv/bin/python
+/home/cado/Code/Personal/helix/venv/bin/python
+```
+
+These results will be shown in the telescope viewer and if they are a python virtual environment, they can be activated by pressing enter.
+
+You can add multiple searches as well:
+
+```lua
+{
+  search = {
+    find_code_venvs = {
+      command = "fd /bin/python$ ~/Code --full-path",
+    },
+    find_programming_venvs = {
+      command = "fd /bin/python$ ~/Programming/Python --full-path -IHL -E /proc",
+    },
+ },
+}
+```
+
+Some notes about using quotes or not around the regexp:
+
+- For `fish` shell, you need to put the regexp in quotes: `'/bin/python$'`.
+- For `zsh` and `bash`, they are optional.
+- On `Windows` using `powershell`, quotes are not working.
+
+### Special note about anaconda/miniconda searches
+
+If you need to create your own anaconda/miniconda search, you have to remember to set the `type` to `anaconda`. This is because the plugin uses the type to understand if it should set conda-specific environment variables like `CONDA_PREFIX` when a virtual environment is activated.
+
+Even if its a miniconda environment, the type needs to be anaconda since the same environment variables are set.
+
+```lua
+{
+  search = {
+    anaconda_base = {
+      command = "fd /python$ /opt/anaconda/bin --full-path --color never -E /proc",
+      type = "anaconda"
+    },
   },
 }
 ```
 
-But if you want, you can also manually call the setup function like this:
+
+## VenvSelect is slow for me, what can i do?
+
+The only thing that determines speed for this plugin is how fast the `fd` search is.
+
+By default, its searching **all your hidden files** in your working directory - and its subdirectories - to look for pythons hiding under `.venv`, `.env` and such.
+
+It tries to be fast even when searching hidden files by skipping some well known directories that we are never interested in on Mac and Linux:
+
+- .git/
+- .wine/
+- .steam/
+- Steam/
+- site-packages/
+- /proc
+
+But sometimes its still so many files to search that it will become slow.
+
+Here is an example of *replacing* the default cwd search with one that **doesnt** search for hidden files. It replaces the cwd search since its named `cwd`.
 
 ```lua
-return {
-  'linux-cultist/venv-selector.nvim',
-  dependencies = { 'neovim/nvim-lspconfig', 'nvim-telescope/telescope.nvim', 'mfussenegger/nvim-dap-python' },
-  config = function()
-    require('venv-selector').setup {
-      -- Your options go here
-      -- name = "venv",
-      -- auto_refresh = false
+{
+  search = {
+    cwd = {
+      command = "fd '/bin/python$' $CWD --full-path --color never -E /proc -I -a -L",
+    },
+  },
+}
+```
+
+The most important difference compared to the default `cwd` search defined [here](https://github.com/linux-cultist/venv-selector.nvim/blob/regexp/lua/venv-selector/config.lua) is that we dont search hidden files (using `-I` instead if `-HI`).
+
+If you know that your venvs are in a specific location, you can also disable the default `cwd` search and write your own:
+
+```lua
+{
+  search = {
+    cwd = false, -- setting this to false disables the default cwd search
+    my_search = {
+      command = "fd /bin/python$ ~/Code --full-path -a -L" -- read up on the fd flags so it searches what you need
     }
-  end,
-  event = 'VeryLazy', -- Optional: needed only if you want to type `:VenvSelect` without a keymapping
+  },
+}
+```
+
+Or you can disable all the default searches and take complete control over everything. See the options section in this README.
+
+
+This is because the plugin needs to know that you want the `CONDA_PREFIX` to be set, amongst other things.
+
+
+## Common flags to fd
+
+
+| Fd option             | Description |
+|-----------------------|-------------|
+| `-I` or `--no-ignore` | Ignore files and directories specified in `.gitignore`, `.fdignore`, and other ignore files. This option forces `fd` to include files it would normally ignore. |
+| `-L` or `--follow`    | Follow symbolic links while searching. This option makes `fd` consider the targets of symbolic links as potential search results. |
+| `-H` or `--hidden`    | Include hidden directories and files in the search results. Hidden files are those starting with a dot (`.`) on Unix-like systems. |
+| `-E` or `--exclude`   | Exclude files and directories that match the specified pattern. This can be used multiple times to exclude various patterns. |
+
+So if you dont add `-I`, paths that are in a `.gitignore` file will be ignored. Its common to have venv folders in that file, so thats why this flag can be important.
+
+However, some flags slows down the search significantly and should not be used if not needed (like `-H` to look for hidden files). If your venvs are not starting with a dot in their name, you dont need to use this flag.
+
+
+
+
+## Override or disable a default search
+
+If you want to **override** one of the default searches, create a search with the same name. This changes the default workspace search.
+```lua
+{
+  search = {
+    workspace = {
+      command = "fd /bin/python$ $WORKSPACE_PATH --full-path --color never -E /proc -unrestricted",
+    }
+  }
+}
+```
+
+The above search adds the unrestriced flag to fd. See `fd` docs for what it does!
+
+If you want to **disable one** of the default searches, you can simply set it to false. This disables the workspace search.
+
+```lua
+{
+  search = {
+    workspace = false
+  }
+}
+```
+
+If you want to **disable all** built in searches, set the global option `enable_default_searches` to false (see separate section about global options)
+
+
+## Changing the output in the telescope viewer (on_telescope_result_callback)
+
+Maybe you dont want to see the entire full path to python in the telescope viewer. You can change whats being displayed by using a callback function.
+
+```lua
+-- This function gets called by the plugin when a new result from fd is received
+-- You can change the filename displayed here to what you like.
+-- Here in the example for linux/mac we replace the home directory with '~' and remove the /bin/python part.
+local function shorter_name(filename)
+   return filename:gsub(os.getenv("HOME"), "~"):gsub("/bin/python", "")
+end
+
+return {
+  "linux-cultist/venv-selector.nvim",
+  dependencies = {
+    "neovim/nvim-lspconfig",
+    "mfussenegger/nvim-dap", "mfussenegger/nvim-dap-python", --both are optionals for debugging
+    { "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } },
+  },
+  ft = "python", -- Load when opening Python files
+  branch = "regexp", -- This is the regexp branch, use this for the new version
   keys = {
-    -- Keymap to open VenvSelector to pick a venv.
-    { '<leader>vs', '<cmd>VenvSelect<cr>' },
-    -- Keymap to retrieve the venv from a cache (the one previously used for the same project directory).
-    { '<leader>vc', '<cmd>VenvSelectCached<cr>' },
+    { ",v", "<cmd>VenvSelect<cr>" }, -- Open picker on keymap
   },
-}
+  opts = {
+    options = {
+      -- If you put the callback here as a global option, its used for all searches (including the default ones by the plugin)
+      on_telescope_result_callback = shorter_name
+    },
+    search = {
+      my_venvs = {
+        command = "fd python$ ~/Code", -- Sample command, need to be changed for your own venvs
+        -- If you put the callback here, its only called for your "my_venvs" search
+        on_telescope_result_callback = shorter_name
+      },
+    },
+  },
+},
 ```
 
-### Configuration Options
+## Run your own code on venv activation (on_venv_activate_callback)
 
-Important: `VenvSelect` has several different types of searching mentioned in the options description below, so its good to
-understand the differences.
+The following is an example of how to run your own code when a venv activates.
 
-**Parental Search**
+In this case, we want to run `poetry env use <path to selected python>` when these conditions are met:
 
-`VenvSelect` goes up a number of parent directories and then searches downwards in all directories under that one. This is
-used when searching for venv folders matching a certain name (like `venv` or `.venv`) relative to your opened file.
+  1) A virtual environment found by the `poetry` search was activated by the user (its source is `poetry`)
+  2) A terminal was opened afterwards.
 
-Example: You have read the file `/home/cado/Code/Python/Projects/MachineLearning/Tutorial/main.py` into the current neovim buffer.
 
-`VenvSelect` would by default go up to `/home/cado/Python/Projects` and search downwards in all folders under that directory for directories matching the name `venv`.
+The function `on_venv_activate` sets up a neovim autocommand to run the function `run_shell_command` when the terminal opens.
 
-Look into options like `parents` and `name` to change the specifics of this kind of search.
-
-**Venv Manager Search**
-
-`VenvSelect` looks for virtual environments managed by Poetry, PDM, Pipenv, Anaconda etc in specific locations where they normally are. This kind of search
-does not go up to parent directories - it just looks in the specific default folders on your machine.
-
-Look into options like `poetry_path`, `pipenv_path` etc to change where the plugin will look. The options `name` or `parents` has no effect on this search.
-
-**Workspace Search**
-
-`VenvSelect` looks in the workspace (your project directory) that your LSP server has determined. You can typically see this directory with the `LspInfo` command inside
-Neovim when you have a file opened and your LSP has started. `VenvSelect` looks in that directory for virtual environments.
-
-| Property                             | Default                                                                                                  | Description                                                                                                                                                                                                                                                                                                                                                                                               |
-| ------------------------------------ | -------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| auto_refresh                         | false                                                                                                    | Whether or not `VenvSelect` should automatically refresh its search every time its opened. You can manually refresh it with `Ctrl-r` otherwise.                                                                                                                                                                                                                                                           |
-| search_venv_managers                 | true                                                                                                     | Whether or not the plugin will look for Venv Manager venvs or skip that search. You can set it to false if you dont use any Venv Managers.                                                                                                                                                                                                                                                                |
-| search_workspace                     | true                                                                                                     | Whether or not the plugin will look for venvs in the currently active LSP workspace.                                                                                                                                                                                                                                                                                                                      |
-| path                                 | nil                                                                                                      | A fixed path on the disk where VenvSelect should start its search for venvs. If set, it will use this path instead of the path for the currently opened file in the buffer. It will still go up `parents` number of steps before it searches, so set `parents` option to 0 if you want this specific path to be searched and nothing else. Can be useful if all your projects are in a specific location. |
-| search                               | true                                                                                                     | This is the Parental Search talked about above. It tries to find venvs in parent paths and below. Use the `parents` option to control how many parents to search.                                                                                                                                                                                                                                         |
-| dap_enabled                          | false                                                                                                    | When set to true, uses the selected virtual environment with the debugger. Requires extra dependencies to be added to `VenvSelect` dependencies: [nvim-dap-python](https://github.com/mfussenegger/nvim-dap-python), [debugpy](https://github.com/microsoft/debugpy), [nvim-dap](https://github.com/mfussenegger/nvim-dap)                                                                                |
-| parents                              | 2                                                                                                        | The number of parent directories to go up, before searching all directories below for venvs.                                                                                                                                                                                                                                                                                                              |
-| name                                 | venv                                                                                                     | The name of the venvs to look for. Can be set to a lua table to search for multiple names (name = {"venv", ".venv"})                                                                                                                                                                                                                                                                                      |
-| fd_binary_name                       | fd                                                                                                       | `VenvSelect` also tries to find other names for the same program, like `fdfind` and `fd-find` and will use those if found. But you can set something specific here if you need to.                                                                                                                                                                                                                        |
-| notify_user_on_activate              | true                                                                                                     | `VenvSelect` will notify you with a message when a venv is selected in the user interface.                                                                                                                                                                                                                                                                                                                |
-| poetry_path                          | [system.lua](https://github.com/linux-cultist/venv-selector.nvim/blob/main/lua/venv-selector/system.lua) | The default path on your system where the plugin looks for Poetry venvs.                                                                                                                                                                                                                                                                                                                                  |
-| pdm_path                             | [system.lua](https://github.com/linux-cultist/venv-selector.nvim/blob/main/lua/venv-selector/system.lua) | The default path on your system where the plugin looks for PDM venvs.                                                                                                                                                                                                                                                                                                                                     |
-| pipenv_path                          | [system.lua](https://github.com/linux-cultist/venv-selector.nvim/blob/main/lua/venv-selector/system.lua) | The default path on your system where the plugin looks for Pipenv venvs.                                                                                                                                                                                                                                                                                                                                  |
-| pyenv_path                           | [system.lua](https://github.com/linux-cultist/venv-selector.nvim/blob/main/lua/venv-selector/system.lua) | The default path on your system where the plugin looks for Pyenv venvs.                                                                                                                                                                                                                                                                                                                                   |
-| hatch_path                           | [system.lua](https://github.com/linux-cultist/venv-selector.nvim/blob/main/lua/venv-selector/system.lua) | The default path on your system where the plugin looks for Hatch venvs.                                                                                                                                                                                                                                                                                                                                   |
-| venvwrapper_path                     | [system.lua](https://github.com/linux-cultist/venv-selector.nvim/blob/main/lua/venv-selector/system.lua) | The default path on your system where the plugin looks for VenvWrapper venvs.                                                                                                                                                                                                                                                                                                                             |
-| anaconda_base_path                   | [system.lua](https://github.com/linux-cultist/venv-selector.nvim/blob/main/lua/venv-selector/system.lua) | The default path on your system where the plugin looks for Anaconda venvs.                                                                                                                                                                                                                                                                                                                                |
-| anaconda_envs_path                   | [system.lua](https://github.com/linux-cultist/venv-selector.nvim/blob/main/lua/venv-selector/system.lua) | The default path on your system where the plugin looks for Anaconda venvs.                                                                                                                                                                                                                                                                                                                                |
-| anaconda { python_executable = nil } | 'python' or 'python3'                                                                                    | The name of the anaconda python executable                                                                                                                                                                                                                                                                                                                                                                |
-| anaconda { python_parent_dir = nil } | 'bin' or 'Scripts'                                                                                       | The name of the anaconda python parent directory                                                                                                                                                                                                                                                                                                                                                          |
-
-## ☄ Getting started
-
-Once the plugin has been installed, the `:VenvSelect` command is available.
-
-This plugin will look for python virtual environments located close to your code.
-
-It will start looking in the same directory as your currently opened file. Usually the venv is located in a parent
-directory. By default it will go up 2 levels in the directory tree (relative to your currently open file), and then go back down into all the directories under that
-directory. Finally it will give you a list of found virtual environments so you can pick one to activate.
-
-There is also the `:VenvSelectCurrent` command to get a message saying which venv is active.
-
-### Hooks
-
-By default, the plugin tries to setup `basedpyright`, `pyright`, `pylance`, and `pylsp` automatically using hooks. If you want to add a custom integration, you need to write
-a hook with following signature:
+We only want to run the function once, which is why we have the `command_run` flag.
 
 ```lua
---- @param venv_path string A string containing the absolute path to selected virtualenv
---- @param venv_python string A string containing the absolute path to python binary in selected venv
-function your_hook_name(venv_path, venv_python)
-  --- your custom integration here
-end
-```
+{
+  options = {
+    on_venv_activate_callback = function()
+      local command_run = false
 
-And provide it to a setup function:
+      local function run_shell_command()
+        local source = require("venv-selector").source()
+        local python = require("venv-selector").python()
 
-```lua
-require('venv-selector').setup {
-  --- other configuration
-  changed_venv_hooks = { your_hook_name },
-}
-```
+        if source == "poetry" and command_run == false then
+          local command = "poetry env use " .. python
+          vim.api.nvim_feedkeys(command .. "\n", "n", false)
+          command_run = true
+        end
 
-The plugin-provided hooks are exposed for convenience in case you want to use them alongside your custom one:
+      end
 
-```lua
-local venv_selector = require 'venv-selector'
+      vim.api.nvim_create_augroup("TerminalCommands", { clear = true })
 
-venv_selector.setup {
-  --- other configuration
-  changed_venv_hooks = { your_hook_name, venv_selector.hooks.pyright },
-}
-```
-
-Currently provided hooks are:
-
-- `require("venv-selector").hooks.basedpyright`
-- `require("venv-selector").hooks.pyright`
-- `require("venv-selector").hooks.pylance`
-- `require("venv-selector").hooks.pylsp`
-
-### Helpful functions
-
-The selected virtual environment and path to the python executable is available from these two functions:
-
-```lua
-require('venv-selector').get_active_path() -- Gives path to the python executable inside the activated virtual environment
-require('venv-selector').get_active_venv() -- Gives path to the activated virtual environment folder
-require('venv-selector').retrieve_from_cache() -- To activate the last virtual environment set in the current working directory
-```
-
-This can be used to print out the virtual environment in a status bar, or make the plugin work with other plugins that
-want this information.
-
-## 🤖 Automate
-
-After choosing your virtual environment, the path to the virtual environment will be cached under the current working directory. To activate the same virtual environment
-the next time, simply use `:VenvSelectCached` to reactivate your virtual environment.
-
-This can also be automated to run whenever you enter into a python project, for example.
-
-```lua
-vim.api.nvim_create_autocmd('VimEnter', {
-  desc = 'Auto select virtualenv Nvim open',
-  pattern = '*',
-  callback = function()
-    local venv = vim.fn.findfile('pyproject.toml', vim.fn.getcwd() .. ';')
-    if venv ~= '' then
-      require('venv-selector').retrieve_from_cache()
+      vim.api.nvim_create_autocmd("TermEnter", {
+        group = "TerminalCommands",
+        pattern = "*",
+        callback = run_shell_command,
+      })
     end
-  end,
-  once = true,
-})
-```
-
-#### Find out where your virtual environments are located
-
-##### Poetry
-
-First run `poetry env info` in your project folder where you are using poetry to manage the virtual environments. You
-should get some output simular to this:
-
-```bash
-Virtualenv
-Python:         3.10.10
-Implementation: CPython
-Path:           /home/cado/.cache/pypoetry/virtualenvs/poetry-demo-EUUW_nAM-py3.10
-Executable:     /home/cado/.cache/pypoetry/virtualenvs/poetry-demo-EUUW_nAM-py3.10/bin/python
-Valid:          True
-
-System
-Platform:   linux
-OS:         posix
-Python:     3.10.10
-Path:       /usr
-Executable: /usr/bin/python3.10
-
-```
-
-You can see that the path shows that the virtual environments are located under `/home/cado/.cache/pypoetry/virtualenvs` in this case.
-
-Copy the virtualenv path and set it as a parameter to the `VenvSelector` setup function:
-
-```lua
-require('venv-selector').setup {
-  poetry_path = '/home/cado/.cache/pypoetry/virtualenvs',
-}
-```
-
-##### Pipenv
-
-First run `pipenv --venv` in your project folder where you are using pipenv to manage the virtual environments. You
-should get some output simular to this:
-
-```bash
-/home/cado/.local/share/virtualenvs/pipenv_test-w6BD3kWZ
-```
-
-You can see that the path shows that the virtual environments are located under `/home/cado/.local/share/virtualenvs` in this case.
-
-Copy the virtualenv path and set it as a parameter to the `VenvSelector` setup function:
-
-```lua
-require('venv-selector').setup {
-  pipenv_path = '/home/cado/.local/share/virtualenvs',
-}
-```
-
-#### Pyenv-virtualenv
-
-First run `pyenv root` to get the rootfolder for pyenv versions and shims are kept. You should get some output similar to this:
-
-`/home/cado/.pyenv`
-
-The virtualenvs are stored under the `versions` folder inside that directory. In this case it would be `/home/cado/.pyenv/versions`.
-
-Copy the virtualenv path and set it as a parameter to the `VenvSelector` setup function:
-
-```lua
-require('venv-selector').setup {
-  pyenv_path = '/home/cado/.pyenv/versions',
-}
-```
-
-#### Anaconda
-
-Once you have your anaconda environment activated in a shell, you can use the `conda env list` command to list
-both the base environment and the other environments:
-
-```
-# conda environments:
-#
-conda1                   /home/cado/.conda/envs/conda1
-conda2                   /home/cado/.conda/envs/conda2
-base                  *  /opt/anaconda
-```
-
-Configure `VenvSelect` like this in this example:
-
-```lua
-require('venv-selector').setup {
-  anaconda_base_path = '/opt/anaconda',
-  anaconda_envs_path = '/home/cado/.conda/envs',
-}
-```
-
-## Dependencies
-
-This plugin has been built to be as fast as possible. It will search your computer for virtual environments while you
-continue working, and it wont freeze the neovim gui while looking for them. Usually it will give you a result in a few seconds.
-
-Even better, with caching enabled, this plugin instantly activate previously configured virtual environment without having to spend time on searching again.
-
-Note: You need [fd](https://github.com/sharkdp/fd) installed on your system. This plugin uses it to search for
-the virtual environments as fast as possible.
-
-Telescope is also needed to let you pick a virtual environment to use.
-
-[nvim-python-dap](https://github.com/mfussenegger/nvim-dap-python) is required for DAP function. Enable DAP at config.
-
-## 💡Tips and Tricks
-
-### VS Code like statusline functionality with [heirline](https://github.com/rebelot/heirline.nvim)
-
-To add a clickable component to your heirline statusline.
-
-```lua
-local actived_venv = function()
-  local venv_name = require('venv-selector').get_active_venv()
-  if venv_name ~= nil then
-    return string.gsub(venv_name, '.*/pypoetry/virtualenvs/', '(poetry) ')
-  else
-    return 'venv'
-  end
-end
-
-local venv = {
-  {
-    provider = function()
-      return '  ' .. actived_venv()
-    end,
-  },
-  on_click = {
-    callback = function()
-      vim.cmd.VenvSelect()
-    end,
-    name = 'heirline_statusline_venv_selector',
   },
 }
 ```
+
+
+## Python debugger support with dap and dap-python
+
+If `mfussenegger/nvim-dap` and `mfussenegger/nvim-dap-python` are installed as optional dependencies, the plugin will update `dap` with a new python path every time you switch venv.
+
+You also need `debugpy` installed in the venv you are switching to.
+
+## Global options to the plugin
+
+```lua
+{
+  options = {
+        on_venv_activate_callback = nil,           -- callback function for after a venv activates
+        enable_default_searches = true,            -- switches all default searches on/off
+        enable_cached_venvs = true,                -- use cached venvs that are activated automatically when a python file is registered with the LSP.
+        cached_venv_automatic_activation = true,   -- if set to false, the VenvSelectCached command becomes available to manually activate them.
+        activate_venv_in_terminal = true,          -- activate the selected python interpreter in terminal windows opened from neovim
+        set_environment_variables = true,          -- sets VIRTUAL_ENV or CONDA_PREFIX environment variables
+        notify_user_on_venv_activation = false,    -- notifies user on activation of the virtual env
+        search_timeout = 5,                        -- if a search takes longer than this many seconds, stop it and alert the user
+        debug = false,                             -- enables you to run the VenvSelectLog command to view debug logs
+        fd_binary_name = M.find_fd_command_name(), -- plugin looks for `fd` or `fdfind` but you can set something else here
+        require_lsp_activation = true,             -- require activation of an lsp before setting env variables
+
+        -- telescope viewer options
+        on_telescope_result_callback = nil,        -- callback function for modifying telescope results
+        show_telescope_search_type = true,         -- shows which of the searches found which venv in telescope
+        telescope_filter_type = "substring"        -- when you type something in telescope, filter by "substring" or "character"
+        telescope_active_venv_color = "#00FF00"    -- The color of the active venv in telescope
+        picker = "auto",                           -- The picker to use. Valid options are "telescope", "fzf-lua", "snacks", "native", "mini-pick" or "auto"
+        icon = "",                                -- The icon to use in the picker for each item
+
+  }
+}
+```
+
+## Exposed functions
+
+These functions can be used to easily get the selected python interpreter and the active venv.
+
+- `require("venv-selector").python()`           -- Gives back absolute path to python or nil if none is selected
+- `require("venv-selector").venv()`             -- Gives back absolute path to the venv or nil if none is selected
+- `require("venv-selector").source()`           -- Gives back the name of the search that found the venv
+- `require("venv-selector").workspace_paths()`  -- Gives back the workspace paths your LSP is using
+- `require("venv-selector").cwd()`              -- Gives back the current working directory
+- `require("venv-selector").file_dir()`         -- Gives back the directory of the currently opened file
+- `require("venv-selector").deactivate()`       -- Removes the venv from terminal path and unsets environment variables
+- `require("venv-selector").stop_lsp_servers()` -- Stops the lsp servers used by the plugin
+- `require("venv-selector").activate_from_path(python_path)` -- Activates a python interpreter given a path to it
+
+> [!IMPORTANT]
+> The last function, `activate_from_path`, is only intended as a way to select a virtual environment python without using the telescope picker.
+> Trying to activate the system python this way is not supported and will set environment variables like `VIRTUAL_ENV` to the wrong values,
+> since the plugin expects the path to be a virtual environment.

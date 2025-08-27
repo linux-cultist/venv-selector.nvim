@@ -46,7 +46,7 @@ function M.set_python_path_for_client(client_name, venv_python)
                 },
             })
         end
-        client.notify("workspace/didChangeConfiguration", { settings = nil })
+        client:notify("workspace/didChangeConfiguration", { settings = nil })
 
         local message = "Registered '" .. venv_python .. "' with " .. client_name .. " LSP."
         if config.user_settings.options.notify_user_on_venv_activation == true then
@@ -80,7 +80,7 @@ function M.pylsp_hook(venv_python)
                 },
             },
         })
-        client.notify("workspace/didChangeConfiguration", { settings = settings })
+        client:notify("workspace/didChangeConfiguration", { settings = settings })
 
         local message = "Registered '" .. venv_python .. "' with " .. client_name .. " LSP."
         if config.user_settings.options.notify_user_on_venv_activation == true then

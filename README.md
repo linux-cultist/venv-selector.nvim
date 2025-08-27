@@ -62,10 +62,10 @@ All future development will happen in this branch as well, since the rewrite all
     "mfussenegger/nvim-dap", "mfussenegger/nvim-dap-python", --optional
     { "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } },
   },
-  lazy = false,
+  ft = "python", -- Load when opening Python files
   branch = "regexp", -- This is the regexp branch, use this for the new version
   keys = {
-    { ",v", "<cmd>VenvSelect<cr>" },
+    { ",v", "<cmd>VenvSelect<cr>" }, -- Open picker on keymap
   },
   opts = {
     -- Your settings go here
@@ -297,10 +297,10 @@ return {
     "mfussenegger/nvim-dap", "mfussenegger/nvim-dap-python", --both are optionals for debugging
     { "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } },
   },
-  lazy = false,
+  ft = "python", -- Load when opening Python files
   branch = "regexp", -- This is the regexp branch, use this for the new version
   keys = {
-    { ",v", "<cmd>VenvSelect<cr>" },
+    { ",v", "<cmd>VenvSelect<cr>" }, -- Open picker on keymap
   },
   opts = {
     options = {
@@ -391,7 +391,7 @@ You also need `debugpy` installed in the venv you are switching to.
         show_telescope_search_type = true,         -- shows which of the searches found which venv in telescope
         telescope_filter_type = "substring"        -- when you type something in telescope, filter by "substring" or "character"
         telescope_active_venv_color = "#00FF00"    -- The color of the active venv in telescope
-        picker = "auto",                           -- The picker to use. Valid options are "telescope", "fzf-lua", "snacks", "native", or "auto"
+        picker = "auto",                           -- The picker to use. Valid options are "telescope", "fzf-lua", "snacks", "native", "mini-pick" or "auto"
         icon = "",                                -- The icon to use in the picker for each item
 
   }

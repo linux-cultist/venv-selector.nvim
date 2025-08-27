@@ -82,22 +82,25 @@ function M.log_line(msg, level)
     if M.enabled == false then
         return
     end
-    if log_buf == nil or not vim.api.nvim_buf_is_valid(log_buf) then
-        log_buf = vim.api.nvim_create_buf(false, true)
-        vim.api.nvim_buf_set_name(log_buf, buffer_name)
-        vim.api.nvim_buf_set_lines(log_buf, 0, -1, false, {})
-    end
 
-    local line_count = vim.api.nvim_buf_line_count(log_buf)
-    local utc_time_stamp = M.get_utc_date_time()
-    local log_entry = string.format("%s [%s]: %s", utc_time_stamp, level, msg)
+    -- Wrap buffer operations in vim.schedule to avoid E565
+    vim.schedule(function()
+        if log_buf == nil or not vim.api.nvim_buf_is_valid(log_buf) then
+            log_buf = vim.api.nvim_create_buf(false, true)
+            vim.api.nvim_buf_set_name(log_buf, buffer_name)
+            vim.api.nvim_buf_set_lines(log_buf, 0, -1, false, {})
+        end
 
-    -- Replace the first line if it's empty, or append the new log entry
-    if line_count == 1 and vim.api.nvim_buf_get_lines(log_buf, 0, 1, false)[1] == "" then
-        vim.api.nvim_buf_set_lines(log_buf, 0, 1, false, { log_entry })
-    else
-        vim.api.nvim_buf_set_lines(log_buf, line_count, line_count, false, { log_entry })
-    end
+        local line_count = vim.api.nvim_buf_line_count(log_buf)
+        local utc_time_stamp = M.get_utc_date_time()
+        local log_entry = string.format("%s [%s]: %s", utc_time_stamp, level, msg)
+
+        if line_count == 1 and vim.api.nvim_buf_get_lines(log_buf, 0, 1, false)[1] == "" then
+            vim.api.nvim_buf_set_lines(log_buf, 0, 1, false, { log_entry })
+        else
+            vim.api.nvim_buf_set_lines(log_buf, line_count, line_count, false, { log_entry })
+        end
+    end)
 end
 
 function M.log(level, msg, indent)

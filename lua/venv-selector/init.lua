@@ -27,7 +27,6 @@ function M.python()
     return require("venv-selector.path").current_python_path
 end
 
-
 function M.venv()
     return require("venv-selector.path").current_venv_path
 end
@@ -56,7 +55,6 @@ function M.activate_from_path(python_path)
     require("venv-selector.venv").activate(python_path, "activate_from_path", true)
 end
 
-
 -- Temporary, will be removed later.
 function M.split_command(str)
     local ut = require("venv-selector.utils")
@@ -70,6 +68,7 @@ end
 
 ---@param plugin_settings venv-selector.Config
 function M.setup(conf)
+
     if vim.tbl_get(conf, "options", "debug") then
         local log = require("venv-selector.logger")
         log.enabled = true
@@ -81,7 +80,8 @@ function M.setup(conf)
     user_commands.register()
 
     vim.api.nvim_command("hi VenvSelectActiveVenv guifg=" .. config.user_settings.options.telescope_active_venv_color)
+    
+    vim.notify("Important: VenvSelect is now using `main` as the updated branch again. Please remove `branch = regexp` from your config.", vim.log.levels.ERROR, { title = "VenvSelect" })
 end
-
 
 return M

@@ -65,8 +65,9 @@
   keys = {
     { ",v", "<cmd>VenvSelect<cr>" }, -- Open picker on keymap
   },
-  opts = {
-    -- Your settings go here
+  opts = { -- this can be an empty lua table - just showing below for clarity.
+      search = {}, -- if you add your own searches, they go here.
+      options = {} -- if you add plugin options, they go here.
   },
 },
 ```

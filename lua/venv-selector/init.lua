@@ -22,9 +22,11 @@ vim.api.nvim_create_autocmd("LspAttach", {
 
 local M = {}
 
+
 function M.python()
     return require("venv-selector.path").current_python_path
 end
+
 
 function M.venv()
     return require("venv-selector.path").current_venv_path
@@ -54,6 +56,7 @@ function M.activate_from_path(python_path)
     require("venv-selector.venv").activate(python_path, "activate_from_path", true)
 end
 
+
 -- Temporary, will be removed later.
 function M.split_command(str)
     local ut = require("venv-selector.utils")
@@ -79,5 +82,6 @@ function M.setup(conf)
 
     vim.api.nvim_command("hi VenvSelectActiveVenv guifg=" .. config.user_settings.options.telescope_active_venv_color)
 end
+
 
 return M

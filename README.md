@@ -10,9 +10,9 @@
     <img src="venvselect-2024.png" />
 </p>
 
-#  Recent News
+# 📰 Recent News
 
-- *2025-08-27*: The new version of VenvSelect (from the `regexp` branch) has been merged into the `main` branch. This updates the plugin with the last 9 months of changes from the `regexp` branch. Users who prefer the old version can set their branch to `v1`, but its not updated anymore. With this change, users dont have to specify a branch anymore when installing the plugin since `main` is the default.
+- *2025-08-27*: The new version of VenvSelect (from the `regexp` branch) has been merged into the `main` branch. This updates the plugin with the last 9 months of changes from the `regexp` branch. Users who prefer the old version can set their branch to `v1`, but its not updated anymore.
 
 - *2025-08-26*: Support for [mini-pick](https://github.com/echasnovski/mini.pick) added.
 

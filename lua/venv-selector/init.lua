@@ -81,7 +81,6 @@ function M.setup(conf)
 
     vim.api.nvim_command("hi VenvSelectActiveVenv guifg=" .. config.user_settings.options.telescope_active_venv_color)
     
-    vim.notify("Important: VenvSelect is now using `main` as the updated branch again. Please remove `branch = regexp` from your config.", vim.log.levels.ERROR, { title = "VenvSelect" })
 end
 
 return M

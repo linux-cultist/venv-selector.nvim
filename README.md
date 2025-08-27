@@ -10,15 +10,14 @@
     <img src="venvselect-2024.png" />
 </p>
 
-# 2024-05-14 - New version of VenvSelect
 
-There is a rewrite of the plugin in the [regexp branch](https://github.com/linux-cultist/venv-selector.nvim/tree/regexp).
+# 📰 Recent News
 
-Use that version if you are a new user `VenvSelect`.
+- *2025-08-27*: The new version of VenvSelect (from the `regexp` branch) has been merged into the `main` branch. This updates the plugin with the last 9 months of changes from the `regexp` branch. Users who prefer the old version can set their branch to `v1`, but its not updated anymore.
 
-It has eliminated many bugs and allows users to easily add their own searches, if the plugin doesnt find them automatically.
+- *2025-08-26*: Support for [mini-pick](https://github.com/echasnovski/mini.pick) added.
 
-All future development will happen in this branch as well, since the rewrite allows for much easier development of new features.
+- *2025-08-26*: The plugin can now be lazy loaded. Remove `lazy = false` from your config and neovim will start faster. Readme has also been updated with how you load the plugin automatically when opening python files.
 
 
 
@@ -63,7 +62,6 @@ All future development will happen in this branch as well, since the rewrite all
     { "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } },
   },
   ft = "python", -- Load when opening Python files
-  branch = "regexp", -- This is the regexp branch, use this for the new version
   keys = {
     { ",v", "<cmd>VenvSelect<cr>" }, -- Open picker on keymap
   },
@@ -298,7 +296,6 @@ return {
     { "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } },
   },
   ft = "python", -- Load when opening Python files
-  branch = "regexp", -- This is the regexp branch, use this for the new version
   keys = {
     { ",v", "<cmd>VenvSelect<cr>" }, -- Open picker on keymap
   },

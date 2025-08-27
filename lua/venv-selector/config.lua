@@ -39,7 +39,6 @@ local M = {}
 ---@diagnostic disable-next-line: missing-fields
 M.user_settings = {}
 
-
 --- Health check tracking of legacy settings
 ---@type boolean
 M.has_legacy_settings = false

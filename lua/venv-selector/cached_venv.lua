@@ -14,6 +14,12 @@ local base_dir = path.get_base(cache_file)
 
 local M = {}
 
+function M.handle_automatic_activation()
+    if config.user_settings.options.cached_venv_automatic_activation then
+        M.retrieve()
+    end
+end
+
 function M.create_dir()
     if vim.fn.filewritable(base_dir) == 0 then
         vim.fn.mkdir(base_dir, "p")

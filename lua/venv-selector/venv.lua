@@ -18,7 +18,6 @@ function M.set_source(source)
     M.current_source = source
 end
 
-
 --- Activate a virtual environment.
 ---
 --- This function will update the paths and environment variables to the selected virtual environment,
@@ -30,7 +29,6 @@ end
 function M.activate(python_path, type, check_lsp)
     if python_path == nil then
         return false
-
     end
 
     if vim.fn.filereadable(python_path) ~= 1 then
@@ -64,12 +62,10 @@ function M.activate(python_path, type, check_lsp)
 
     M.update_paths(python_path, type)
 
-
     local on_venv_activate_callback = config.user_settings.options.on_venv_activate_callback
     if on_venv_activate_callback ~= nil then
         log.debug("Calling on_venv_activate_callback() function")
         on_venv_activate_callback()
-
     end
 
     return true

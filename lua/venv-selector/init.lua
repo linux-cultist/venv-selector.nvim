@@ -5,13 +5,10 @@
 -- local path = require("venv-selector.path")
 -- local ws = require("venv-selector.workspace")
 
-local function on_lsp_attach()
+local function on_lsp_attach(args)
     if vim.bo.filetype == "python" then
-        local config = require("venv-selector.config")
         local cache = require("venv-selector.cached_venv")
-        if config.user_settings.options.cached_venv_automatic_activation == true then
-            cache.retrieve()
-        end
+        cache.handle_automatic_activation()
     end
 end
 
@@ -21,7 +18,6 @@ vim.api.nvim_create_autocmd("LspAttach", {
 })
 
 local M = {}
-
 
 function M.python()
     return require("venv-selector.path").current_python_path
@@ -68,7 +64,6 @@ end
 
 ---@param plugin_settings venv-selector.Config
 function M.setup(conf)
-
     if vim.tbl_get(conf, "options", "debug") then
         local log = require("venv-selector.logger")
         log.enabled = true
@@ -80,7 +75,6 @@ function M.setup(conf)
     user_commands.register()
 
     vim.api.nvim_command("hi VenvSelectActiveVenv guifg=" .. config.user_settings.options.telescope_active_venv_color)
-    
 end
 
 return M

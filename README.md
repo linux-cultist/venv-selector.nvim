@@ -367,6 +367,98 @@ If `mfussenegger/nvim-dap` and `mfussenegger/nvim-dap-python` are installed as o
 
 You also need `debugpy` installed in the venv you are switching to.
 
+## Nvchad and Lualine statusline support
+
+### Lualine
+
+```lua
+{
+    "nvim-lualine/lualine.nvim",
+    event = "VeryLazy",
+    -- enabled = false,
+    config = function()
+      require("lualine").setup {
+        sections = {
+          lualine_a = { "mode" },
+          lualine_b = { "branch", "diff", "diagnostics" },
+          lualine_c = { "filename" },
+          lualine_x = {
+            "venv-selector", -- This calls venv-selectors built-in method for rendering, but it can be overridden
+            "encoding",
+            "fileformat",
+            "filetype",
+          },
+          lualine_y = { "progress" },
+          lualine_z = { "location" },
+        },
+      }
+    end,
+    dependencies = { "nvim-tree/nvim-web-devicons" },
+  },
+```
+
+
+Lualine will call a function called `statusline_func.lualine` in VenvSelect if you define it in your options, and thats one way to change its output:
+
+
+```lua
+options = {
+  statusline_func = {
+    lualine = function()
+      local venv = require("venv-selector").venv()
+      local venv_name = vim.fn.fnamemodify(venv, ":t") -- Shorten name of venv
+      if not venv_name then
+        return ""
+      end
+  
+      if venv_name ~= nil then
+        return " 🐍 " .. venv_name
+      end
+    end,
+  }
+}
+```
+
+
+
+### Nvchad
+
+Edit your `~/.config/nvim/lua/chadrc.lua` file like this:
+
+```lua
+M.ui = {
+  statusline = {
+    modules = {
+      venv = require("venv-selector.statusline.nvchad").render() -- calls the default method to render, but can be overridden.
+    },
+    order = { "mode", "file", "git", "%=", "lsp_msg", "diagnostics", "venv", "lsp", "cwd" } -- "venv" is our venvselect module here
+  }
+}
+```
+
+If you want to override the default render method, define the `statusline_func.nvchad` function in your options and return a string from it:
+
+
+```lua
+options = {
+  statusline_func = {
+    nvchad = function()
+      local venv = require("venv-selector").venv()
+      local venv_name = vim.fn.fnamemodify(venv, ":t") -- Shorten name of venv
+      if not venv_name then
+        return ""
+      end
+  
+      if venv_name ~= nil then
+        return " 🐍 " .. venv_name
+      end
+    end,
+  }
+}
+```
+
+
+
 ## Global options to the plugin
 
 ```lua
@@ -391,6 +483,7 @@ You also need `debugpy` installed in the venv you are switching to.
         telescope_active_venv_color = "#00FF00"    -- The color of the active venv in telescope
         picker = "auto",                           -- The picker to use. Valid options are "telescope", "fzf-lua", "snacks", "native", "mini-pick" or "auto"
         icon = "",                                -- The icon to use in the picker for each item
+        statusline_func = { nvchad = nil, lualine = nil } -- If a function is defined here for a statusline, it can be used to customize the statusline.
 
   }
 }

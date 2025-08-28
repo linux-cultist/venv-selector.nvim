@@ -59,7 +59,7 @@ end
 
 function M.deactivate()
     require("venv-selector.path").remove_current()
-    require("venv-selector.path").unset_env_variables()
+    require("venv-selector.venv").unset_env_variables()
 end
 
 ---@param plugin_settings venv-selector.Config

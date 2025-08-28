@@ -3,6 +3,35 @@ local gui_utils = require("venv-selector.gui.utils")
 local M = {}
 M.__index = M
 
+
+
+
+
+
+
+local function get_dynamic_winopts()
+    local columns = vim.o.columns
+    local lines = vim.o.lines
+    
+    -- Calculate dynamic width (80-95% of terminal width, with min/max constraints)
+    local width_ratio = 0.9
+    local min_width = 60
+    local max_width = 120
+    local dynamic_width = math.max(min_width, math.min(max_width, math.floor(columns * width_ratio)))
+    
+    -- Calculate dynamic height (30-50% of terminal height, with min/max constraints)
+    local height_ratio = 0.4
+    local min_height = 0.3
+    local max_height = 0.6
+    local dynamic_height = math.max(min_height, math.min(max_height, height_ratio))
+    
+    return {
+        height = dynamic_height,
+        width = dynamic_width,
+        row = 0.5,
+    }
+end
+
 function M.new(search_opts)
     local self = setmetatable({ is_done = false, queue = {}, entries = {} }, M)
 
@@ -12,11 +41,7 @@ function M.new(search_opts)
         self:consume_queue()
     end, {
         prompt = "Virtual environments (ctrl-r to refresh) > ",
-        winopts = {
-            height = 0.4,
-            width = 120,
-            row = 0.5,
-        },
+        winopts = get_dynamic_winopts(),
         actions = {
             ["default"] = function(selected, _)
                 if selected and #selected > 0 then
@@ -91,5 +116,7 @@ function M:search_done()
     self.queue = results
     require("fzf-lua").actions.resume()
 end
+
+
 
 return M

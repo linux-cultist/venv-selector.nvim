@@ -1,5 +1,5 @@
 <p align="center">
-  <h1 align="center">:tada: Python Venv Selector</h2>
+  <h1 align="center">:tada: Python Venv Selector</h1>
 </p>
 
 <p align="center">
@@ -10,12 +10,25 @@
     <img src="venvselect-2024.png" />
 </p>
 
+
+# 📰 Recent News
+
+- *2025-08-27*: The new version of VenvSelect (from the `regexp` branch) has been merged into the `main` branch. This updates the plugin with the last 9 months of changes from the `regexp` branch. Users who prefer the old version can set their branch to `v1`, but its not updated anymore.
+
+- *2025-08-26*: Support for [mini-pick](https://github.com/echasnovski/mini.pick) added.
+
+- *2025-08-26*: The plugin can now be lazy loaded. Remove `lazy = false` from your config and neovim will start faster. Readme has also been updated with how you load the plugin automatically when opening python files.
+
+
+
 # ⚡️ Features
 
 - Switch back and forth between virtual environments without restarting neovim
+
 - New and much more flexible configuration to support finding the exact venvs you want.
 - Browse existing python virtual environments on your computer and select one to activate inside neovim.
 - Supports **all** virtual environments using configurable **regular expressions**. The default ones are:
+
   - [Python](https://www.python.org/) (`python3 -m venv venv`)
   - [Poetry](https://python-poetry.org)
   - [Pipenv](https://pipenv.pypa.io/en/latest/)
@@ -37,24 +50,25 @@
 - Requires a terminal [nerd font](https://www.nerdfonts.com/) to be configured for the icons to look correct.
 
 
+
 ## Configuration snippet for [lazy.nvim](https://github.com/folke/lazy.nvim)
 
-```
+```lua
 {
   "linux-cultist/venv-selector.nvim",
-    dependencies = {
-      "neovim/nvim-lspconfig",
-      "mfussenegger/nvim-dap", "mfussenegger/nvim-dap-python", --optional
-      { "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } },
-    },
-  lazy = false,
-  branch = "regexp", -- This is the regexp branch, use this for the new version
-  config = function()
-      require("venv-selector").setup()
-    end,
-    keys = {
-      { ",v", "<cmd>VenvSelect<cr>" },
-    },
+  dependencies = {
+    "neovim/nvim-lspconfig",
+    "mfussenegger/nvim-dap", "mfussenegger/nvim-dap-python", --optional
+    { "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } },
+  },
+  ft = "python", -- Load when opening Python files
+  keys = {
+    { ",v", "<cmd>VenvSelect<cr>" }, -- Open picker on keymap
+  },
+  opts = { -- this can be an empty lua table - just showing below for clarity.
+      search = {}, -- if you add your own searches, they go here.
+      options = {} -- if you add plugin options, they go here.
+  },
 },
 ```
 
@@ -86,7 +100,6 @@ If you want to see the values that the plugin will insert in place of these spec
 
 There wont be any workspace paths before your LSP has detected a workspace (normally happens when you open a python project).
 
-
 ### The current default searches are for:
 
 - Venvs created by [Virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest)
@@ -108,21 +121,16 @@ If your venvs are not being found because they are in a custom location, you can
 
 You create a search for python venvs with `fd` and you put that into the plugin config. You can also use `find` or any other command as long as its output lists your venvs.
 
-The best way to craft a search is to run `fd` with your desired parameters on the command line before you put it into the plugin config.
-
 The configuration looks like this:
 
-```
-      require("venv-selector").setup {
-        settings = {
-          search = {
-            my_venvs = {
-              command = "fd python$ ~/Code",
-            },
-          },
-        },
-      }
-
+```lua
+{
+  search = {
+    my_venvs = {
+      command = "fd python$ ~/Code",
+    },
+  },
+}
 ```
 The example command above launches a search for any path ending with `python` in the `~/Code` folder. Its using a regular expression where `python$` means the path must end with the word python. For windows we would need to use `python.exe$` instead. Here are the results:
 
@@ -133,24 +141,21 @@ The example command above launches a search for any path ending with `python` in
 /home/cado/Code/Personal/helix/venv/bin/python
 ```
 
-
 These results will be shown in the telescope viewer and if they are a python virtual environment, they can be activated by pressing enter.
 
 You can add multiple searches as well:
 
-```
-      require("venv-selector").setup {
-        settings = {
-          search = {
-            find_code_venvs = {
-              command = "fd /bin/python$ ~/Code --full-path",
-            },
-            find_programming_venvs = {
-              command = "fd /bin/python$ ~/Programming/Python --full-path -IHL -E /proc",
-            },
-          },
-        },
-      }
+```lua
+{
+  search = {
+    find_code_venvs = {
+      command = "fd /bin/python$ ~/Code --full-path",
+    },
+    find_programming_venvs = {
+      command = "fd /bin/python$ ~/Programming/Python --full-path -IHL -E /proc",
+    },
+ },
+}
 ```
 
 Some notes about using quotes or not around the regexp:
@@ -165,20 +170,16 @@ If you need to create your own anaconda/miniconda search, you have to remember t
 
 Even if its a miniconda environment, the type needs to be anaconda since the same environment variables are set.
 
+```lua
+{
+  search = {
+    anaconda_base = {
+      command = "fd /python$ /opt/anaconda/bin --full-path --color never -E /proc",
+      type = "anaconda"
+    },
+  },
+}
 ```
-      require("venv-selector").setup {
-        settings = {
-          search = {
-            anaconda_base = {
-                command = "fd /python$ /opt/anaconda/bin --full-path --color never -E /proc",
-                type = "anaconda"
-            },
-          },
-        },
-      }
-
-```
-
 
 
 ## VenvSelect is slow for me, what can i do?
@@ -200,8 +201,8 @@ But sometimes its still so many files to search that it will become slow.
 
 Here is an example of *replacing* the default cwd search with one that **doesnt** search for hidden files. It replaces the cwd search since its named `cwd`.
 
-```
-settings = {
+```lua
+{
   search = {
     cwd = {
       command = "fd '/bin/python$' $CWD --full-path --color never -E /proc -I -a -L",
@@ -214,8 +215,8 @@ The most important difference compared to the default `cwd` search defined [here
 
 If you know that your venvs are in a specific location, you can also disable the default `cwd` search and write your own:
 
-```
-settings = {
+```lua
+{
   search = {
     cwd = false, -- setting this to false disables the default cwd search
     my_search = {
@@ -251,8 +252,8 @@ However, some flags slows down the search significantly and should not be used i
 ## Override or disable a default search
 
 If you want to **override** one of the default searches, create a search with the same name. This changes the default workspace search.
-```
-settings = {
+```lua
+{
   search = {
     workspace = {
       command = "fd /bin/python$ $WORKSPACE_PATH --full-path --color never -E /proc -unrestricted",
@@ -265,8 +266,8 @@ The above search adds the unrestriced flag to fd. See `fd` docs for what it does
 
 If you want to **disable one** of the default searches, you can simply set it to false. This disables the workspace search.
 
-```
-settings = {
+```lua
+{
   search = {
     workspace = false
   }
@@ -280,47 +281,38 @@ If you want to **disable all** built in searches, set the global option `enable_
 
 Maybe you dont want to see the entire full path to python in the telescope viewer. You can change whats being displayed by using a callback function.
 
-```
-{
+```lua
+-- This function gets called by the plugin when a new result from fd is received
+-- You can change the filename displayed here to what you like.
+-- Here in the example for linux/mac we replace the home directory with '~' and remove the /bin/python part.
+local function shorter_name(filename)
+   return filename:gsub(os.getenv("HOME"), "~"):gsub("/bin/python", "")
+end
+
+return {
   "linux-cultist/venv-selector.nvim",
-    dependencies = {
-      "neovim/nvim-lspconfig",
-      "mfussenegger/nvim-dap", "mfussenegger/nvim-dap-python", --both are optionals for debugging
-      { "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } },
+  dependencies = {
+    "neovim/nvim-lspconfig",
+    "mfussenegger/nvim-dap", "mfussenegger/nvim-dap-python", --both are optionals for debugging
+    { "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } },
+  },
+  ft = "python", -- Load when opening Python files
+  keys = {
+    { ",v", "<cmd>VenvSelect<cr>" }, -- Open picker on keymap
+  },
+  opts = {
+    options = {
+      -- If you put the callback here as a global option, its used for all searches (including the default ones by the plugin)
+      on_telescope_result_callback = shorter_name
     },
-  lazy = false,
-  branch = "regexp", -- This is the regexp branch, use this for the new version
-  config = function()
-
-      -- This function gets called by the plugin when a new result from fd is received
-      -- You can change the filename displayed here to what you like.
-      -- Here in the example for linux/mac we replace the home directory with '~' and remove the /bin/python part.
-      local function shorter_name(filename)
-         return filename:gsub(os.getenv("HOME"), "~"):gsub("/bin/python", "")
-      end
-
-
-      require("venv-selector").setup {
-        settings = {
-          options = {
-            -- If you put the callback here as a global option, its used for all searches (including the default ones by the plugin)
-            on_telescope_result_callback = shorter_name
-          },
-
-          search = {
-            my_venvs = {
-              command = "fd python$ ~/Code", -- Sample command, need to be changed for your own venvs
-
-              -- If you put the callback here, its only called for your "my_venvs" search
-              on_telescope_result_callback = shorter_name
-            },
-          },
-        },
-      }
-    end,
-    keys = {
-      { ",v", "<cmd>VenvSelect<cr>" },
+    search = {
+      my_venvs = {
+        command = "fd python$ ~/Code", -- Sample command, need to be changed for your own venvs
+        -- If you put the callback here, its only called for your "my_venvs" search
+        on_telescope_result_callback = shorter_name
+      },
     },
+  },
 },
 ```
 
@@ -338,59 +330,34 @@ The function `on_venv_activate` sets up a neovim autocommand to run the function
 
 We only want to run the function once, which is why we have the `command_run` flag.
 
+```lua
+{
+  options = {
+    on_venv_activate_callback = function()
+      local command_run = false
 
+      local function run_shell_command()
+        local source = require("venv-selector").source()
+        local python = require("venv-selector").python()
 
-```
-  {
-    "linux-cultist/venv-selector.nvim",
-    dependencies = {
-      "neovim/nvim-lspconfig",
-      { "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } },
-      "mfussenegger/nvim-dap",
-      "mfussenegger/nvim-dap-python",
-    },
-    lazy = false,
-    dev = true,
-    branch = "regexp",
-    config = function()
-      local function on_venv_activate()
-        local command_run = false
-
-        local function run_shell_command()
-          local source = require("venv-selector").source()
-          local python = require("venv-selector").python()
-
-          if source == "poetry" and command_run == false then
-            local command = "poetry env use " .. python
-            vim.api.nvim_feedkeys(command .. "\n", "n", false)
-            command_run = true
-          end
-
+        if source == "poetry" and command_run == false then
+          local command = "poetry env use " .. python
+          vim.api.nvim_feedkeys(command .. "\n", "n", false)
+          command_run = true
         end
 
-        vim.api.nvim_create_augroup("TerminalCommands", { clear = true })
-
-        vim.api.nvim_create_autocmd("TermEnter", {
-          group = "TerminalCommands",
-          pattern = "*",
-          callback = run_shell_command,
-        })
       end
 
+      vim.api.nvim_create_augroup("TerminalCommands", { clear = true })
 
-      require("venv-selector").setup {
-        settings = {
-          options = {
-            on_venv_activate_callback = on_venv_activate,
-          },
-        },
-      }
-    end,
-    keys = {
-      { ",v", "<cmd>VenvSelect<cr>" },
-    },
+      vim.api.nvim_create_autocmd("TermEnter", {
+        group = "TerminalCommands",
+        pattern = "*",
+        callback = run_shell_command,
+      })
+    end
   },
-
+}
 ```
 
 
@@ -400,10 +367,102 @@ If `mfussenegger/nvim-dap` and `mfussenegger/nvim-dap-python` are installed as o
 
 You also need `debugpy` installed in the venv you are switching to.
 
+## Nvchad and Lualine statusline support
+
+### Lualine
+
+```lua
+{
+    "nvim-lualine/lualine.nvim",
+    event = "VeryLazy",
+    -- enabled = false,
+    config = function()
+      require("lualine").setup {
+        sections = {
+          lualine_a = { "mode" },
+          lualine_b = { "branch", "diff", "diagnostics" },
+          lualine_c = { "filename" },
+          lualine_x = {
+            "venv-selector", -- This calls venv-selectors built-in method for rendering, but it can be overridden
+            "encoding",
+            "fileformat",
+            "filetype",
+          },
+          lualine_y = { "progress" },
+          lualine_z = { "location" },
+        },
+      }
+    end,
+    dependencies = { "nvim-tree/nvim-web-devicons" },
+  },
+```
+
+
+Lualine will call a function called `statusline_func.lualine` in VenvSelect if you define it in your options, and thats one way to change its output:
+
+
+```lua
+options = {
+  statusline_func = {
+    lualine = function()
+      local venv = require("venv-selector").venv()
+      local venv_name = vim.fn.fnamemodify(venv, ":t") -- Shorten name of venv
+      if not venv_name then
+        return ""
+      end
+  
+      if venv_name ~= nil then
+        return " 🐍 " .. venv_name
+      end
+    end,
+  }
+}
+```
+
+
+
+### Nvchad
+
+Edit your `~/.config/nvim/lua/chadrc.lua` file like this:
+
+```lua
+M.ui = {
+  statusline = {
+    modules = {
+      venv = require("venv-selector.statusline.nvchad").render() -- calls the default method to render, but can be overridden.
+    },
+    order = { "mode", "file", "git", "%=", "lsp_msg", "diagnostics", "venv", "lsp", "cwd" } -- "venv" is our venvselect module here
+  }
+}
+```
+
+If you want to override the default render method, define the `statusline_func.nvchad` function in your options and return a string from it:
+
+
+```lua
+options = {
+  statusline_func = {
+    nvchad = function()
+      local venv = require("venv-selector").venv()
+      local venv_name = vim.fn.fnamemodify(venv, ":t") -- Shorten name of venv
+      if not venv_name then
+        return ""
+      end
+  
+      if venv_name ~= nil then
+        return " 🐍 " .. venv_name
+      end
+    end,
+  }
+}
+```
+
+
+
 ## Global options to the plugin
 
-```
-settings = {
+```lua
+{
   options = {
         on_venv_activate_callback = nil,           -- callback function for after a venv activates
         enable_default_searches = true,            -- switches all default searches on/off
@@ -422,9 +481,12 @@ settings = {
         show_telescope_search_type = true,         -- shows which of the searches found which venv in telescope
         telescope_filter_type = "substring"        -- when you type something in telescope, filter by "substring" or "character"
         telescope_active_venv_color = "#00FF00"    -- The color of the active venv in telescope
+        picker = "auto",                           -- The picker to use. Valid options are "telescope", "fzf-lua", "snacks", "native", "mini-pick" or "auto"
+        icon = "",                                -- The icon to use in the picker for each item
+        statusline_func = { nvchad = nil, lualine = nil } -- If a function is defined here for a statusline, it can be used to customize the statusline.
+
   }
 }
-
 ```
 
 ## Exposed functions
@@ -441,4 +503,7 @@ These functions can be used to easily get the selected python interpreter and th
 - `require("venv-selector").stop_lsp_servers()` -- Stops the lsp servers used by the plugin
 - `require("venv-selector").activate_from_path(python_path)` -- Activates a python interpreter given a path to it
 
-IMPORTANT: The last function, `activate_from_path`, is only intended as a way to select a virtual environment python without using the telescope picker. Trying to activate the system python this way is not supported and will set environment variables like `VIRTUAL_ENV` to the wrong values, since the plugin expects the path to be a virtual environment.
+> [!IMPORTANT]
+> The last function, `activate_from_path`, is only intended as a way to select a virtual environment python without using the telescope picker.
+> Trying to activate the system python this way is not supported and will set environment variables like `VIRTUAL_ENV` to the wrong values,
+> since the plugin expects the path to be a virtual environment.

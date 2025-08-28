@@ -78,20 +78,26 @@ function M.update_paths(venv_path, type)
 
     if type == "anaconda" then
         M.unset_env("VIRTUAL_ENV")
-        M.set_env(venv_path, "CONDA_PREFIX")
+        local base_path
+
+        if vim.fn.has("Win32") then
+            base_path = path.get_base(venv_path)
+        else
+            base_path = path.get_base(path.get_base(venv_path))
+        end
+
+        M.set_env(base_path, "CONDA_PREFIX")
     else
+        local base_path = path.get_base(path.get_base(venv_path))
         M.unset_env("CONDA_PREFIX")
-        M.set_env(venv_path, "VIRTUAL_ENV")
+        M.set_env(base_path, "VIRTUAL_ENV")
     end
 end
 
-function M.set_env(python_path, env_variable_name)
+function M.set_env(env_variable_value, env_variable_name)
     if config.user_settings.options.set_environment_variables == true then
-        local env_path = path.get_base(path.get_base(python_path))
-        if env_path ~= nil then
-            vim.fn.setenv(env_variable_name, env_path)
-            log.debug("$" .. env_variable_name .. " set to " .. env_path)
-        end
+        vim.fn.setenv(env_variable_name, env_variable_value)
+        log.debug("$" .. env_variable_name .. " set to " .. env_variable_value)
     end
 end
 

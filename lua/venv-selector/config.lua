@@ -1,31 +1,70 @@
 local hooks = require("venv-selector.hooks")
-local log = require("venv-selector.logger")
+-- local log = require("venv-selector.logger")
+
+---@class venv-selector.Options
+---@field on_venv_activate_callback? fun(): nil callback function for after a venv activates
+---@field enable_default_searches boolean switches all default searches on/off
+---@field enable_cached_venvs boolean use cached venvs that are activated automatically when a python file is registered with the LSP.
+---@field cached_venv_automatic_activation boolean if set to false, the VenvSelectCached command becomes available to manually activate them.
+---@field activate_venv_in_terminal boolean activate the selected python interpreter in terminal windows opened from neovim
+---@field set_environment_variables boolean sets VIRTUAL_ENV or CONDA_PREFIX environment variables
+---@field notify_user_on_venv_activation boolean notifies user on activation of the virtual env
+---@field search_timeout integer if a search takes longer than this many seconds, stop it and alert the user
+---@field debug boolean enables you to run the VenvSelectLog command to view debug logs
+---@field fd_binary_name string plugin looks for `fd` or `fdfind` but you can set something else here
+---@field require_lsp_activation boolean require activation of an lsp before setting env variables
+---@field on_telescope_result_callback? fun(filename: string): string callback function for modifying telescope results
+---@field show_telescope_search_type boolean Shows which of the searches found which venv in telescope
+---@field telescope_filter_type "substring" | "character" When you type something in telescope, filter by "substring" or "character"
+---@field telescope_active_venv_color string The color of the active venv in telescope
+---@field icon string The icon used for each item in the picker
+
+---@class venv-selector.Settings
+---@field cache venv-selector.CacheSettings
+---@field hooks venv-selector.Hook[]
+---@field options venv-selector.Options
+---@field search venv-selector.Searches set or override search commands
+
+---@class (partial) venv-selector.Config: venv-selector.Settings
+
+---@class venv-selector.Detected
+---@field system string the detected system name
+
+---@class (partial) venv-selector.UserSettings: venv-selector.Settings
+---@field detected venv-selector.Detected
 
 local M = {}
 
+---@type venv-selector.UserSettings
+---@diagnostic disable-next-line: missing-fields
 M.user_settings = {}
+
+--- Health check tracking of legacy settings
+---@type boolean
+M.has_legacy_settings = false
 
 function M.get_default_searches()
     local systems = {
         ["Linux"] = function()
             return {
                 virtualenvs = {
-                    command = "$FD 'python$' ~/.virtualenvs --color never",
+                    command = "$FD 'python$' ~/.virtualenvs --no-ignore-vcs --color never",
                 },
                 hatch = {
-                    command = "$FD 'python$' ~/.local/share/hatch --color never -E '*-build*'",
+                    command = "$FD 'python$' ~/.local/share/hatch --no-ignore-vcs --color never -E '*-build*'",
                 },
                 poetry = {
-                    command = "$FD '/bin/python$' ~/.cache/pypoetry/virtualenvs --full-path",
+                    command = "$FD '/bin/python$' ~/.cache/pypoetry/virtualenvs --no-ignore-vcs --full-path",
                 },
                 pyenv = {
-                    command = "$FD '/bin/python$' ~/.pyenv/versions --full-path --color never -E pkgs/ -E envs/ -L",
+                    command =
+                    "$FD '/bin/python$' ~/.pyenv/versions --no-ignore-vcs --full-path --color never -E pkgs/ -E envs/ -L",
                 },
                 pipenv = {
-                    command = "$FD '/bin/python$' ~/.local/share/virtualenvs --full-path --color never",
+                    command = "$FD '/bin/python$' ~/.local/share/virtualenvs --no-ignore-vcs --full-path --color never",
                 },
                 anaconda_envs = {
-                    command = "$FD 'bin/python$' ~/.conda/envs --full-path --color never",
+                    command = "$FD 'bin/python$' ~/.conda/envs --no-ignore-vcs --full-path --color never",
                     type = "anaconda",
                 },
                 anaconda_base = {
@@ -33,15 +72,16 @@ function M.get_default_searches()
                     type = "anaconda",
                 },
                 miniconda_envs = {
-                    command = "$FD 'bin/python$' ~/miniconda3/envs --full-path --color never",
+                    command = "$FD 'bin/python$' ~/miniconda3/envs --no-ignore-vcs --full-path --color never",
                     type = "anaconda",
                 },
                 miniconda_base = {
-                    command = "$FD '/python$' ~/miniconda3/bin --full-path --color never",
+                    command = "$FD '/python$' ~/miniconda3/bin --no-ignore-vcs --full-path --color never",
                     type = "anaconda",
                 },
                 pipx = {
-                    command = "$FD '/bin/python$' ~/.local/share/pipx/venvs ~/.local/pipx/venvs --full-path --color never",
+                    command =
+                    "$FD '/bin/python$' ~/.local/share/pipx/venvs ~/.local/pipx/venvs --no-ignore-vcs --full-path --color never",
                 },
                 cwd = {
                     command = "$FD '/bin/python$' '$CWD' --full-path --color never -HI -a -L -E /proc -E .git/ -E .wine/ -E .steam/ -E Steam/ -E site-packages/",
@@ -57,22 +97,24 @@ function M.get_default_searches()
         ["Darwin"] = function()
             return {
                 virtualenvs = {
-                    command = "$FD 'python$' ~/.virtualenvs --color never",
+                    command = "$FD 'python$' ~/.virtualenvs --no-ignore-vcs --color never",
                 },
                 hatch = {
-                    command = "$FD 'python$' ~/Library/Application\\\\ Support/hatch/env/virtual --color never -E '*-build*'",
+                    command =
+                    "$FD 'python$' ~/Library/Application\\\\ Support/hatch/env/virtual --no-ignore-vcs --color never -E '*-build*'",
                 },
                 poetry = {
-                    command = "$FD '/bin/python$' ~/Library/Caches/pypoetry/virtualenvs --full-path",
+                    command = "$FD '/bin/python$' ~/Library/Caches/pypoetry/virtualenvs --no-ignore-vcs --full-path",
                 },
                 pyenv = {
-                    command = "$FD '/bin/python$' ~/.pyenv/versions --full-path --color never -E pkgs/ -E envs/ -L",
+                    command =
+                    "$FD '/bin/python$' ~/.pyenv/versions --no-ignore-vcs --full-path --color never -E pkgs/ -E envs/ -L",
                 },
                 pipenv = {
-                    command = "$FD '/bin/python$' ~/.local/share/virtualenvs --full-path --color never",
+                    command = "$FD '/bin/python$' ~/.local/share/virtualenvs --no-ignore-vcs --full-path --color never",
                 },
                 anaconda_envs = {
-                    command = "$FD 'bin/python$' ~/.conda/envs --full-path --color never",
+                    command = "$FD 'bin/python$' ~/.conda/envs --no-ignore-vcs --full-path --color never",
                     type = "anaconda",
                 },
                 anaconda_base = {
@@ -80,15 +122,16 @@ function M.get_default_searches()
                     type = "anaconda",
                 },
                 miniconda_envs = {
-                    command = "$FD 'bin/python$' ~/miniconda3/envs --full-path --color never",
+                    command = "$FD 'bin/python$' ~/miniconda3/envs --no-ignore-vcs --full-path --color never",
                     type = "anaconda",
                 },
                 miniconda_base = {
-                    command = "$FD '/python$' ~/miniconda3/bin --full-path --color never",
+                    command = "$FD '/python$' ~/miniconda3/bin --no-ignore-vcs --full-path --color never",
                     type = "anaconda",
                 },
                 pipx = {
-                    command = "$FD '/bin/python$' ~/.local/share/pipx/venvs ~/.local/pipx/venvs --full-path --color never",
+                    command =
+                    "$FD '/bin/python$' ~/.local/share/pipx/venvs ~/.local/pipx/venvs --no-ignore-vcs --full-path --color never",
                 },
                 cwd = {
                     command = "$FD '/bin/python$' '$CWD' --full-path --color never -HI -a -L -E /proc -E .git/ -E .wine/ -E .steam/ -E Steam/ -E site-packages/",
@@ -106,35 +149,38 @@ function M.get_default_searches()
             -- a lot of escaping of the strings to get right.
             return {
                 hatch = {
-                    command = "$FD python.exe $HOME/AppData/Local/hatch/env/virtual --full-path --color never",
+                    command =
+                    "$FD python.exe $HOME/AppData/Local/hatch/env/virtual --no-ignore-vcs --full-path --color never",
                 },
                 poetry = {
-                    command = "$FD python.exe$ $HOME/AppData/Local/pypoetry/Cache/virtualenvs --full-path --color never",
+                    command =
+                    "$FD python.exe$ $HOME/AppData/Local/pypoetry/Cache/virtualenvs --no-ignore-vcs --full-path --color never",
                 },
                 pyenv = {
-                    command = "$FD python.exe$ $HOME/.pyenv/pyenv-win/versions $HOME/.pyenv-win-venv/envs -E Lib",
+                    command =
+                    "$FD python.exe$ $HOME/.pyenv/pyenv-win/versions $HOME/.pyenv-win-venv/envs --no-ignore-vcs -E Lib",
                 },
                 pipenv = {
-                    command = "$FD python.exe$ $HOME/.virtualenvs --full-path --color never",
+                    command = "$FD python.exe$ $HOME/.virtualenvs --no-ignore-vcs --full-path --color never",
                 },
                 anaconda_envs = {
-                    command = "$FD python.exe$ $HOME/anaconda3/envs --full-path -a -E Lib",
+                    command = "$FD python.exe$ $HOME/anaconda3/envs --no-ignore-vcs --full-path -a -E Lib",
                     type = "anaconda",
                 },
                 anaconda_base = {
-                    command = "$FD anaconda3//python.exe $HOME/anaconda3 --full-path -a --color never",
+                    command = "$FD anaconda3//python.exe $HOME/anaconda3 --no-ignore-vcs --full-path -a --color never",
                     type = "anaconda",
                 },
                 miniconda_envs = {
-                    command = "$FD python.exe$ $HOME/miniconda3/envs --full-path -a -E Lib",
+                    command = "$FD python.exe$ $HOME/miniconda3/envs --no-ignore-vcs --full-path -a -E Lib",
                     type = "anaconda",
                 },
                 miniconda_base = {
-                    command = "$FD miniconda3//python.exe $HOME/miniconda3 --full-path -a --color never",
+                    command = "$FD miniconda3//python.exe $HOME/miniconda3 --no-ignore-vcs --full-path -a --color never",
                     type = "anaconda",
                 },
                 pipx = {
-                    command = "$FD Scripts//python.exe$ $HOME/pipx/venvs --full-path -a --color never",
+                    command = "$FD Scripts//python.exe$ $HOME/pipx/venvs --no-ignore-vcs --full-path -a --color never",
                 },
                 cwd = {
                     command = "$FD Scripts//python.exe$ '$CWD' --full-path --color never -HI -a -L",
@@ -153,9 +199,16 @@ function M.get_default_searches()
     return systems[name] or systems["Linux"]
 end
 
-function M.merge_user_settings(user_settings)
-    log.debug("User plugin settings: ", user_settings.settings, "")
-    M.user_settings = vim.tbl_deep_extend("force", M.default_settings, user_settings.settings or {})
+---@param user_settings venv-selector.Settings
+function M.merge_user_settings(conf)
+    if conf.settings ~= nil then
+        conf = conf.settings
+        M.has_legacy_settings = true
+    end
+    local log = require("venv-selector.logger")
+    log.debug("User plugin settings: ", conf, "")
+
+    M.user_settings = vim.tbl_deep_extend("force", M.default_settings, conf or {})
 
     M.user_settings.detected = {
         system = vim.loop.os_uname().sysname,
@@ -173,6 +226,7 @@ function M.find_fd_command_name()
     end
 end
 
+---@type venv-selector.Settings
 M.default_settings = {
     cache = {
         file = "~/.cache/venv-selector/venvs2.json",
@@ -195,6 +249,9 @@ M.default_settings = {
         show_telescope_search_type = true, -- Shows which of the searches found which venv in telescope
         telescope_filter_type = "substring", -- When you type something in telescope, filter by "substring" or "character"
         telescope_active_venv_color = "#00FF00", -- The color of the active venv in telescope
+        picker = "auto", -- The picker to use. Valid options are "telescope", "fzf-lua", "snacks", "native", "mini-pick" or "auto"
+        icon = "", -- The icon to use in the picker for each item
+        statusline_func = { nvchad = nil, lualine = nil }
     },
     search = M.get_default_searches()(),
 }

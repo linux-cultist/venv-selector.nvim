@@ -89,6 +89,7 @@ Some of them use special variables in the `fd` search query (these are not envir
 - `$CWD` - Current working directory. The directory where you start neovim.
 - `$WORKSPACE_PATH` - The workspace directories found by your LSP when you have an opened python file.
 - `$FILE_DIR` - The directory of the file in the neovim buffer.
+- `$CURRENT_FILE` - The full path to the currently opened file in the neovim buffer.
 
 You can use these in your own queries as well. Maybe you want to search the parent directories of your opened file for example.
 
@@ -257,6 +258,9 @@ If you want to **override** one of the default searches, create a search with th
   search = {
     workspace = {
       command = "fd /bin/python$ $WORKSPACE_PATH --full-path --color never -E /proc -unrestricted",
+    },
+    uv_script = {
+      command = "uv python find --script '$CURRENT_FILE'",
     }
   }
 }
@@ -276,6 +280,35 @@ If you want to **disable one** of the default searches, you can simply set it to
 
 If you want to **disable all** built in searches, set the global option `enable_default_searches` to false (see separate section about global options)
 
+## UV PEP-723 Script Support
+
+VenvSelector includes built-in support for UV's PEP-723 inline script metadata feature. When you have a Python script with inline dependency specifications, the `uv_script` search will automatically detect PEP-723 metadata and find the appropriate Python interpreter.
+
+### Example PEP-723 Script
+
+```python
+#!/usr/bin/env python3
+# /// script
+# dependencies = [
+#   "requests",
+#   "rich",
+# ]
+# ///
+
+import requests
+import rich
+
+# Your script code here...
+```
+
+### How it works
+
+- The `uv_script` search uses `uv python find --script '$CURRENT_FILE'` to locate the correct Python interpreter
+- It only appears in the picker when the current file contains PEP-723 metadata (inline dependencies)
+- When selected, it configures the LSP to use UV's resolved Python environment
+- This provides proper code completion and analysis for your script's dependencies
+
+This feature is enabled by default on all platforms and requires UV to be installed and available in your PATH.
 
 ## Changing the output in the telescope viewer (on_telescope_result_callback)
 

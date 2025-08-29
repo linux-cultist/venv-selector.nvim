@@ -76,7 +76,46 @@ function M.update_paths(venv_path, type)
     path.update_python_dap(venv_path)
     path.save_selected_python(venv_path)
 
-    if type == "anaconda" then
+    -- Special handling for UV environments
+    if type == "uv" then
+        -- For UV environments, we need to get the actual environment path
+        local current_file = vim.fn.expand("%:p")
+        if current_file and current_file ~= "" then
+            log.debug("Setting up UV environment for: " .. current_file)
+            -- First sync the dependencies, then get the actual environment Python path
+            vim.fn.jobstart({"uv", "sync", "--script", current_file}, {
+                stdout_buffered = true,
+                on_stdout = function(_, data, _)
+                    if data and #data > 0 then
+                        for _, line in ipairs(data) do
+                            if line:match("Using script environment at:") then
+                                local env_path = line:match("Using script environment at: (.+)")
+                                if env_path then
+                                    local actual_python_path = env_path .. "/bin/python"
+                                    log.debug("Found UV environment path from sync output: " .. actual_python_path)
+                                    -- Update the paths with the correct environment Python
+                                    path.current_python_path = actual_python_path
+                                    path.current_venv_path = path.get_base(actual_python_path)
+                                    -- Update PATH with the actual environment
+                                    path.add(path.get_base(actual_python_path))
+                                    vim.notify("UV environment ready with dependencies", vim.log.levels.INFO, { title = "VenvSelect" })
+                                end
+                            end
+                        end
+                    end
+                end,
+                on_exit = function(_, sync_exit_code)
+                    if sync_exit_code ~= 0 then
+                        log.debug("UV sync failed with exit code: " .. sync_exit_code)
+                        vim.notify("UV dependency sync failed", vim.log.levels.WARN, { title = "VenvSelect" })
+                    end
+                end
+            })
+        end
+        -- Don't set VIRTUAL_ENV for UV environments
+        M.unset_env("VIRTUAL_ENV")
+        M.unset_env("CONDA_PREFIX")
+    elseif type == "anaconda" then
         M.unset_env("VIRTUAL_ENV")
         local base_path
 

@@ -78,40 +78,16 @@ function M.update_paths(venv_path, type)
 
     -- Special handling for UV environments
     if type == "uv" then
-        -- For UV environments, we need to get the actual environment path
+        -- Use UV module for environment setup
+        local uv = require("venv-selector.uv")
         local current_file = vim.fn.expand("%:p")
-        if current_file and current_file ~= "" then
-            log.debug("Setting up UV environment for: " .. current_file)
-            -- First sync the dependencies, then get the actual environment Python path
-            vim.fn.jobstart({"uv", "sync", "--script", current_file}, {
-                stdout_buffered = true,
-                on_stdout = function(_, data, _)
-                    if data and #data > 0 then
-                        for _, line in ipairs(data) do
-                            if line:match("Using script environment at:") then
-                                local env_path = line:match("Using script environment at: (.+)")
-                                if env_path then
-                                    local actual_python_path = env_path .. "/bin/python"
-                                    log.debug("Found UV environment path from sync output: " .. actual_python_path)
-                                    -- Update the paths with the correct environment Python
-                                    path.current_python_path = actual_python_path
-                                    path.current_venv_path = path.get_base(actual_python_path)
-                                    -- Update PATH with the actual environment
-                                    path.add(path.get_base(actual_python_path))
-                                    vim.notify("UV environment ready with dependencies", vim.log.levels.INFO, { title = "VenvSelect" })
-                                end
-                            end
-                        end
-                    end
-                end,
-                on_exit = function(_, sync_exit_code)
-                    if sync_exit_code ~= 0 then
-                        log.debug("UV sync failed with exit code: " .. sync_exit_code)
-                        vim.notify("UV dependency sync failed", vim.log.levels.WARN, { title = "VenvSelect" })
-                    end
-                end
-            })
-        end
+        uv.setup_environment(current_file, venv_path, function(success)
+            if success then
+                log.debug("UV environment setup completed successfully")
+            else
+                log.debug("UV environment setup failed")
+            end
+        end)
         -- Don't set VIRTUAL_ENV for UV environments
         M.unset_env("VIRTUAL_ENV")
         M.unset_env("CONDA_PREFIX")

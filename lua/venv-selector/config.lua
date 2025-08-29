@@ -93,7 +93,7 @@ function M.get_default_searches()
                 file = {
                     command = "$FD '/bin/python$' $FILE_DIR --full-path --color never -E /proc -HI -a -L",
                 },
-                uv_script = {
+                uv = {
                     command = "uv python find --script '$CURRENT_FILE'",
                     type = "uv",
                 },
@@ -148,7 +148,7 @@ function M.get_default_searches()
                 file = {
                     command = "$FD '/bin/python$' $FILE_DIR --full-path --color never -E /proc -HI -a -L",
                 },
-                uv_script = {
+                uv = {
                     command = "uv python find --script '$CURRENT_FILE'",
                     type = "uv",
                 },
@@ -201,7 +201,7 @@ function M.get_default_searches()
                 file = {
                     command = "$FD Scripts//python.exe$ $FILE_DIR --full-path --color never -HI -a -L",
                 },
-                uv_script = {
+                uv = {
                     command = "uv python find --script '$CURRENT_FILE'",
                     type = "uv",
                 },

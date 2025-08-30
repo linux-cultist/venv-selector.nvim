@@ -93,6 +93,8 @@ function M.check_and_activate_if_different(script_path, current_python_path)
         })
 
         log.debug("UV check jobstart returned job_id: " .. (job_id or "nil"))
+    else
+        require("venv-selector.logger").debug("Uv not found on system.")
     end
 end
 
@@ -163,6 +165,8 @@ function M.activate_for_script(script_path)
         })
 
         log.debug("UV jobstart returned job_id: " .. (job_id or "nil"))
+    else
+        require("venv-selector.logger").debug("Uv not found on system.")
     end
 end
 

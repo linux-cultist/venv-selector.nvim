@@ -2,6 +2,45 @@ local log = require("venv-selector.logger")
 
 ---@alias venv-selector.Hook fun(venv_python: string): nil
 
+--[[
+Example: Custom hook with custom settings format
+
+function my_custom_lsp_hook(venv_python)
+  -- Get the LSP client
+  local client = vim.lsp.get_clients({name = "my_custom_lsp"})[1]
+  if not client then return 0 end
+  
+  if venv_python == nil then
+    -- Deactivation: stop the client
+    vim.lsp.stop_client(client.id)
+    return 1
+  end
+  
+  -- Configure with custom settings structure
+  client.settings = vim.tbl_deep_extend("force", client.settings or {}, {
+    customLsp = {
+      pythonExecutable = venv_python,
+      workspaceFolder = vim.fn.fnamemodify(venv_python, ":h:h"),
+      enableFeatures = true,
+    }
+  })
+  
+  -- Notify the LSP of changes
+  client:notify("workspace/didChangeConfiguration", { settings = nil })
+  
+  print("Configured my_custom_lsp with: " .. venv_python)
+  return 1  -- Return number of clients configured
+end
+
+Usage in setup:
+require('venv-selector').setup({
+  hooks = {
+    hooks.basedpyright_hook,
+    my_custom_lsp_hook,  -- Your custom hook
+  }
+})
+--]]
+
 local M = {}
 
 M.notifications_memory = {}

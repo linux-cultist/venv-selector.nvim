@@ -39,7 +39,7 @@ function M.auto_activate_if_needed(file_path)
     local path = require("venv-selector.path")
     local current_python = path.current_python_path
     log.debug("Current Python path: " .. (current_python or "nil"))
-    
+
     -- If we have a UV environment active, check if it's the right one for this file
     if current_python and current_python:match("/environments%-v2/") then
         -- Get the expected Python path for this file to compare
@@ -74,7 +74,7 @@ function M.check_and_activate_if_different(script_path, current_python_path)
                             -- If the expected Python is different from current, switch
                             if expected_python ~= current_python_path then
                                 log.debug("Switching UV environment from " ..
-                                current_python_path .. " to " .. expected_python)
+                                    current_python_path .. " to " .. expected_python)
                                 local venv = require("venv-selector.venv")
                                 venv.activate(expected_python, "uv", false)
                             else
@@ -104,7 +104,7 @@ function M.activate_for_script(script_path)
 
         -- First check what environment this script needs
         log.debug("Running UV command: " .. vim.inspect({ "uv", "python", "find", "--script", script_path }))
-        
+
         local job_id = vim.fn.jobstart({ "uv", "python", "find", "--script", script_path }, {
             stdout_buffered = true,
             stderr_buffered = true,
@@ -115,18 +115,18 @@ function M.activate_for_script(script_path)
                             local expected_python = line:gsub("%s+$", "") -- trim whitespace
                             local path = require("venv-selector.path")
                             local current_python = path.current_python_path
-                            
+
                             log.debug("Expected Python for " .. script_path .. ": " .. expected_python)
                             log.debug("Current Python: " .. (current_python or "nil"))
-                            
+
                             -- If we already have the correct environment, don't run setup again
                             if current_python == expected_python then
                                 log.debug("UV environment already correct for this file")
                                 return
                             end
-                            
+
                             log.debug("Auto-activating UV environment: " .. expected_python)
-                            
+
                             -- Only run setup if we need a different environment
                             M.setup_environment(script_path, nil, function(setup_success)
                                 if setup_success then
@@ -161,7 +161,7 @@ function M.activate_for_script(script_path)
                 end
             end
         })
-        
+
         log.debug("UV jobstart returned job_id: " .. (job_id or "nil"))
     end
 end
@@ -241,7 +241,7 @@ function M.setup_auto_activation()
             end,
             group = vim.api.nvim_create_augroup("VenvSelectorUVOpen", { clear = true })
         })
-        
+
         -- Handle switching between already-loaded buffers
         vim.api.nvim_create_autocmd("BufEnter", {
             pattern = "*.py",

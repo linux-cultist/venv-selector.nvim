@@ -206,7 +206,7 @@ function M.run_search(picker, opts)
     -- Start search jobs from config
     for job_name, search in pairs(search_settings.search) do
         log.debug("Processing search: '" ..
-        job_name .. "' with command: '" .. (search and search.command or "false") .. "'")
+            job_name .. "' with command: '" .. (search and search.command or "false") .. "'")
         if search ~= false then -- Can be set to false by user to not search path
             search.execute_command = search.command:gsub("$FD", options.fd_binary_name)
 
@@ -235,37 +235,12 @@ function M.run_search(picker, opts)
                     job_count = start_search_job(job_name, search, job_count)
                 end
             elseif is_current_file_search(search.command) then
-                if require("venv-selector.uv").uv_installed == true then
-                    log.debug("Found $CURRENT_FILE search: '" ..
-                    job_name ..
-                    "', current_file: '" .. current_file .. "', search.type: '" .. (search.type or "nil") .. "'")
-                    if current_file ~= "" then
-                        -- For UV script search, only run if file has PEP-723 metadata
-                        if search.type == "uv" then
-                            log.debug("UV search detected - checking PEP-723 metadata for file: " .. current_file)
-                            if utils.has_pep723_metadata(current_file) then
-                                log.debug("PEP-723 metadata found, starting UV search with command: " ..
-                                search.execute_command)
-                                job_count = start_search_job(job_name, search, job_count)
-                            else
-                                log.debug("Skipping UV search - no PEP-723 metadata found in " .. current_file)
-                            end
-                        else
-                            log.debug("Non-UV $CURRENT_FILE search, executing command")
-                            job_count = start_search_job(job_name, search, job_count)
-                        end
-                    else
-                        log.debug("Skipping $CURRENT_FILE search - current_file is empty")
-                        -- For UV search specifically, provide helpful message about unsaved files
-                        if search.type == "uv" and buf_type == "" and file_type == "python" then
-                            log.info(
-                            "UV PEP-723 search requires a saved file. Please save your Python file first to use UV script dependencies.")
-                            vim.notify("UV PEP-723 search requires a saved file. Please save your Python file first.",
-                                vim.log.levels.WARN, {
-                                title = "VenvSelect UV",
-                            })
-                        end
-                    end
+                log.debug("Found $CURRENT_FILE search: '" .. job_name .. "', current_file: '" .. current_file .. "'")
+                if current_file ~= "" then
+                    log.debug("Executing $CURRENT_FILE search command")
+                    job_count = start_search_job(job_name, search, job_count)
+                else
+                    log.debug("Skipping $CURRENT_FILE search - current_file is empty")
                 end
             else
                 -- search has no keywords inside

@@ -38,12 +38,18 @@
   - [Virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/)
   - [Hatch](https://hatch.pypa.io/latest/)
   - [Pipx](https://github.com/pypa/pipx)
+  
 - Supports callbacks to further filter or rename telescope results as they are found.
 - Supports using any program to find virtual environments (`fd`, `find`, `ls`, `dir` etc)
 - Supports running any interactive command to populate the telescope viewer:
   - `:VenvSelect fd 'python$' . --full-path -IH -a`
+- Supports the following lsp servers (and should support others as well)
 
-- Support [Pyright](https://github.com/microsoft/pyright), [Pylance](https://github.com/microsoft/pylance-release) and [Pylsp](https://github.com/python-lsp/python-lsp-server) lsp servers with ability to config hooks for others.
+  - [Basedpyright](https://docs.basedpyright.com/latest)
+  - [Pyright](https://github.com/microsoft/pyright)
+  - [Pylsp](https://github.com/python-lsp/python-lsp-server)
+  - [Jedi](https://github.com/pappasam/jedi-language-server)
+  
 - Virtual environments are remembered for each specific working directory and automatically activated the next time.
 - Requires [fd](https://github.com/sharkdp/fd) and [Telescope](https://github.com/nvim-telescope/telescope.nvim) for fast searches, and visual pickers.
 - Requires [nvim-dap-python](https://github.com/mfussenegger/nvim-dap-python), [debugpy](https://github.com/microsoft/debugpy) and [nvim-dap](https://github.com/mfussenegger/nvim-dap) for debugger support

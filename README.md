@@ -416,7 +416,7 @@ You also need `debugpy` installed in the venv you are switching to.
           lualine_b = { "branch", "diff", "diagnostics" },
           lualine_c = { "filename" },
           lualine_x = {
-            "venv-selector", -- This calls venv-selectors built-in method for rendering, but it can be overridden
+            "venv-selector", -- You can customize the look of the output, see below`.
             "encoding",
             "fileformat",
             "filetype",
@@ -438,15 +438,18 @@ Lualine will call a function called `statusline_func.lualine` in VenvSelect if y
 options = {
   statusline_func = {
     lualine = function()
-      local venv = require("venv-selector").venv()
-      local venv_name = vim.fn.fnamemodify(venv, ":t") -- Shorten name of venv
-      if not venv_name then
-        return ""
-      end
-  
-      if venv_name ~= nil then
-        return " 🐍 " .. venv_name
-      end
+        local venv_path = require("venv-selector").venv()
+        if not venv_path or venv_path == "" then
+            return ""
+        end
+    
+        local venv_name = vim.fn.fnamemodify(venv_path, ":t")
+        if not venv_name then
+            return ""
+        end
+    
+        local output = "🐍 " .. venv_name .. " " -- Changes only the icon but you can change colors or use powerline symbols here.
+        return output
     end,
   }
 }
@@ -462,7 +465,7 @@ Edit your `~/.config/nvim/lua/chadrc.lua` file like this:
 M.ui = {
   statusline = {
     modules = {
-      venv = require("venv-selector.statusline.nvchad").render() -- calls the default method to render, but can be overridden.
+      venv = require("venv-selector.statusline.nvchad").render -- sets the plugin render function, but can be overridden, see below.
     },
     order = { "mode", "file", "git", "%=", "lsp_msg", "diagnostics", "venv", "lsp", "cwd" } -- "venv" is our venvselect module here
   }
@@ -476,15 +479,18 @@ If you want to override the default render method, define the `statusline_func.n
 options = {
   statusline_func = {
     nvchad = function()
-      local venv = require("venv-selector").venv()
-      local venv_name = vim.fn.fnamemodify(venv, ":t") -- Shorten name of venv
-      if not venv_name then
-        return ""
-      end
-  
-      if venv_name ~= nil then
-        return " 🐍 " .. venv_name
-      end
+        local venv_path = require("venv-selector").venv()
+        if not venv_path or venv_path == "" then
+            return ""
+        end
+    
+        local venv_name = vim.fn.fnamemodify(venv_path, ":t")
+        if not venv_name then
+            return ""
+        end
+    
+        local output = "🐍 " .. venv_name .. " " -- Changes only the icon but you can change colors or use powerline symbols here.
+        return output
     end,
   }
 }

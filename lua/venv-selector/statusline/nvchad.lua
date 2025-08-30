@@ -12,7 +12,7 @@ function M.render() -- call this function from ~/.config/nvim/lua/chadrc.lua
 
     local venv_path = require("venv-selector").venv()
     if not venv_path or venv_path == "" then
-        return nil
+        return ""
     end
 
     local venv_name = vim.fn.fnamemodify(venv_path, ":t")

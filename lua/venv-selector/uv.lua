@@ -1,8 +1,5 @@
 local M = {}
 
--- TODO: Uv activation doesnt work well with ordinary venv from cache activation so need to disable that when its a uv venv.
--- Current uv venv is activated from cache even when uv is not installed and no search is running.
-
 M.uv_installed = vim.fn.executable("uv") == 1
 
 --- Check if a file has PEP-723 metadata and auto-activate UV environment if needed
@@ -16,7 +13,7 @@ function M.auto_activate_if_needed(file_path)
     end
 
     -- Only check Python files
-    local filetype = vim.bo[0].filetype
+    local filetype = vim.bo.filetype
     if filetype ~= "python" then
         return
     end
@@ -32,7 +29,7 @@ function M.auto_activate_if_needed(file_path)
     local path = require("venv-selector.path")
     local current_python = path.current_python_path
     log.debug("Current Python path: " .. (current_python or "nil"))
-    
+
     -- If we have a UV environment active, check if it's the right one for this file
     if current_python and current_python:match("/environments%-v2/") then
         -- Get the expected Python path for this file to compare
@@ -51,7 +48,7 @@ end
 function M.check_and_activate_if_different(script_path, current_python_path)
     if M.uv_installed == true then
         local log = require("venv-selector.logger")
-        
+
         -- Get the expected Python path for this script
         local job_id = vim.fn.jobstart({ "uv", "python", "find", "--script", script_path }, {
             stdout_buffered = true,
@@ -62,10 +59,11 @@ function M.check_and_activate_if_different(script_path, current_python_path)
                             local expected_python = line:gsub("%s+$", "") -- trim whitespace
                             log.debug("Expected Python for " .. script_path .. ": " .. expected_python)
                             log.debug("Current Python: " .. current_python_path)
-                            
+
                             -- If the expected Python is different from current, switch
                             if expected_python ~= current_python_path then
-                                log.debug("Switching UV environment from " .. current_python_path .. " to " .. expected_python)
+                                log.debug("Switching UV environment from " ..
+                                current_python_path .. " to " .. expected_python)
                                 local venv = require("venv-selector.venv")
                                 venv.activate(expected_python, "uv", false)
                             else
@@ -82,7 +80,7 @@ function M.check_and_activate_if_different(script_path, current_python_path)
                 end
             end
         })
-        
+
         log.debug("UV check jobstart returned job_id: " .. (job_id or "nil"))
     end
 end

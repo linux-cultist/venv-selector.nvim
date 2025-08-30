@@ -93,6 +93,12 @@ function M.update_paths(venv_path, type)
             M.unset_env("VIRTUAL_ENV")
             M.unset_env("CONDA_PREFIX")
         end
+    elseif type == "uv_skip_setup" then
+        -- UV environment where setup was already done, just set environment variables
+        log.debug("Skipping UV setup as it was already completed")
+        -- Don't set VIRTUAL_ENV for UV environments
+        M.unset_env("VIRTUAL_ENV")
+        M.unset_env("CONDA_PREFIX")
     elseif type == "anaconda" then
         M.unset_env("VIRTUAL_ENV")
         local base_path

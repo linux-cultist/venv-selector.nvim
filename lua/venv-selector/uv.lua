@@ -13,7 +13,7 @@ function M.auto_activate_if_needed(file_path)
     end
 
     -- Only check Python files
-    local filetype = vim.bo.filetype
+    local filetype = vim.bo[0].filetype
     if filetype ~= "python" then
         return
     end
@@ -29,7 +29,7 @@ function M.auto_activate_if_needed(file_path)
     local path = require("venv-selector.path")
     local current_python = path.current_python_path
     log.debug("Current Python path: " .. (current_python or "nil"))
-
+    
     -- If we have a UV environment active, check if it's the right one for this file
     if current_python and current_python:match("/environments%-v2/") then
         -- Get the expected Python path for this file to compare
@@ -91,34 +91,66 @@ function M.activate_for_script(script_path)
     if M.uv_installed == true then
         local log = require("venv-selector.logger")
 
-        -- Use uv python find to get the Python path (same as manual picker)
+        -- First check what environment this script needs
+        log.debug("Running UV command: " .. vim.inspect({ "uv", "python", "find", "--script", script_path }))
+        
         local job_id = vim.fn.jobstart({ "uv", "python", "find", "--script", script_path }, {
             stdout_buffered = true,
+            stderr_buffered = true,
             on_stdout = function(_, data, _)
                 if data and #data > 0 then
                     for _, line in ipairs(data) do
                         if line ~= "" and line:match("python") then
-                            local python_path = line:gsub("%s+$", "") -- trim whitespace
-                            log.debug("Auto-activating UV environment: " .. python_path)
-
-                            -- Activate the UV environment using the same flow as manual picker
-                            local venv = require("venv-selector.venv")
-                            venv.activate(python_path, "uv", false)
-                            -- vim.notify("UV environment activated automatically", vim.log.levels.INFO,
-                            --     { title = "VenvSelect" })
+                            local expected_python = line:gsub("%s+$", "") -- trim whitespace
+                            local path = require("venv-selector.path")
+                            local current_python = path.current_python_path
+                            
+                            log.debug("Expected Python for " .. script_path .. ": " .. expected_python)
+                            log.debug("Current Python: " .. (current_python or "nil"))
+                            
+                            -- If we already have the correct environment, don't run setup again
+                            if current_python == expected_python then
+                                log.debug("UV environment already correct for this file")
+                                return
+                            end
+                            
+                            log.debug("Auto-activating UV environment: " .. expected_python)
+                            
+                            -- Only run setup if we need a different environment
+                            M.setup_environment(script_path, nil, function(setup_success)
+                                if setup_success then
+                                    local venv = require("venv-selector.venv")
+                                    -- Skip UV setup in venv.activate since we already did it
+                                    venv.activate(expected_python, "uv_skip_setup", false)
+                                    -- vim.notify("UV environment activated automatically", vim.log.levels.INFO,
+                                    --     { title = "VenvSelect" })
+                                else
+                                    log.debug("UV environment setup failed, cannot activate")
+                                end
+                            end)
                             break
                         end
                     end
                 end
             end,
+            on_stderr = function(_, data, _)
+                if data and #data > 0 then
+                    for _, line in ipairs(data) do
+                        if line ~= "" then
+                            log.debug("UV stderr: " .. line)
+                        end
+                    end
+                end
+            end,
             on_exit = function(_, exit_code)
+                log.debug("UV command completed with exit code: " .. exit_code)
                 if exit_code ~= 0 then
                     log.debug("UV auto-activation failed with exit code: " .. exit_code)
                     -- vim.notify("UV environment auto-activation failed", vim.log.levels.WARN, { title = "VenvSelect" })
                 end
             end
         })
-
+        
         log.debug("UV jobstart returned job_id: " .. (job_id or "nil"))
     end
 end
@@ -186,16 +218,32 @@ end
 --- Set up auto-activation for PEP-723 files
 function M.setup_auto_activation()
     if M.uv_installed == true then
-        vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile", "BufEnter" }, {
+        -- Handle opening files (existing or new)
+        vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile" }, {
             pattern = "*.py",
             callback = function()
-                -- Use a small delay to ensure the file is fully loaded
+                -- Use longer delay to let LSP attach and cache check complete first
                 vim.defer_fn(function()
                     local current_file = vim.fn.expand("%:p")
                     M.auto_activate_if_needed(current_file)
-                end, 100)
+                end, 300)
             end,
-            group = vim.api.nvim_create_augroup("VenvSelectorUVAuto", { clear = true })
+            group = vim.api.nvim_create_augroup("VenvSelectorUVOpen", { clear = true })
+        })
+        
+        -- Handle switching between already-loaded buffers
+        vim.api.nvim_create_autocmd("BufEnter", {
+            pattern = "*.py",
+            callback = function()
+                -- Only activate on buffer switch, not initial file open
+                if vim.bo.buflisted then
+                    vim.defer_fn(function()
+                        local current_file = vim.fn.expand("%:p")
+                        M.auto_activate_if_needed(current_file)
+                    end, 50)
+                end
+            end,
+            group = vim.api.nvim_create_augroup("VenvSelectorUVSwitch", { clear = true })
         })
     end
 end

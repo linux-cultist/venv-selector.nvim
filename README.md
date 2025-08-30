@@ -24,8 +24,7 @@
 # ⚡️ Features
 
 - Switch back and forth between virtual environments without restarting neovim
-
-- New and much more flexible configuration to support finding the exact venvs you want.
+- Flexible configuration to support finding the exact venvs you want.
 - Browse existing python virtual environments on your computer and select one to activate inside neovim.
 - Supports **all** virtual environments using configurable **regular expressions**. The default ones are:
 
@@ -50,6 +49,7 @@
   - [Pylsp](https://github.com/python-lsp/python-lsp-server)
   - [Jedi](https://github.com/pappasam/jedi-language-server)
   
+- Supports user-defined hooks (callback functions), called on venv activations, to do anything.
 - Virtual environments are remembered for each specific working directory and automatically activated the next time.
 - Requires [fd](https://github.com/sharkdp/fd) and [Telescope](https://github.com/nvim-telescope/telescope.nvim) for fast searches, and visual pickers.
 - Requires [nvim-dap-python](https://github.com/mfussenegger/nvim-dap-python), [debugpy](https://github.com/microsoft/debugpy) and [nvim-dap](https://github.com/mfussenegger/nvim-dap) for debugger support

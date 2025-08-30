@@ -32,6 +32,12 @@ function M.save(python_path, venv_type)
         return
     end
 
+    -- Skip saving UV environments to cache as they are managed automatically
+    if venv_type == "uv" then
+        log.debug("Skipping cache save for UV environment: " .. python_path)
+        return
+    end
+
     M.create_dir()
 
     local venv_cache = {

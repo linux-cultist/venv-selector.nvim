@@ -24,6 +24,10 @@ local function is_filepath_search(str)
     return string.find(str, "$FILE_DIR") ~= nil
 end
 
+local function is_current_file_search(str)
+    return string.find(str, "$CURRENT_FILE") ~= nil
+end
+
 local M = {}
 
 local function disable_default_searches(search_settings)
@@ -93,10 +97,10 @@ function M.run_search(picker, opts)
                     if callback then
                         log.debug(
                             "Calling on_telescope_result() callback function with line '"
-                                .. line
-                                .. "' and source '"
-                                .. rv.source
-                                .. "'"
+                            .. line
+                            .. "' and source '"
+                            .. rv.source
+                            .. "'"
                         )
                         rv.name = callback(line, rv.source)
                     end
@@ -155,7 +159,8 @@ function M.run_search(picker, opts)
                     .. jobs[job_id].name
                     .. "' took more than "
                     .. search_timeout
-                    .. " seconds and was stopped. Avoid using VenvSelect in your $HOME directory since it searches all hidden files by default."
+                    ..
+                    " seconds and was stopped. Avoid using VenvSelect in your $HOME directory since it searches all hidden files by default."
                 log.warning(message)
                 vim.notify(message, vim.log.levels.ERROR, {
                     title = "VenvSelect",
@@ -183,11 +188,34 @@ function M.run_search(picker, opts)
     end
 
     local current_dir = path.get_current_file_directory()
+    local current_file = vim.fn.expand("%:p") -- Get current file at same time as current_dir
+
+    log.debug("Initial current_file from expand: '" .. current_file .. "'")
+
+    -- If current_file is empty, try alternate buffer (handles jumplist navigation)
+    if current_file == "" then
+        local alt_file = vim.fn.expand("#:p")
+        if alt_file and alt_file ~= "" then
+            current_file = alt_file
+            log.debug("Using alternate buffer: " .. current_file)
+        end
+    end
+
+    log.debug("Final current_file: '" .. current_file .. "'")
 
     -- Start search jobs from config
     for job_name, search in pairs(search_settings.search) do
+        log.debug("Processing search: '" ..
+            job_name .. "' with command: '" .. (search and search.command or "false") .. "'")
         if search ~= false then -- Can be set to false by user to not search path
             search.execute_command = search.command:gsub("$FD", options.fd_binary_name)
+
+            -- Do $CURRENT_FILE substitution early for all searches that need it
+            if is_current_file_search(search.command) then
+                search.execute_command = search.execute_command:gsub("$CURRENT_FILE", current_file)
+            end
+
+            log.debug("After variable substitution: '" .. search.execute_command .. "'")
 
             -- search has $WORKSPACE_PATH inside - dont start it unless the lsp has discovered workspace folders
             if is_workspace_search(search.command) then
@@ -205,6 +233,14 @@ function M.run_search(picker, opts)
                 if current_dir ~= nil then
                     search.execute_command = search.execute_command:gsub("$FILE_DIR", current_dir)
                     job_count = start_search_job(job_name, search, job_count)
+                end
+            elseif is_current_file_search(search.command) then
+                log.debug("Found $CURRENT_FILE search: '" .. job_name .. "', current_file: '" .. current_file .. "'")
+                if current_file ~= "" then
+                    log.debug("Executing $CURRENT_FILE search command")
+                    job_count = start_search_job(job_name, search, job_count)
+                else
+                    log.debug("Skipping $CURRENT_FILE search - current_file is empty")
                 end
             else
                 -- search has no keywords inside

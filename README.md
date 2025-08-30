@@ -89,6 +89,7 @@ Some of them use special variables in the `fd` search query (these are not envir
 - `$CWD` - Current working directory. The directory where you start neovim.
 - `$WORKSPACE_PATH` - The workspace directories found by your LSP when you have an opened python file.
 - `$FILE_DIR` - The directory of the file in the neovim buffer.
+- `$CURRENT_FILE` - The full path to the currently opened file in the neovim buffer.
 
 You can use these in your own queries as well. Maybe you want to search the parent directories of your opened file for example.
 
@@ -257,6 +258,9 @@ If you want to **override** one of the default searches, create a search with th
   search = {
     workspace = {
       command = "fd /bin/python$ $WORKSPACE_PATH --full-path --color never -E /proc -unrestricted",
+    },
+    uv_script = {
+      command = "uv python find --script '$CURRENT_FILE'",
     }
   }
 }
@@ -276,6 +280,35 @@ If you want to **disable one** of the default searches, you can simply set it to
 
 If you want to **disable all** built in searches, set the global option `enable_default_searches` to false (see separate section about global options)
 
+## UV PEP-723 Script Support
+
+VenvSelector includes built-in support for UV's PEP-723 inline script metadata feature. When you have a Python script with inline dependency specifications, the `uv_script` search will automatically detect PEP-723 metadata and find the appropriate Python interpreter.
+
+### Example PEP-723 Script
+
+```python
+#!/usr/bin/env python3
+# /// script
+# dependencies = [
+#   "requests",
+#   "rich",
+# ]
+# ///
+
+import requests
+import rich
+
+# Your script code here...
+```
+
+### How it works
+
+- The `uv_script` search uses `uv python find --script '$CURRENT_FILE'` to locate the correct Python interpreter
+- It only appears in the picker when the current file contains PEP-723 metadata (inline dependencies)
+- When selected, it configures the LSP to use UV's resolved Python environment
+- This provides proper code completion and analysis for your script's dependencies
+
+This feature is enabled by default on all platforms and requires UV to be installed and available in your PATH.
 
 ## Changing the output in the telescope viewer (on_telescope_result_callback)
 
@@ -383,7 +416,7 @@ You also need `debugpy` installed in the venv you are switching to.
           lualine_b = { "branch", "diff", "diagnostics" },
           lualine_c = { "filename" },
           lualine_x = {
-            "venv-selector", -- This calls venv-selectors built-in method for rendering, but it can be overridden
+            "venv-selector", -- You can customize the look of the output, see below`.
             "encoding",
             "fileformat",
             "filetype",
@@ -405,15 +438,18 @@ Lualine will call a function called `statusline_func.lualine` in VenvSelect if y
 options = {
   statusline_func = {
     lualine = function()
-      local venv = require("venv-selector").venv()
-      local venv_name = vim.fn.fnamemodify(venv, ":t") -- Shorten name of venv
-      if not venv_name then
-        return ""
-      end
-  
-      if venv_name ~= nil then
-        return " 🐍 " .. venv_name
-      end
+        local venv_path = require("venv-selector").venv()
+        if not venv_path or venv_path == "" then
+            return ""
+        end
+    
+        local venv_name = vim.fn.fnamemodify(venv_path, ":t")
+        if not venv_name then
+            return ""
+        end
+    
+        local output = "🐍 " .. venv_name .. " " -- Changes only the icon but you can change colors or use powerline symbols here.
+        return output
     end,
   }
 }
@@ -429,7 +465,7 @@ Edit your `~/.config/nvim/lua/chadrc.lua` file like this:
 M.ui = {
   statusline = {
     modules = {
-      venv = require("venv-selector.statusline.nvchad").render() -- calls the default method to render, but can be overridden.
+      venv = require("venv-selector.statusline.nvchad").render -- sets the plugin render function, but can be overridden, see below.
     },
     order = { "mode", "file", "git", "%=", "lsp_msg", "diagnostics", "venv", "lsp", "cwd" } -- "venv" is our venvselect module here
   }
@@ -443,15 +479,18 @@ If you want to override the default render method, define the `statusline_func.n
 options = {
   statusline_func = {
     nvchad = function()
-      local venv = require("venv-selector").venv()
-      local venv_name = vim.fn.fnamemodify(venv, ":t") -- Shorten name of venv
-      if not venv_name then
-        return ""
-      end
-  
-      if venv_name ~= nil then
-        return " 🐍 " .. venv_name
-      end
+        local venv_path = require("venv-selector").venv()
+        if not venv_path or venv_path == "" then
+            return ""
+        end
+    
+        local venv_name = vim.fn.fnamemodify(venv_path, ":t")
+        if not venv_name then
+            return ""
+        end
+    
+        local output = "🐍 " .. venv_name .. " " -- Changes only the icon but you can change colors or use powerline symbols here.
+        return output
     end,
   }
 }

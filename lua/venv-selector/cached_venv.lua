@@ -32,6 +32,12 @@ function M.save(python_path, venv_type)
         return
     end
 
+    -- Skip saving UV environments to cache as they are managed automatically
+    if venv_type == "uv" then
+        log.debug("Skipping cache save for UV environment: " .. python_path)
+        return
+    end
+
     M.create_dir()
 
     local venv_cache = {
@@ -88,6 +94,16 @@ function M.retrieve()
     if config.user_settings.options.enable_cached_venvs ~= true then
         log.debug("Option 'enable_cached_venvs' is false so will not use cache.")
         return
+    end
+    
+    -- Skip cache retrieval if current file has PEP 723 metadata to avoid interfering with UV
+    local current_file = vim.fn.expand("%:p")
+    if current_file and current_file ~= "" and vim.bo.filetype == "python" then
+        local utils = require("venv-selector.utils")
+        if utils.has_pep723_metadata(current_file) then
+            log.debug("Skipping cache retrieval because current file has PEP 723 metadata: " .. current_file)
+            return
+        end
     end
     if vim.fn.filereadable(cache_file) == 1 then
         local cache_file_content = vim.fn.readfile(cache_file)

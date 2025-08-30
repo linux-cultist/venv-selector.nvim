@@ -1,10 +1,3 @@
--- local log = require("venv-selector.logger")
--- local user_commands = require("venv-selector.user_commands")
--- local config = require("venv-selector.config")
--- local venv = require("venv-selector.venv")
--- local path = require("venv-selector.path")
--- local ws = require("venv-selector.workspace")
-
 local function on_lsp_attach(args)
     if vim.bo.filetype == "python" then
         local cache = require("venv-selector.cached_venv")
@@ -51,12 +44,6 @@ function M.activate_from_path(python_path)
     require("venv-selector.venv").activate(python_path, "activate_from_path", true)
 end
 
--- Temporary, will be removed later.
-function M.split_command(str)
-    local ut = require("venv-selector.utils")
-    return ut.split_cmd_for_windows(str)
-end
-
 function M.deactivate()
     require("venv-selector.path").remove_current()
     require("venv-selector.venv").unset_env_variables()
@@ -76,5 +63,9 @@ function M.setup(conf)
 
     vim.api.nvim_command("hi VenvSelectActiveVenv guifg=" .. config.user_settings.options.telescope_active_venv_color)
 end
+
+-- Initialize UV auto-activation
+local uv = require("venv-selector.uv")
+uv.setup_auto_activation()
 
 return M

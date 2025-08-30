@@ -92,4 +92,61 @@ function M.print_table(tbl, indent)
     end
 end
 
+-- Check if a file contains PEP-723 script metadata
+function M.has_pep723_metadata(file_path)
+
+    if require("venv-selector.uv").uv_installed ~= true then
+        log.debug("Uv not found on system - skipping metadata check.")
+        return
+    end
+
+    log.debug("Checking PEP-723 metadata for file: '" .. (file_path or "nil") .. "'")
+
+    if not file_path or file_path == "" then
+        log.debug("PEP-723 check: file_path is empty or nil")
+        return false
+    end
+
+    -- Check if file exists and is readable
+    local file = io.open(file_path, "r")
+    if not file then
+        log.debug("PEP-723 check: cannot open file: " .. file_path)
+        return false
+    end
+
+    local line_count = 0
+    local in_script_block = false
+    local found_metadata = false
+
+    for line in file:lines() do
+        line_count = line_count + 1
+
+        -- Only check first 50 lines for performance
+        if line_count > 50 then
+            log.debug("PEP-723 check: reached line limit (50), stopping search")
+            break
+        end
+
+        -- Look for start of script metadata block
+        if line:match("^%s*#%s*///%s*script%s*$") then
+            log.debug("PEP-723 check: found script block start at line " .. line_count)
+            in_script_block = true
+        elseif in_script_block and line:match("^%s*#%s*///%s*$") then
+            -- Found end of script block
+            log.debug("PEP-723 check: found script block end at line " .. line_count)
+            found_metadata = true
+            break
+        elseif in_script_block and line:match("^%s*#%s*dependencies%s*=") then
+            -- Found dependencies declaration
+            log.debug("PEP-723 check: found dependencies declaration at line " .. line_count)
+            found_metadata = true
+            break
+        end
+    end
+
+    file:close()
+    log.debug("PEP-723 check result: " .. tostring(found_metadata))
+    return found_metadata
+end
+
 return M

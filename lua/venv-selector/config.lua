@@ -93,6 +93,7 @@ function M.get_default_searches()
                 file = {
                     command = "$FD '/bin/python$' $FILE_DIR --full-path --color never -E /proc -HI -a -L",
                 },
+
             }
         end,
         ["Darwin"] = function()
@@ -144,6 +145,7 @@ function M.get_default_searches()
                 file = {
                     command = "$FD '/bin/python$' $FILE_DIR --full-path --color never -E /proc -HI -a -L",
                 },
+
             }
         end,
         ["Windows_NT"] = function()
@@ -193,6 +195,7 @@ function M.get_default_searches()
                 file = {
                     command = "$FD Scripts//python.exe$ $FILE_DIR --full-path --color never -HI -a -L",
                 },
+
             }
         end,
     }

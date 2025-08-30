@@ -4,7 +4,7 @@ function M.render() -- call this function from lualine
     if vim.bo.filetype ~= "python" then
         return ""
     end
-    
+
     local statusline_func = require("venv-selector.config").user_settings.options.statusline_func.lualine
     if statusline_func ~= nil then
         return statusline_func()
@@ -12,7 +12,7 @@ function M.render() -- call this function from lualine
 
     local venv_path = require("venv-selector").venv()
     if not venv_path or venv_path == "" then
-        return nil
+        return ""
     end
 
     local venv_name = vim.fn.fnamemodify(venv_path, ":t")

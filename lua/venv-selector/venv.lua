@@ -51,7 +51,7 @@ function M.activate(python_path, type, check_lsp)
 
     if check_lsp and count == 0 and config.user_settings.options.require_lsp_activation == true then
         local message =
-            "No python lsp servers are running. Please open a python file and then select a venv to activate."
+        "No python lsp servers are running. Please open a python file and then select a venv to activate."
         vim.notify(message, vim.log.levels.INFO, { title = "VenvSelect" })
         log.info(message)
         return false
@@ -76,7 +76,30 @@ function M.update_paths(venv_path, type)
     path.update_python_dap(venv_path)
     path.save_selected_python(venv_path)
 
-    if type == "anaconda" then
+    -- Special handling for UV environments
+    if type == "uv" then
+        -- Use UV module for environment setup
+        local uv = require("venv-selector.uv")
+        if uv.uv_installed == true then
+            local current_file = vim.fn.expand("%:p")
+            uv.setup_environment(current_file, venv_path, function(success)
+                if success then
+                    log.debug("UV environment setup completed successfully")
+                else
+                    log.debug("UV environment setup failed")
+                end
+            end)
+            -- Don't set VIRTUAL_ENV for UV environments
+            M.unset_env("VIRTUAL_ENV")
+            M.unset_env("CONDA_PREFIX")
+        end
+    elseif type == "uv_skip_setup" then
+        -- UV environment where setup was already done, just set environment variables
+        log.debug("Skipping UV setup as it was already completed")
+        -- Don't set VIRTUAL_ENV for UV environments
+        M.unset_env("VIRTUAL_ENV")
+        M.unset_env("CONDA_PREFIX")
+    elseif type == "anaconda" then
         M.unset_env("VIRTUAL_ENV")
         local base_path
 

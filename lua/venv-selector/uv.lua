@@ -2,6 +2,9 @@ local M = {}
 
 M.uv_installed = vim.fn.executable("uv") == 1
 
+-- Track recently activated files to prevent duplicates
+local recently_activated = {}
+
 --- Check if a file has PEP-723 metadata and auto-activate UV environment if needed
 --- @param file_path string The path to the Python file to check
 function M.auto_activate_if_needed(file_path)
@@ -23,6 +26,13 @@ function M.auto_activate_if_needed(file_path)
         return
     end
 
+    -- Skip if we recently activated this file (within 1 second)
+    local now = vim.loop.now()
+    if recently_activated[file_path] and (now - recently_activated[file_path]) < 1000 then
+        log.debug("Skipping activation - recently activated: " .. file_path)
+        return
+    end
+
     log.debug("Found PEP-723 metadata in: " .. file_path)
 
     -- Check if we already have the correct UV environment active for this specific file
@@ -39,6 +49,7 @@ function M.auto_activate_if_needed(file_path)
 
     -- No UV environment active, so activate one for this file
     log.debug("Starting UV auto-activation for: " .. file_path)
+    recently_activated[file_path] = now
     M.activate_for_script(file_path)
 end
 
@@ -235,13 +246,11 @@ function M.setup_auto_activation()
         vim.api.nvim_create_autocmd("BufEnter", {
             pattern = "*.py",
             callback = function()
-                -- Only activate on buffer switch, not initial file open
-                if vim.bo.buflisted then
-                    vim.defer_fn(function()
-                        local current_file = vim.fn.expand("%:p")
-                        M.auto_activate_if_needed(current_file)
-                    end, 50)
-                end
+                -- Only activate after a short delay to avoid initial file open conflicts
+                vim.defer_fn(function()
+                    local current_file = vim.fn.expand("%:p")
+                    M.auto_activate_if_needed(current_file)
+                end, 500)
             end,
             group = vim.api.nvim_create_augroup("VenvSelectorUVSwitch", { clear = true })
         })

@@ -45,12 +45,6 @@ function M.activate_from_path(python_path)
     require("venv-selector.venv").activate(python_path, "activate_from_path", true)
 end
 
--- Temporary, will be removed later.
-function M.split_command(str)
-    local ut = require("venv-selector.utils")
-    return ut.split_cmd_for_windows(str)
-end
-
 function M.deactivate()
     require("venv-selector.path").remove_current()
     require("venv-selector.venv").unset_env_variables()

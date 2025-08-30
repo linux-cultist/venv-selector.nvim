@@ -1,5 +1,10 @@
 local M = {}
 
+-- TODO: Uv activation doesnt work well with ordinary venv from cache activation so need to disable that when its a uv venv.
+-- Current uv venv is activated from cache even when uv is not installed and no search is running.
+
+M.uv_installed = vim.fn.executable("uv") == 1
+
 --- Check if a file has PEP-723 metadata and auto-activate UV environment if needed
 --- @param file_path string The path to the Python file to check
 function M.auto_activate_if_needed(file_path)
@@ -42,37 +47,39 @@ end
 --- Activate UV environment for a specific script file
 --- @param script_path string The path to the Python script
 function M.activate_for_script(script_path)
-    local log = require("venv-selector.logger")
+    if M.uv_installed == true then
+        local log = require("venv-selector.logger")
 
-    -- Use uv python find to get the Python path (same as manual picker)
-    local job_id = vim.fn.jobstart({ "uv", "python", "find", "--script", script_path }, {
-        stdout_buffered = true,
-        on_stdout = function(_, data, _)
-            if data and #data > 0 then
-                for _, line in ipairs(data) do
-                    if line ~= "" and line:match("python") then
-                        local python_path = line:gsub("%s+$", "") -- trim whitespace
-                        log.debug("Auto-activating UV environment: " .. python_path)
+        -- Use uv python find to get the Python path (same as manual picker)
+        local job_id = vim.fn.jobstart({ "uv", "python", "find", "--script", script_path }, {
+            stdout_buffered = true,
+            on_stdout = function(_, data, _)
+                if data and #data > 0 then
+                    for _, line in ipairs(data) do
+                        if line ~= "" and line:match("python") then
+                            local python_path = line:gsub("%s+$", "") -- trim whitespace
+                            log.debug("Auto-activating UV environment: " .. python_path)
 
-                        -- Activate the UV environment using the same flow as manual picker
-                        local venv = require("venv-selector.venv")
-                        venv.activate(python_path, "uv", false)
-                        -- vim.notify("UV environment activated automatically", vim.log.levels.INFO,
-                        --     { title = "VenvSelect" })
-                        break
+                            -- Activate the UV environment using the same flow as manual picker
+                            local venv = require("venv-selector.venv")
+                            venv.activate(python_path, "uv", false)
+                            -- vim.notify("UV environment activated automatically", vim.log.levels.INFO,
+                            --     { title = "VenvSelect" })
+                            break
+                        end
                     end
                 end
+            end,
+            on_exit = function(_, exit_code)
+                if exit_code ~= 0 then
+                    log.debug("UV auto-activation failed with exit code: " .. exit_code)
+                    -- vim.notify("UV environment auto-activation failed", vim.log.levels.WARN, { title = "VenvSelect" })
+                end
             end
-        end,
-        on_exit = function(_, exit_code)
-            if exit_code ~= 0 then
-                log.debug("UV auto-activation failed with exit code: " .. exit_code)
-                -- vim.notify("UV environment auto-activation failed", vim.log.levels.WARN, { title = "VenvSelect" })
-            end
-        end
-    })
+        })
 
-    log.debug("UV jobstart returned job_id: " .. (job_id or "nil"))
+        log.debug("UV jobstart returned job_id: " .. (job_id or "nil"))
+    end
 end
 
 --- Set up UV environment for activation (called from venv.lua when activating UV type)
@@ -111,7 +118,7 @@ function M.setup_environment(current_file, python_path, on_complete)
                             path.add(path.get_base(actual_python_path))
 
                             -- vim.notify("UV environment ready with dependencies", vim.log.levels.INFO,
-                                -- { title = "VenvSelect" })
+                            -- { title = "VenvSelect" })
                             if on_complete then on_complete(true) end
                             return
                         end
@@ -137,17 +144,19 @@ end
 
 --- Set up auto-activation for PEP-723 files
 function M.setup_auto_activation()
-    vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile" }, {
-        pattern = "*.py",
-        callback = function()
-            -- Use a small delay to ensure the file is fully loaded
-            vim.defer_fn(function()
-                local current_file = vim.fn.expand("%:p")
-                M.auto_activate_if_needed(current_file)
-            end, 100)
-        end,
-        group = vim.api.nvim_create_augroup("VenvSelectorUVAuto", { clear = true })
-    })
+    if M.uv_installed == true then
+        vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile" }, {
+            pattern = "*.py",
+            callback = function()
+                -- Use a small delay to ensure the file is fully loaded
+                vim.defer_fn(function()
+                    local current_file = vim.fn.expand("%:p")
+                    M.auto_activate_if_needed(current_file)
+                end, 100)
+            end,
+            group = vim.api.nvim_create_augroup("VenvSelectorUVAuto", { clear = true })
+        })
+    end
 end
 
 return M

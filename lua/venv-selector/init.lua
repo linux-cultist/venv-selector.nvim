@@ -1,3 +1,6 @@
+local M = {}
+local setup_done = false
+
 local function on_lsp_attach(args)
     if vim.bo.filetype == "python" then
         local cache = require("venv-selector.cached_venv")
@@ -5,12 +8,6 @@ local function on_lsp_attach(args)
     end
 end
 
-vim.api.nvim_create_autocmd("LspAttach", {
-    pattern = "*",
-    callback = on_lsp_attach,
-})
-
-local M = {}
 
 function M.python()
     return require("venv-selector.path").current_python_path
@@ -49,8 +46,9 @@ function M.deactivate()
     require("venv-selector.venv").unset_env_variables()
 end
 
----@param plugin_settings venv-selector.Config
 function M.setup(conf)
+    if setup_done then return end
+
     if vim.tbl_get(conf, "options", "debug") then
         local log = require("venv-selector.logger")
         log.enabled = true
@@ -58,14 +56,25 @@ function M.setup(conf)
 
     local config = require("venv-selector.config")
     config.merge_user_settings(conf or {}) -- creates config.user_settings variable with configuration
+
+    -- Create autocmd with proper group
+    local group = vim.api.nvim_create_augroup("VenvSelector", { clear = true })
+    vim.api.nvim_create_autocmd("LspAttach", {
+        group = group,
+        pattern = "*",
+        callback = on_lsp_attach,
+    })
+
     local user_commands = require("venv-selector.user_commands")
     user_commands.register()
 
-    vim.api.nvim_command("hi VenvSelectActiveVenv guifg=" .. config.user_settings.options.telescope_active_venv_color)
-end
+    vim.api.nvim_set_hl(0, "VenvSelectActiveVenv", {
+        fg = config.user_settings.options.telescope_active_venv_color
+    })
 
--- Initialize UV auto-activation
-local uv = require("venv-selector.uv")
-uv.setup_auto_activation()
+    -- Initialize UV auto-activation
+    local uv = require("venv-selector.uv")
+    uv.setup_auto_activation()
+end
 
 return M

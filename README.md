@@ -37,8 +37,9 @@
   - [Virtualenvwrapper](https://virtualenvwrapper.readthedocs.io/en/latest/)
   - [Hatch](https://hatch.pypa.io/latest/)
   - [Pipx](https://github.com/pypa/pipx)
-  
-- Supports callbacks to further filter or rename telescope results as they are found.
+
+- Supports using PEP-723 metadata in file headers to load & create [Uv](https://docs.astral.sh/uv/) venvs automatically
+- Supports callbacks to further filter or rename telescope results as they are found
 - Supports using any program to find virtual environments (`fd`, `find`, `ls`, `dir` etc)
 - Supports running any interactive command to populate the telescope viewer:
   - `:VenvSelect fd 'python$' . --full-path -IH -a`
@@ -49,11 +50,20 @@
   - [Pylsp](https://github.com/python-lsp/python-lsp-server)
   - [Jedi](https://github.com/pappasam/jedi-language-server)
   
-- Supports user-defined hooks (callback functions), called on venv activations, to do anything.
-- Virtual environments are remembered for each specific working directory and automatically activated the next time.
-- Requires [fd](https://github.com/sharkdp/fd) and [Telescope](https://github.com/nvim-telescope/telescope.nvim) for fast searches, and visual pickers.
-- Requires [nvim-dap-python](https://github.com/mfussenegger/nvim-dap-python), [debugpy](https://github.com/microsoft/debugpy) and [nvim-dap](https://github.com/mfussenegger/nvim-dap) for debugger support
-- Requires a terminal [nerd font](https://www.nerdfonts.com/) to be configured for the icons to look correct.
+- Supports user-defined hooks (callback functions), called on venv activations
+- Virtual environments are remembered for each specific working directory and automatically activated the next time
+
+- Supports the following pickers:
+
+  - [Telescope](https://github.com/nvim-telescope/telescope.nvim)
+  - [Fzf-lua](https://github.com/ibhagwan/fzf-lua)
+  - [Snacks](https://github.com/folke/snacks.nvim/blob/main/docs/picker.md)
+  - [Mini-pick](https://github.com/nvim-mini/mini.pick)
+  - Native (vim.ui.select)
+  
+- Requires [fd](https://github.com/sharkdp/fd) and a picker above
+- Optionally requires [nvim-dap-python](https://github.com/mfussenegger/nvim-dap-python), [debugpy](https://github.com/microsoft/debugpy) and [nvim-dap](https://github.com/mfussenegger/nvim-dap) for debugger support
+- Requires a terminal [nerd font](https://www.nerdfonts.com/) to be configured for the icons to look correct
 
 
 

@@ -37,8 +37,6 @@ function M.activate(python_path, type, check_lsp)
     end
 
     -- Set the below two variables as quick as possible since its used in sorting results in telescope
-    -- and if the user is quick to open the telescope before lsp has activated, the selected
-    -- venv wont be displayed otherwise.
     path.current_python_path = python_path
     path.current_venv_path = path.get_base(python_path)
 

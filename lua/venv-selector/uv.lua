@@ -5,6 +5,9 @@ M.uv_installed = vim.fn.executable("uv") == 1
 -- Track recently activated files to prevent duplicates
 local recently_activated = {}
 
+-- Get path module
+local path = require("venv-selector.path")
+
 --- Helper function to handle jobstart data output
 --- @param data table The data array from jobstart callback
 --- @param output_lines table Array to store output lines
@@ -62,7 +65,8 @@ end
 
 --- Check if a file has PEP-723 metadata and auto-activate UV environment if needed
 --- @param file_path string The path to the Python file to check
-function M.auto_activate_if_needed(file_path)
+--- @param force boolean Whether to force activation even if non-UV environment is active
+function M.auto_activate_if_needed(file_path, force)
     local log = require("venv-selector.logger")
     local utils = require("venv-selector.utils")
 
@@ -74,6 +78,15 @@ function M.auto_activate_if_needed(file_path)
     local filetype = vim.bo[0].filetype
     if filetype ~= "python" then
         return
+    end
+
+    -- Skip if user has manually selected a non-UV environment (unless forced)
+    if not force then
+        local current_python = path.current_python_path
+        if current_python and not current_python:match("/environments%-v2/") then
+            log.debug("Skipping UV auto-activation - non-UV environment active: " .. current_python)
+            return
+        end
     end
 
     -- Skip if we recently activated this file (within 100ms) - check early to prevent duplicate work
@@ -197,7 +210,7 @@ function M.setup_auto_activation()
             callback = function()
                 vim.defer_fn(function()
                     local current_file = vim.fn.expand("%:p")
-                    M.auto_activate_if_needed(current_file)
+                    M.auto_activate_if_needed(current_file, false) -- Normal activation on buffer enter
                 end, 300)
             end,
             group = vim.api.nvim_create_augroup("VenvSelectorUV", { clear = true })
@@ -212,12 +225,14 @@ function M.setup_auto_activation()
                     -- Clear cache since file content may have changed
                     local utils = require("venv-selector.utils")
                     utils.clear_pep723_cache()
-                    M.auto_activate_if_needed(current_file)
+                    M.auto_activate_if_needed(current_file, true) -- Force activation on file save
                 end, 300)
             end,
             group = vim.api.nvim_create_augroup("VenvSelectorUVWrite", { clear = true })
         })
     end
 end
+
+
 
 return M

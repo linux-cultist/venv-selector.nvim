@@ -1,6 +1,12 @@
 local M = {}
 local setup_done = false
 
+-- Use 'rcarriga/nvim-notify' if its installed to show user important alerts.
+local has_notify, notify_plugin = pcall(require, "notify")
+if has_notify then
+    vim.notify = notify_plugin
+end
+
 local function on_lsp_attach(args)
     if vim.bo.filetype == "python" then
         local cache = require("venv-selector.cached_venv")

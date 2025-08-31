@@ -63,6 +63,7 @@ function M.check_and_activate_if_different(script_path, current_python_path)
         -- Get the expected Python path for this script
         local job_id = vim.fn.jobstart({ "uv", "python", "find", "--script", script_path }, {
             stdout_buffered = true,
+            stderr_buffered = true,
             on_stdout = function(_, data, _)
                 if data and #data > 0 then
                     for _, line in ipairs(data) do
@@ -71,16 +72,51 @@ function M.check_and_activate_if_different(script_path, current_python_path)
                             log.debug("Expected Python for " .. script_path .. ": " .. expected_python)
                             log.debug("Current Python: " .. current_python_path)
 
-                            -- If the expected Python is different from current, switch
+                            -- Always sync when metadata files change (handles dependency updates)
                             if expected_python ~= current_python_path then
                                 log.debug("Switching UV environment from " ..
                                     current_python_path .. " to " .. expected_python)
                                 local venv = require("venv-selector.venv")
                                 venv.activate(expected_python, "uv", false)
                             else
-                                log.debug("UV environment already correct for this file")
+                                log.debug("UV environment path correct, but syncing dependencies")
+                                -- Run uv sync to ensure dependencies are up to date
+                                local sync_stderr = {}
+                                vim.fn.jobstart({ "uv", "sync", "--script", script_path }, {
+                                    stderr_buffered = true,
+                                    on_stderr = function(_, stderr_data, _)
+                                        if stderr_data and #stderr_data > 0 then
+                                            for _, stderr_line in ipairs(stderr_data) do
+                                                if stderr_line ~= "" then
+                                                    table.insert(sync_stderr, stderr_line)
+                                                    -- log.debug("UV sync stderr: " .. stderr_line)
+                                                end
+                                            end
+                                        end
+                                    end,
+                                    on_exit = function(_, sync_exit_code)
+                                        if sync_exit_code == 0 then
+                                            log.debug("UV sync completed successfully")
+                                        else
+                                            log.debug("UV sync failed with exit code: " .. sync_exit_code)
+                                            -- Only show error notifications when sync actually fails
+                                            for _, stderr_line in ipairs(sync_stderr) do
+                                                vim.notify(stderr_line, vim.log.levels.ERROR, { title = "VenvSelect" })
+                                            end
+                                        end
+                                    end
+                                })
                             end
                             break
+                        end
+                    end
+                end
+            end,
+            on_stderr = function(_, data, _)
+                if data and #data > 0 then
+                    for _, line in ipairs(data) do
+                        if line ~= "" then
+                            log.debug("UV python find stderr: " .. line)
                         end
                     end
                 end
@@ -92,7 +128,7 @@ function M.check_and_activate_if_different(script_path, current_python_path)
             end
         })
 
-        log.debug("UV check jobstart returned job_id: " .. (job_id or "nil"))
+
     else
         require("venv-selector.logger").debug("Uv not found on system.")
     end
@@ -151,6 +187,7 @@ function M.activate_for_script(script_path)
                     for _, line in ipairs(data) do
                         if line ~= "" then
                             log.debug("UV stderr: " .. line)
+                            vim.notify(line, vim.log.levels.ERROR, { title = "VenvSelect" })
                         end
                     end
                 end
@@ -159,12 +196,10 @@ function M.activate_for_script(script_path)
                 log.debug("UV command completed with exit code: " .. exit_code)
                 if exit_code ~= 0 then
                     log.debug("UV auto-activation failed with exit code: " .. exit_code)
-                    -- vim.notify("UV environment auto-activation failed", vim.log.levels.WARN, { title = "VenvSelect" })
                 end
             end
         })
 
-        log.debug("UV jobstart returned job_id: " .. (job_id or "nil"))
     else
         require("venv-selector.logger").debug("Uv not found on system.")
     end
@@ -218,7 +253,7 @@ function M.setup_environment(current_file, python_path, on_complete)
             log.debug("UV sync completed with exit code: " .. exit_code)
             if exit_code ~= 0 then
                 log.debug("UV environment setup failed")
-                vim.notify("UV dependency sync failed", vim.log.levels.WARN, { title = "VenvSelect" })
+                vim.notify("UV dependency sync failed", vim.log.levels.ERROR, { title = "VenvSelect" })
                 if on_complete then on_complete(false) end
             else
                 -- If sync succeeded but we didn't get environment path from output,
@@ -247,7 +282,7 @@ function M.setup_auto_activation()
         })
 
         -- Handle switching between already-loaded buffers
-        vim.api.nvim_create_autocmd("BufEnter", {
+        vim.api.nvim_create_autocmd({"BufEnter", "BufWrite"}, {
             pattern = "*.py",
             callback = function()
                 -- Only activate after a short delay to avoid initial file open conflicts

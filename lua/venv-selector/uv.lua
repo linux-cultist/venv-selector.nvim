@@ -131,6 +131,11 @@ function M.activate_for_script(script_path)
                             if line:match("python") then
                                 local expected_python = line:gsub("%s+$", "") -- trim whitespace
                                 log.debug("Activating UV environment: " .. expected_python)
+                                
+                                -- Clear LSP client tracking to force reconfiguration after dependency changes
+                                local hooks = require("venv-selector.hooks")
+                                hooks.configured_clients = {}
+                                
                                 local venv = require("venv-selector.venv")
                                 venv.activate(expected_python, "uv", false)
                                 break

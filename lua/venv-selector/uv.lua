@@ -43,12 +43,13 @@ local function run_uv_command(cmd, callback)
             handle_data(data, stderr_lines, "stderr", command_name)
         end,
         on_exit = function(_, exit_code)
-            log.debug(command_name .. " completed with exit code: " .. exit_code)
-            
             local success = exit_code == 0
+            
             if not success then
-                for _, stderr_line in ipairs(stderr_lines) do
-                    vim.notify(stderr_line, vim.log.levels.ERROR, { title = "VenvSelect" })
+                log.debug(command_name .. " failed with exit code: " .. exit_code)
+                if #stderr_lines > 0 then
+                    local error_message = table.concat(stderr_lines, "\n")
+                    vim.notify(error_message, vim.log.levels.ERROR, { title = "VenvSelect" })
                 end
             end
             
@@ -75,15 +76,15 @@ function M.auto_activate_if_needed(file_path)
         return
     end
 
-    -- Check if file has PEP-723 metadata
-    if not utils.has_pep723_metadata(file_path) then
-        return
-    end
-
-    -- Skip if we recently activated this file (within 100ms)
+    -- Skip if we recently activated this file (within 100ms) - check early to prevent duplicate work
     local now = vim.loop.now()
     if recently_activated[file_path] and (now - recently_activated[file_path]) < 100 then
         log.debug("Skipping activation - recently activated: " .. file_path)
+        return
+    end
+
+    -- Check if file has PEP-723 metadata
+    if not utils.has_pep723_metadata(file_path) then
         return
     end
 
@@ -95,7 +96,6 @@ function M.auto_activate_if_needed(file_path)
     log.debug("Current Python path: " .. (current_python or "nil"))
 
     -- Always activate UV environment for PEP-723 files to ensure sync
-    log.debug("Starting UV auto-activation for: " .. file_path)
     recently_activated[file_path] = now
     M.activate_for_script(file_path)
 end
@@ -108,38 +108,26 @@ function M.activate_for_script(script_path)
     if M.uv_installed == true then
         local log = require("venv-selector.logger")
 
-        -- First check what environment this script needs
-        log.debug("Running UV command: " .. vim.inspect({ "uv", "python", "find", "--script", script_path }))
-
-        run_uv_command({ "uv", "python", "find", "--script", script_path }, function(success, stdout_lines, stderr_lines, exit_code)
-            if not success then
-                log.debug("UV auto-activation failed with exit code: " .. exit_code)
-                -- Show stderr errors (but run_uv_command already handles this)
-                return
-            end
-            
-            -- Always run setup to ensure environment and dependencies are up to date
-            log.debug("Auto-activating UV environment for: " .. script_path)
-            M.setup_environment(script_path, nil, function(setup_success)
-                if setup_success then
-                    -- Get the actual Python path after setup
-                    run_uv_command({ "uv", "python", "find", "--script", script_path }, function(find_success, find_stdout_lines, _, _)
-                        if find_success then
-                            for _, line in ipairs(find_stdout_lines) do
-                                if line:match("python") then
-                                    local expected_python = line:gsub("%s+$", "") -- trim whitespace
-                                    log.debug("Activating UV environment: " .. expected_python)
-                                    local venv = require("venv-selector.venv")
-                                    venv.activate(expected_python, "uv_skip_setup", false)
-                                    break
-                                end
+        -- Always run setup to ensure environment and dependencies are up to date
+        M.setup_environment(script_path, nil, function(setup_success)
+            if setup_success then
+                -- Get the actual Python path after setup
+                run_uv_command({ "uv", "python", "find", "--script", script_path }, function(find_success, find_stdout_lines, _, _)
+                    if find_success then
+                        for _, line in ipairs(find_stdout_lines) do
+                            if line:match("python") then
+                                local expected_python = line:gsub("%s+$", "") -- trim whitespace
+                                log.debug("Activating UV environment: " .. expected_python)
+                                local venv = require("venv-selector.venv")
+                                venv.activate(expected_python, "uv", false)
+                                break
                             end
                         end
-                    end)
-                else
-                    log.debug("UV environment setup failed, cannot activate")
-                end
-            end)
+                    end
+                end)
+            else
+                log.debug("UV environment setup failed, cannot activate")
+            end
         end)
 
     else
@@ -159,8 +147,6 @@ function M.setup_environment(current_file, python_path, on_complete)
         if on_complete then on_complete(false) end
         return
     end
-
-    log.debug("Setting up UV environment for: " .. current_file)
 
     -- Run UV sync in background to ensure dependencies are available
     run_uv_command({ "uv", "sync", "--script", current_file }, function(success, stdout_lines, stderr_lines, exit_code)

@@ -76,27 +76,9 @@ function M.update_paths(venv_path, type)
     path.update_python_dap(venv_path)
     path.save_selected_python(venv_path)
 
-    -- Special handling for UV environments
+    -- Handle environment variables based on venv type
     if type == "uv" then
-        -- Use UV module for environment setup
-        local uv = require("venv-selector.uv")
-        if uv.uv_installed == true then
-            local current_file = vim.fn.expand("%:p")
-            uv.setup_environment(current_file, venv_path, function(success)
-                if success then
-                    log.debug("UV environment setup completed successfully")
-                else
-                    log.debug("UV environment setup failed")
-                end
-            end)
-            -- Don't set VIRTUAL_ENV for UV environments
-            M.unset_env("VIRTUAL_ENV")
-            M.unset_env("CONDA_PREFIX")
-        end
-    elseif type == "uv_skip_setup" then
-        -- UV environment where setup was already done, just set environment variables
-        log.debug("Skipping UV setup as it was already completed")
-        -- Don't set VIRTUAL_ENV for UV environments
+        -- Don't set VIRTUAL_ENV for UV environments as they are managed by UV
         M.unset_env("VIRTUAL_ENV")
         M.unset_env("CONDA_PREFIX")
     elseif type == "anaconda" then

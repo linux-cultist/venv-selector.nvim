@@ -107,7 +107,6 @@ function M.has_pep723_metadata(file_path)
 
     -- Check if we already know the metadata status for this buffer
     if vim.b.has_uv_metadata ~= nil then
-        log.debug("Using cached PEP-723 metadata for: " .. file_path .. " = " .. tostring(vim.b.has_uv_metadata))
         return vim.b.has_uv_metadata
     end
 

@@ -18,12 +18,19 @@ end
 function M.add(newDir)
     if config.user_settings.options.activate_venv_in_terminal == true then
         if newDir ~= nil then
+            local clean_dir = M.remove_trailing_slash(newDir)
+            
+            -- Check if the new directory is the same as the previous one
+            if previous_dir == clean_dir then
+                log.debug("Path unchanged - already using: " .. clean_dir)
+                return
+            end
+            
             if previous_dir ~= nil then
                 M.remove(previous_dir)
             end
             local path = vim.fn.getenv("PATH")
             local path_separator = package.config:sub(1, 1) == "\\" and ";" or ":"
-            local clean_dir = M.remove_trailing_slash(newDir)
             local updated_path = clean_dir .. path_separator .. path
             previous_dir = clean_dir
             vim.fn.setenv("PATH", updated_path)
@@ -41,7 +48,7 @@ function M.update_python_dap(python_path)
             return python_path
         end
     else
-        log.debug("Debugger not enabled: dap or dap-python not installed.")
+        -- Debugger not enabled: dap or dap-python not installed
     end
 end
 
@@ -63,7 +70,7 @@ end
 function M.remove(removalDir)
     local clean_dir = M.remove_trailing_slash(removalDir)
     local path = vim.fn.getenv("PATH")
-    log.debug("Path before venv removal: ", path)
+    log.debug("Terminal path before venv removal: " .. path)
     local pathSeparator = package.config:sub(1, 1) == "\\" and ";" or ":"
     local paths = {}
     for p in string.gmatch(path, "[^" .. pathSeparator .. "]+") do
@@ -73,7 +80,7 @@ function M.remove(removalDir)
     end
     local updatedPath = table.concat(paths, pathSeparator)
     vim.fn.setenv("PATH", updatedPath)
-    log.debug("Path after venv removal: ", updatedPath)
+    log.debug("Terminal path after venv removal: " .. updatedPath)
 end
 
 function M.get_current_file_directory()

@@ -33,9 +33,9 @@ local function run_uv_command(cmd, callback)
     local command_name = table.concat(cmd, " ")
     local stdout_lines = {}
     local stderr_lines = {}
-    
+
     log.debug("Running UV command: " .. vim.inspect(cmd))
-    
+
     return vim.fn.jobstart(cmd, {
         stdout_buffered = true,
         stderr_buffered = true,
@@ -47,7 +47,7 @@ local function run_uv_command(cmd, callback)
         end,
         on_exit = function(_, exit_code)
             local success = exit_code == 0
-            
+
             if not success then
                 log.debug(command_name .. " failed with exit code: " .. exit_code)
                 if #stderr_lines > 0 then
@@ -55,7 +55,7 @@ local function run_uv_command(cmd, callback)
                     vim.notify(error_message, vim.log.levels.ERROR, { title = "VenvSelect" })
                 end
             end
-            
+
             if callback then
                 callback(success, stdout_lines, stderr_lines, exit_code)
             end
@@ -113,8 +113,6 @@ function M.auto_activate_if_needed(file_path, force)
     M.activate_for_script(file_path)
 end
 
-
-
 --- Activate UV environment for a specific script file
 --- @param script_path string The path to the Python script
 function M.activate_for_script(script_path)
@@ -125,29 +123,29 @@ function M.activate_for_script(script_path)
         M.setup_environment(script_path, nil, function(setup_success)
             if setup_success then
                 -- Get the actual Python path after setup
-                run_uv_command({ "uv", "python", "find", "--script", script_path }, function(find_success, find_stdout_lines, _, _)
-                    if find_success then
-                        for _, line in ipairs(find_stdout_lines) do
-                            if line:match("python") then
-                                local expected_python = line:gsub("%s+$", "") -- trim whitespace
-                                log.debug("Activating UV environment: " .. expected_python)
-                                
-                                -- Clear LSP client tracking to force reconfiguration after dependency changes
-                                local hooks = require("venv-selector.hooks")
-                                hooks.configured_clients = {}
-                                
-                                local venv = require("venv-selector.venv")
-                                venv.activate(expected_python, "uv", false)
-                                break
+                run_uv_command({ "uv", "python", "find", "--script", script_path },
+                    function(find_success, find_stdout_lines, _, _)
+                        if find_success then
+                            for _, line in ipairs(find_stdout_lines) do
+                                if line:match("python") then
+                                    local expected_python = line:gsub("%s+$", "") -- trim whitespace
+                                    log.debug("Activating UV environment: " .. expected_python)
+
+                                    -- Clear LSP client tracking to force reconfiguration after dependency changes
+                                    local hooks = require("venv-selector.hooks")
+                                    hooks.configured_clients = {}
+
+                                    local venv = require("venv-selector.venv")
+                                    venv.activate(expected_python, "uv", false)
+                                    break
+                                end
                             end
                         end
-                    end
-                end)
+                    end)
             else
                 log.debug("UV environment setup failed, cannot activate")
             end
         end)
-
     else
         require("venv-selector.logger").debug("Uv not found on system.")
     end
@@ -174,7 +172,7 @@ function M.setup_environment(current_file, python_path, on_complete)
             if on_complete then on_complete(false) end
             return
         end
-        
+
         -- Look for environment path in stdout
         for _, line in ipairs(stdout_lines) do
             log.debug("UV sync output: " .. line)
@@ -198,7 +196,7 @@ function M.setup_environment(current_file, python_path, on_complete)
                 end
             end
         end
-        
+
         -- If sync succeeded but we didn't get environment path from output,
         -- we'll use the original python_path as fallback
         log.debug("UV sync succeeded, using provided Python path")
@@ -220,7 +218,7 @@ function M.setup_auto_activation()
             end,
             group = vim.api.nvim_create_augroup("VenvSelectorUV", { clear = true })
         })
-        
+
         -- Handle file saves (force recheck since metadata may have changed)
         vim.api.nvim_create_autocmd({ "BufWrite" }, {
             pattern = "*.py",
@@ -237,7 +235,5 @@ function M.setup_auto_activation()
         })
     end
 end
-
-
 
 return M

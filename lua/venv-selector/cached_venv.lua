@@ -12,6 +12,8 @@ end
 
 local base_dir = path.get_base(cache_file)
 
+local cache_retrieval_done = false
+
 local M = {}
 
 function M.handle_automatic_activation()
@@ -56,15 +58,15 @@ function M.save(python_path, venv_type)
             local cached_json = vim.fn.json_decode(cached_file[1])
             local merged_cache = vim.tbl_deep_extend("force", cached_json, venv_cache)
             venv_cache_json = vim.fn.json_encode(merged_cache)
-            log.debug("Cache content: ", venv_cache_json)
+
         end
     else
         venv_cache_json = vim.fn.json_encode(venv_cache)
-        log.debug("Cache content: ", venv_cache_json)
+
     end
 
     vim.fn.writefile({ venv_cache_json }, cache_file)
-    log.debug("Wrote cache content to " .. cache_file)
+    log.debug("Wrote cache to " .. cache_file .. " with content: " .. venv_cache_json)
 end
 
 function M.clean_stale_entries(venv_cache)
@@ -96,6 +98,12 @@ function M.retrieve()
         return
     end
     
+    -- Prevent multiple cache retrievals in the same session
+    if cache_retrieval_done then
+        log.debug("Cache retrieval already done in this session, skipping.")
+        return
+    end
+    
     -- Skip cache retrieval if current file has PEP 723 metadata to avoid interfering with UV
     local current_file = vim.fn.expand("%:p")
     if current_file and current_file ~= "" and vim.bo.filetype == "python" then
@@ -108,7 +116,7 @@ function M.retrieve()
     if vim.fn.filereadable(cache_file) == 1 then
         local cache_file_content = vim.fn.readfile(cache_file)
         log.debug("Read cache from " .. cache_file)
-        log.debug("Cache content: ", cache_file_content)
+
 
         if cache_file_content ~= nil and cache_file_content[1] ~= nil then
             local venv_cache = vim.fn.json_decode(cache_file_content[1])
@@ -123,11 +131,14 @@ function M.retrieve()
 
                     log.debug("Activating venv `" .. venv_info.value .. "` from cache.")
                     venv.activate(venv_info.value, venv_info.type, false)
-                    return
+                    cache_retrieval_done = true
                 end
             end
         end
     end
+    
+    -- Mark as done even if no venv was activated
+    cache_retrieval_done = true
 end
 
 return M

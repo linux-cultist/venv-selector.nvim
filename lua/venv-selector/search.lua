@@ -3,33 +3,27 @@ local path = require("venv-selector.path")
 local utils = require("venv-selector.utils")
 local log = require("venv-selector.logger")
 
----@alias venv-selector.SearchType
----| '"anaconda"' # an anaconda/minconda search
-
----@class venv-selector.Search
----@field command string The serch commnd to be executed
----@field type? venv-selector.SearchType set for special venv types
-
----@alias venv-selector.Searches table<string, venv-selector.Search|false>
-
-local function is_workspace_search(str)
-    return string.find(str, "$WORKSPACE_PATH") ~= nil
-end
-
-local function is_cwd_search(str)
-    return string.find(str, "$CWD") ~= nil
-end
-
-local function is_filepath_search(str)
-    return string.find(str, "$FILE_DIR") ~= nil
-end
-
-local function is_current_file_search(str)
-    return string.find(str, "$CURRENT_FILE") ~= nil
-end
 
 local M = {}
 
+-- Get current file path with fallback to alternate buffer
+local function get_current_file()
+    local current_file = vim.fn.expand("%:p")
+    log.debug("Initial current_file from expand: '" .. current_file .. "'")
+
+    if current_file == "" then
+        local alt_file = vim.fn.expand("#:p")
+        if alt_file and alt_file ~= "" then
+            current_file = alt_file
+            log.debug("Using alternate buffer: " .. current_file)
+        end
+    end
+
+    log.debug("Final current_file: '" .. current_file .. "'")
+    return current_file
+end
+
+-- Disable default searches that user has overridden
 local function disable_default_searches(search_settings)
     local default_searches = require("venv-selector.config").default_settings.search
     for search_name, _ in pairs(search_settings.search) do
@@ -40,212 +34,233 @@ local function disable_default_searches(search_settings)
     end
 end
 
+-- Handle interactive search from command args
 local function set_interactive_search(opts)
     if opts ~= nil and #opts.args > 0 then
         local settings = {
             search = {
                 interactive = {
-                    command = opts.args:gsub("%$CWD", vim.fn.getcwd()),
+                    command = opts.args:gsub("$CWD", vim.fn.getcwd()),
                 },
             },
         }
         log.debug("Interactive search replaces previous search settings: ", settings)
         return settings
     end
-
     return nil
 end
 
+-- Create result entry from search output line
+local function create_result_entry(line, search_config, context, callback)
+    local rv = {
+        path = line,
+        name = line,
+        icon = context.options.icon or "",
+        type = search_config.type or "venv",
+        source = search_config.name
+    }
+
+    if callback then
+        log.debug("Calling on_telescope_result() callback function with line '" ..
+            line .. "' and source '" .. rv.source .. "'")
+        rv.name = callback(line, rv.source)
+    end
+
+    -- Create concise log message
+    local log_msg = "Found " .. rv.type .. " from " .. rv.source .. ": " .. rv.name
+    if rv.path ~= rv.name then
+        log_msg = log_msg .. " (path: " .. rv.path .. ")"
+    end
+    log.debug(log_msg)
+    return rv
+end
+
+-- Handle job events (stdout, stderr, exit)
+local function handle_job_event(job_id, data, event, context)
+    local search_config = context.jobs[job_id]
+    if not search_config then return end
+
+    if event == "stdout" and data then
+        local callback = search_config.on_telescope_result_callback
+            or context.options.on_telescope_result_callback
+            or search_config.on_fd_result_callback
+            or context.options.on_fd_result_callback
+
+        for _, line in ipairs(data) do
+            if line ~= "" and line ~= nil then
+                local result = create_result_entry(line, search_config, context, callback)
+                context.picker:insert_result(result)
+            end
+        end
+    elseif event == "stderr" and data then
+        -- Collect stderr output for error reporting
+        if not search_config.stderr_output then
+            search_config.stderr_output = {}
+        end
+        for _, line in ipairs(data) do
+            if line ~= "" then
+                table.insert(search_config.stderr_output, line)
+            end
+        end
+    elseif event == "exit" then
+        -- Log job completion status
+        local exit_code = data
+        local has_errors = search_config.stderr_output and #search_config.stderr_output > 0
+        
+        if exit_code == 0 and not has_errors then
+            log.debug("Search job '" .. search_config.name .. "' completed successfully")
+        else
+            local error_msg = "Search job '" .. search_config.name .. "' failed with exit code " .. exit_code
+            if has_errors then
+                error_msg = error_msg .. ". Error output: " .. table.concat(search_config.stderr_output, " ")
+            end
+            log.debug(error_msg)
+        end
+        return true -- Signal that job finished
+    end
+
+    return false
+end
+
+-- Create job timeout handler
+local function create_timeout_handler(job_id, job_name, search_timeout)
+    local function stop_job()
+        local running = vim.fn.jobwait({ job_id }, 0)[1] == -1
+        if running then
+            vim.fn.jobstop(job_id)
+            local message = "Search with name '" .. job_name ..
+                "' took more than " .. search_timeout ..
+                " seconds and was stopped. Avoid using VenvSelect in your $HOME directory since it searches all hidden files by default."
+            log.warning(message)
+            vim.notify(message, vim.log.levels.ERROR, { title = "VenvSelect" })
+        end
+    end
+
+    local timer = vim.uv.new_timer()
+    timer:start(search_timeout * 1000, 0, vim.schedule_wrap(function()
+        stop_job()
+        timer:stop()
+        timer:close()
+    end))
+
+    return timer
+end
+
+-- Start a single search job
+local function start_search_job(search_name, search_config, context)
+    local job = path.expand(search_config.execute_command)
+    -- log.debug("Starting '" .. search_name .. "': '" .. job .. "'")
+
+    -- Handle Windows command splitting
+    if vim.uv.os_uname().sysname == "Windows_NT" then
+        job = utils.split_cmd_for_windows(job)
+    end
+
+    local function job_event_handler(id, data, event)
+        handle_job_event(id, data, event, context)
+    end
+
+    local job_id = vim.fn.jobstart(job, {
+        stdout_buffered = true,
+        stderr_buffered = true,
+        on_stdout = job_event_handler,
+        on_stderr = job_event_handler,
+        on_exit = function(id, data, event)
+            if handle_job_event(id, data, event, context) then
+                context.job_count = context.job_count - 1
+                if context.job_count == 0 then
+                    log.info("Searching finished.")
+                    context.picker:search_done()
+                    M.search_in_progress = false
+                end
+            end
+        end,
+    })
+
+    search_config.name = search_name
+    context.jobs[job_id] = search_config
+    context.job_count = context.job_count + 1
+
+    -- Set up timeout handler
+    create_timeout_handler(job_id, search_name, context.options.search_timeout)
+
+    return context.job_count
+end
+
+-- Process workspace-based searches
+local function process_workspace_searches(search_name, search_config, context)
+    local workspace_folders = workspace.list_folders()
+    for _, workspace_path in pairs(workspace_folders) do
+        local workspace_search = vim.deepcopy(search_config)
+        workspace_search.execute_command = workspace_search.execute_command:gsub("$WORKSPACE_PATH", workspace_path)
+        start_search_job(search_name, workspace_search, context)
+    end
+end
+
+-- Process different types of searches based on their patterns
+local function process_search_by_type(search_name, search_config, context)
+    -- Handle $FD substitution for all searches
+    search_config.execute_command = search_config.command:gsub("$FD", context.options.fd_binary_name)
+
+    log.debug("Processing search: '" ..
+        search_name .. "' with command after substitutions: '" .. search_config.execute_command .. "'")
+
+    if search_config.command:find("$WORKSPACE_PATH") then
+        process_workspace_searches(search_name, search_config, context)
+    elseif search_config.command:find("$CWD") then
+        search_config.execute_command = search_config.execute_command:gsub("$CWD", vim.fn.getcwd())
+        start_search_job(search_name, search_config, context)
+    elseif search_config.command:find("$FILE_DIR") then
+        local current_dir = path.get_current_file_directory()
+        if current_dir ~= nil then
+            search_config.execute_command = search_config.execute_command:gsub("$FILE_DIR", current_dir)
+            start_search_job(search_name, search_config, context)
+        end
+    elseif search_config.command:find("$CURRENT_FILE") then
+        local current_file = get_current_file()
+        log.debug("Found $CURRENT_FILE search: '" .. search_name .. "', current_file: '" .. current_file .. "'")
+        if current_file ~= "" then
+            search_config.execute_command = search_config.execute_command:gsub("$CURRENT_FILE", current_file)
+            log.debug("Executing $CURRENT_FILE search command")
+            start_search_job(search_name, search_config, context)
+        else
+            log.debug("Skipping $CURRENT_FILE search - current_file is empty")
+        end
+    else
+        start_search_job(search_name, search_config, context)
+    end
+end
+
+-- Main search function
 function M.run_search(picker, opts)
     local user_settings = require("venv-selector.config").user_settings
-    local options = require("venv-selector.config").user_settings.options
+    local options = user_settings.options
 
     if M.search_in_progress == true then
         log.info("Not starting new search because previous search is still running.")
         return
     end
 
-    local jobs = {}
-    local job_count = 0
-    local results = {}
+    M.search_in_progress = true
+
     local search_settings = set_interactive_search(opts) or user_settings
-    local cwd = vim.fn.getcwd()
-
-    local search_timeout = options.search_timeout
-
-    local function on_event(job_id, data, event)
-        local callback = jobs[job_id].on_telescope_result_callback
-            or utils.try(search_settings, "options", "on_telescope_result_callback")
-            or jobs[job_id].on_fd_result_callback
-            or utils.try(search_settings, "options", "on_fd_result_callback")
-
-        if event == "stdout" and data then
-            local search = jobs[job_id]
-
-            if not results[job_id] then
-                results[job_id] = {}
-            end
-            for _, line in ipairs(data) do
-                if line ~= "" and line ~= nil then
-                    local rv = {}
-                    rv.path = line
-                    rv.name = line
-                    rv.icon = options.icon or ""
-                    rv.type = search.type or "venv"
-                    rv.source = search.name
-
-                    if callback then
-                        log.debug(
-                            "Calling on_telescope_result() callback function with line '"
-                            .. line
-                            .. "' and source '"
-                            .. rv.source
-                            .. "'"
-                        )
-                        rv.name = callback(line, rv.source)
-                    end
-
-                    log.debug("Result:")
-                    log.debug(rv)
-                    picker:insert_result(rv)
-                end
-            end
-        elseif event == "stderr" and data then
-            if data and #data > 0 then
-                for _, line in ipairs(data) do
-                    if line ~= "" then
-                        log.debug(line)
-                    end
-                end
-            end
-        elseif event == "exit" then
-            job_count = job_count - 1
-            if job_count == 0 then
-                log.info("Searching finished.")
-                picker:search_done()
-                M.search_in_progress = false
-            end
-        end
-    end
-
-    local uv = vim.loop
-    local function start_search_job(job_name, search, count)
-        local job = path.expand(search.execute_command)
-
-        log.debug("Starting '" .. job_name .. "': '" .. job .. "'")
-        M.search_in_progress = true
-
-        -- Special for windows to run the command without a shell (translate the command to a lua table before sending to jobstart)
-        if vim.loop.os_uname().sysname == "Windows_NT" then
-            job = utils.split_cmd_for_windows(job)
-        end
-
-        local job_id = vim.fn.jobstart(job, {
-            stdout_buffered = true,
-            stderr_buffered = true,
-            on_stdout = on_event,
-            on_stderr = on_event,
-            on_exit = on_event,
-        })
-        search.name = job_name
-        jobs[job_id] = search
-        count = count + 1
-
-        local function stop_job()
-            local running = vim.fn.jobwait({ job_id }, 0)[1] == -1
-            if running then
-                vim.fn.jobstop(job_id)
-                local message = "Search with name '"
-                    .. jobs[job_id].name
-                    .. "' took more than "
-                    .. search_timeout
-                    ..
-                    " seconds and was stopped. Avoid using VenvSelect in your $HOME directory since it searches all hidden files by default."
-                log.warning(message)
-                vim.notify(message, vim.log.levels.ERROR, {
-                    title = "VenvSelect",
-                })
-            end
-        end
-
-        -- Start a timer to terminate the job after 5 seconds
-        local timer = uv.new_timer()
-        timer:start(
-            search_timeout * 1000,
-            0,
-            vim.schedule_wrap(function()
-                stop_job()
-                timer:stop()
-                timer:close()
-            end)
-        )
-
-        return count
-    end
 
     if options.enable_default_searches == false then
         disable_default_searches(search_settings)
     end
 
-    local current_dir = path.get_current_file_directory()
-    local current_file = vim.fn.expand("%:p") -- Get current file at same time as current_dir
+    -- Create search context object
+    local context = {
+        jobs = {},     -- Job tracking dictionary - needed for storing job info by job_id
+        job_count = 0, -- Simple counter for active jobs
+        picker = picker,
+        options = options
+    }
 
-    log.debug("Initial current_file from expand: '" .. current_file .. "'")
-
-    -- If current_file is empty, try alternate buffer (handles jumplist navigation)
-    if current_file == "" then
-        local alt_file = vim.fn.expand("#:p")
-        if alt_file and alt_file ~= "" then
-            current_file = alt_file
-            log.debug("Using alternate buffer: " .. current_file)
-        end
-    end
-
-    log.debug("Final current_file: '" .. current_file .. "'")
-
-    -- Start search jobs from config
-    for job_name, search in pairs(search_settings.search) do
-        log.debug("Processing search: '" ..
-            job_name .. "' with command: '" .. (search and search.command or "false") .. "'")
-        if search ~= false then -- Can be set to false by user to not search path
-            search.execute_command = search.command:gsub("$FD", options.fd_binary_name)
-
-            -- Do $CURRENT_FILE substitution early for all searches that need it
-            if is_current_file_search(search.command) then
-                search.execute_command = search.execute_command:gsub("$CURRENT_FILE", current_file)
-            end
-
-            log.debug("After variable substitution: '" .. search.execute_command .. "'")
-
-            -- search has $WORKSPACE_PATH inside - dont start it unless the lsp has discovered workspace folders
-            if is_workspace_search(search.command) then
-                local workspace_folders = workspace.list_folders()
-                for _, workspace_path in pairs(workspace_folders) do
-                    search.execute_command = search.execute_command:gsub("$WORKSPACE_PATH", workspace_path)
-                    job_count = start_search_job(job_name, search, job_count)
-                end
-                -- search has $CWD inside
-            elseif is_cwd_search(search.command) then
-                search.execute_command = search.execute_command:gsub("$CWD", cwd)
-                job_count = start_search_job(job_name, search, job_count)
-                -- search has $FILE_DIR inside
-            elseif is_filepath_search(search.command) then
-                if current_dir ~= nil then
-                    search.execute_command = search.execute_command:gsub("$FILE_DIR", current_dir)
-                    job_count = start_search_job(job_name, search, job_count)
-                end
-            elseif is_current_file_search(search.command) then
-                log.debug("Found $CURRENT_FILE search: '" .. job_name .. "', current_file: '" .. current_file .. "'")
-                if current_file ~= "" then
-                    log.debug("Executing $CURRENT_FILE search command")
-                    job_count = start_search_job(job_name, search, job_count)
-                else
-                    log.debug("Skipping $CURRENT_FILE search - current_file is empty")
-                end
-            else
-                -- search has no keywords inside
-                job_count = start_search_job(job_name, search, job_count)
-            end
+    -- Process all searches
+    for search_name, search_config in pairs(search_settings.search) do
+        if search_config ~= false then
+            process_search_by_type(search_name, search_config, context)
         end
     end
 end

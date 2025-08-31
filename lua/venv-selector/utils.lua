@@ -100,12 +100,18 @@ function M.has_pep723_metadata(file_path)
         return
     end
 
-    log.debug("Checking PEP-723 metadata for file: '" .. (file_path or "nil") .. "'")
-
     if not file_path or file_path == "" then
         log.debug("PEP-723 check: file_path is empty or nil")
         return false
     end
+
+    -- Check if we already know the metadata status for this buffer
+    if vim.b.has_uv_metadata ~= nil then
+        log.debug("Using cached PEP-723 metadata for: " .. file_path .. " = " .. tostring(vim.b.has_uv_metadata))
+        return vim.b.has_uv_metadata
+    end
+
+    log.debug("Checking PEP-723 metadata for file: '" .. file_path .. "'")
 
     -- Check if file exists and is readable
     local file = io.open(file_path, "r")
@@ -145,8 +151,19 @@ function M.has_pep723_metadata(file_path)
     end
 
     file:close()
-    log.debug("PEP-723 check result: " .. tostring(found_metadata))
+    
+    -- Cache the result in buffer-local variable
+    vim.b.has_uv_metadata = found_metadata
+    log.debug("PEP-723 check result: " .. tostring(found_metadata) .. " (cached)")
     return found_metadata
+end
+
+-- Clear cached PEP-723 metadata for current buffer (call when buffer content changes)
+function M.clear_pep723_cache()
+    if vim.b.has_uv_metadata ~= nil then
+        log.debug("Clearing cached PEP-723 metadata for buffer")
+        vim.b.has_uv_metadata = nil
+    end
 end
 
 return M

@@ -15,7 +15,7 @@
 
 # 📰 Recent News
 
-- *2025-09-01: New docs site: https://venvselector.homelab.today. Its searchable and has a lot more room for proper documentation of plugin features and options.
+- *2025-09-01*: New docs site: https://venvselector.homelab.today. Its searchable and has a lot more room for proper documentation of plugin features and options.
 
 - *2025-08-27*: The new version of VenvSelect (from the `regexp` branch) has been merged into the `main` branch. This updates the plugin with the last 9 months of changes from the `regexp` branch. Users who prefer the old version can set their branch to `v1`, but its not updated anymore.
 

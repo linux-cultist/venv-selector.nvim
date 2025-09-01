@@ -12,8 +12,6 @@
 
 
 
-New docs site is live: https://venvselector.homelab.today. This will replace the current README soon. Its searchable and has a lot more room for proper documentation of the plugin.
-
 
 # 📰 Recent News
 

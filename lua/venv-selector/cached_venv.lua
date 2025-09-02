@@ -10,7 +10,13 @@ else
     cache_file = path.expand(config.default_settings.cache.file)
 end
 
-local base_dir = path.get_base(cache_file)
+-- Ensure the cache directory exists
+local cache_dir = path.get_base(cache_file)
+if cache_dir and vim.fn.isdirectory(cache_dir) == 0 then
+    vim.fn.mkdir(cache_dir, "p")
+    log.debug("Created cache directory: " .. cache_dir)
+end
+
 
 local cache_retrieval_done = false
 
@@ -22,11 +28,6 @@ function M.handle_automatic_activation()
     end
 end
 
-function M.create_dir()
-    if vim.fn.filewritable(base_dir) == 0 then
-        vim.fn.mkdir(base_dir, "p")
-    end
-end
 
 function M.save(python_path, venv_type)
     if config.user_settings.options.enable_cached_venvs ~= true then
@@ -40,7 +41,6 @@ function M.save(python_path, venv_type)
         return
     end
 
-    M.create_dir()
 
     local venv_cache = {
         [vim.fn.getcwd()] = {

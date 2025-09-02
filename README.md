@@ -7,7 +7,7 @@
 </p>
 
 <p align="center">
-    <img src="venvselect-2024.png" />
+    <img src="venvselect.png" />
 </p>
 
 

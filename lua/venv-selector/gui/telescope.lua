@@ -32,8 +32,9 @@ end
 
 local function get_dynamic_display_config()
     local columns = vim.o.columns
+    local picker_columns = gui_utils.get_picker_columns()
 
-    -- Calculate dynamic widths but always maintain the same 5-column structure
+    -- Calculate dynamic widths based on configured columns
     local name_width, source_width
 
     -- Reserve space for icon columns (2 chars each) and separators
@@ -58,20 +59,33 @@ local function get_dynamic_display_config()
     name_width = math.max(20, name_width)
     source_width = math.max(8, source_width)
 
+    -- Build display config based on column order
+    local items = {}
+    for _, col in ipairs(picker_columns) do
+        if col == "marker" then
+            table.insert(items, { width = 2 })
+        elseif col == "search_icon" then
+            table.insert(items, { width = 2 })
+        elseif col == "search_name" then
+            table.insert(items, { width = source_width })
+        elseif col == "search_result" then
+            table.insert(items, { width = name_width })
+        end
+    end
+    
+    -- Add remaining space for the last column
+    if #items > 0 then
+        items[#items].remaining = true
+    end
+
     return {
         separator = " ",
-        items = {
-            { width = 2 },            -- icon
-            { width = name_width },   -- name
-            { width = 2 },            -- type icon
-            { width = source_width }, -- source type
-            { remaining = true },     -- remaining space (like original { width = 0.95 })
-        },
+        items = items,
     }
 end
 
 local function get_sorter()
-    local filter_type = config.user_settings.options.telescope_filter_type
+    local filter_type = config.user_settings.options.picker_filter_type or config.user_settings.options.telescope_filter_type
 
     if filter_type == "character" then
         return require("telescope.config").values.file_sorter()
@@ -85,6 +99,12 @@ function M.new(search_opts)
 
     -- Set this as the active instance for resize handling
     active_telescope_instance = self
+    
+    -- Setup highlight groups for marker color
+    local marker_color = config.user_settings.options.selected_venv_marker_color or config.user_settings.options.telescope_active_venv_color
+    
+    -- Create marker highlight group
+    vim.api.nvim_set_hl(0, "VenvSelectMarker", { fg = marker_color })
 
     local opts = {
         prompt_title = "Virtual environments (ctrl-r to refresh)",
@@ -95,6 +115,8 @@ function M.new(search_opts)
 
         sorting_strategy = "ascending",
         sorter = get_sorter(),
+        selection_strategy = "reset",
+        multi_selection = false,
         attach_mappings = function(bufnr, map)
             map({ "i", "n" }, "<cr>", function()
                 local selected_entry = require("telescope.actions.state").get_selected_entry()
@@ -106,6 +128,12 @@ function M.new(search_opts)
                 self.results = {}
                 require("venv-selector.search").run_search(self, search_opts)
             end)
+
+            -- Disable multi-selection mappings
+            map("i", "<Tab>", false)
+            map("i", "<S-Tab>", false)
+            map("n", "<Tab>", false)
+            map("n", "<S-Tab>", false)
 
             return true
         end,
@@ -132,22 +160,40 @@ function M:make_finder()
         entry.value = entry.name
         entry.ordinal = entry.path
         entry.display = function(e)
-            -- Always provide exactly 4 items (same as original), never fill the 5th remaining column
-            return displayer({
-                {
-                    icon,
-                    gui_utils.hl_active_venv(entry),
+            local picker_columns = gui_utils.get_picker_columns()
+            
+            -- Prepare column data
+            local hl = gui_utils.hl_active_venv(entry)
+            local marker_icon = config.user_settings.options.selected_venv_marker_icon or config.user_settings.options.icon or "●"
+            
+            -- Use pre-created highlight groups
+            local marker_hl = hl and "VenvSelectMarker" or nil
+            
+            local column_data = {
+                marker = {
+                    hl and marker_icon or " ",
+                    marker_hl,
                 },
-                { e.name },
-                {
+                search_icon = {
                     config.user_settings.options.show_telescope_search_type and gui_utils.draw_icons_for_types(
                         entry.source
                     ) or "",
                 },
-                {
+                search_name = {
                     config.user_settings.options.show_telescope_search_type and e.source or "",
                 },
-            })
+                search_result = { e.name },
+            }
+            
+            -- Build display items based on configured column order
+            local display_items = {}
+            for _, col in ipairs(picker_columns) do
+                if column_data[col] then
+                    table.insert(display_items, column_data[col])
+                end
+            end
+            
+            return displayer(display_items)
         end
 
         return entry

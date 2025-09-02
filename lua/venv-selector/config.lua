@@ -175,6 +175,22 @@ function M.merge_user_settings(conf)
 
     M.user_settings = vim.tbl_deep_extend("force", M.default_settings, conf or {})
 
+    -- Handle backwards compatibility for deprecated options
+    if conf and conf.options then
+        if conf.options.telescope_active_venv_color and not conf.options.selected_venv_marker_color then
+            M.user_settings.options.selected_venv_marker_color = conf.options.telescope_active_venv_color
+            log.debug("Using deprecated telescope_active_venv_color for selected_venv_marker_color")
+        end
+        if conf.options.icon and not conf.options.selected_venv_marker_icon then
+            M.user_settings.options.selected_venv_marker_icon = conf.options.icon
+            log.debug("Using deprecated icon for selected_venv_marker_icon")
+        end
+        if conf.options.telescope_filter_type and not conf.options.picker_filter_type then
+            M.user_settings.options.picker_filter_type = conf.options.telescope_filter_type
+            log.debug("Using deprecated telescope_filter_type for picker_filter_type")
+        end
+    end
+
     M.user_settings.detected = {
         system = vim.loop.os_uname().sysname,
     }
@@ -220,10 +236,12 @@ M.default_settings = {
         -- telescope viewer options
         on_telescope_result_callback = nil, -- callback function for modifying telescope results
         show_telescope_search_type = true, -- Shows which of the searches found which venv in telescope
-        telescope_filter_type = "substring", -- When you type something in telescope, filter by "substring" or "character"
-        telescope_active_venv_color = "#00FF00", -- The color of the active venv in telescope
+        picker_filter_type = "substring", -- When you type something in pickers, filter by "substring" or "character"
+        selected_venv_marker_color = "#00FF00", -- The color of the selected venv marker
+        selected_venv_marker_icon = "✔", -- The icon to use for marking the selected venv
+        picker_icons = {}, -- Override default icons for venv types (e.g., { poetry = "📝", hatch = "🔨", default = "🐍" })
+        picker_columns = { "marker", "search_icon", "search_name", "search_result" }, -- Column order in pickers (omit columns to hide them)
         picker = "auto", -- The picker to use. Valid options are "telescope", "fzf-lua", "snacks", "native", "mini-pick" or "auto"
-        icon = "", -- The icon to use in the picker for each item
         statusline_func = { nvchad = nil, lualine = nil }
     },
     search = M.get_default_searches()(),

@@ -35,6 +35,10 @@ end
 function M.new(search_opts)
     local self = setmetatable({ is_done = false, queue = {}, entries = {} }, M)
 
+    local config = require("venv-selector.config")
+    local filter_type = config.user_settings.options.picker_filter_type or config.user_settings.options.telescope_filter_type or "substring"
+    local algo = filter_type == "substring" and "v2" or "v1"
+
     local fzf_lua = require("fzf-lua")
     fzf_lua.fzf_exec(function(fzf_cb)
         self.fzf_cb = fzf_cb
@@ -42,6 +46,13 @@ function M.new(search_opts)
     end, {
         prompt = "Virtual environments (ctrl-r to refresh) > ",
         winopts = get_dynamic_winopts(),
+        fzf_opts = {
+            ["--tabstop"] = "1",
+            ["--algo"] = algo,
+            ["--exact"] = filter_type == "substring",
+            ["--literal"] = filter_type == "substring",
+            ["--no-multi"] = true,
+        },
         actions = {
             ["default"] = function(selected, _)
                 if selected and #selected > 0 then
@@ -71,12 +82,49 @@ function M:consume_queue()
             local fzf = require("fzf-lua")
 
             local hl = gui_utils.hl_active_venv(result)
-            local icon = hl and fzf.utils.ansi_from_hl(hl, result.icon) or result.icon
-            local entry = gui_utils.format_result_as_string(icon, result.source, result.name)
+            
+            -- Format entry with configurable column order
+            local config = require("venv-selector.config")
+            local entry
+            if config.user_settings.options.show_telescope_search_type then
+                -- Prepare column data
+                local type_icon = gui_utils.draw_icons_for_types(result.source)
+                local marker
+                if hl then
+                    local color = config.user_settings.options.selected_venv_marker_color or config.user_settings.options.telescope_active_venv_color
+                    local icon = config.user_settings.options.selected_venv_marker_icon or config.user_settings.options.icon or "●"
+                    -- Convert hex color to ANSI escape sequence
+                    local r = tonumber(color:sub(2, 3), 16)
+                    local g = tonumber(color:sub(4, 5), 16)
+                    local b = tonumber(color:sub(6, 7), 16)
+                    marker = string.format("\27[38;2;%d;%d;%dm%s \27[0m", r, g, b, icon)
+                else
+                    marker = "  "
+                end
+                
+                local column_data = {
+                    marker = marker,
+                    search_icon = type_icon,
+                    search_name = string.format("%-15s", result.source),
+                    search_result = result.name
+                }
+                
+                -- Build entry based on configured column order
+                local columns = gui_utils.get_picker_columns()
+                local parts = {}
+                for _, col in ipairs(columns) do
+                    if column_data[col] then
+                        table.insert(parts, column_data[col])
+                    end
+                end
+                entry = table.concat(parts, "  ")
+            else
+                entry = result.name
+            end
+            require("venv-selector.logger").debug("fzf entry" .. entry)
 
-            -- strip ansi colors from the entry, because fzf strips ansi colors
-            -- from the returned selection result
-            self.entries[hl and fzf.utils.strip_ansi_coloring(entry) or entry] = result
+            -- No need to strip ansi colors since we're not using them anymore
+            self.entries[entry] = result
             self.fzf_cb(entry)
         end
         self.queue = {}

@@ -1,4 +1,5 @@
 local gui_utils = require("venv-selector.gui.utils")
+local config = require("venv-selector.config")
 
 local M = {}
 M.__index = M
@@ -11,6 +12,10 @@ H.ns_id = vim.api.nvim_create_namespace("MiniPickVenvSelect")
 
 function M.new()
     local self = setmetatable({ results = {} }, M)
+
+    -- Setup highlight groups for marker color
+    local marker_color = config.user_settings.options.selected_venv_marker_color or config.user_settings.options.telescope_active_venv_color
+    vim.api.nvim_set_hl(0, "VenvSelectMarker", { fg = marker_color })
 
     return self
 end
@@ -51,23 +56,55 @@ function M:search_done()
             -- Function for rendering list of venvs
             show = function(buf_id, items_arr, query)
                 local lines = {}
-                -- Format each item as a string
+                local columns = gui_utils.get_picker_columns()
+                
+                -- Format each item as a string based on configured columns
                 for _, item in ipairs(items_arr) do
-                    table.insert(lines, gui_utils.format_result_as_string(item.icon, item.source, item.name))
+                    local hl = gui_utils.hl_active_venv(item)
+                    local marker_icon = config.user_settings.options.selected_venv_marker_icon or config.user_settings.options.icon or "✔"
+                    
+                    -- Prepare column data
+                    local column_data = {
+                        marker = hl and marker_icon or " ",
+                        search_icon = gui_utils.draw_icons_for_types(item.source),
+                        search_name = string.format("%-15s", item.source),
+                        search_result = item.name
+                    }
+                    
+                    -- Build line based on configured column order
+                    local parts = {}
+                    for _, col in ipairs(columns) do
+                        if column_data[col] then
+                            table.insert(parts, column_data[col])
+                        end
+                    end
+                    table.insert(lines, table.concat(parts, "  "))
                 end
+                
                 -- Set the buffer lines to the formatted items
                 vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
-                -- -- Remove previous highlight extmarks
+                -- Remove previous highlight extmarks
                 pcall(vim.api.nvim_buf_clear_namespace, buf_id, H.ns_id, 0, -1)
-                -- Add new extmarks for icons
+                
+                -- Add new extmarks for marker highlighting
                 for i, item in ipairs(items_arr) do
-                    -- Check if the item should be highlighted
                     local hl = gui_utils.hl_active_venv(item)
                     if hl ~= nil then
-                        -- Highlight the icon in the first column
-                        pcall(vim.api.nvim_buf_set_extmark, buf_id, H.ns_id, i - 1, 0, {
-                            end_col = 1,
-                            hl_group = hl,
+                        -- Find marker position in the configured columns
+                        local marker_col = 0
+                        for j, col in ipairs(columns) do
+                            if col == "marker" then
+                                break
+                            elseif column_data[col] then
+                                -- Add length of previous column + 2 spaces
+                                marker_col = marker_col + vim.fn.strwidth(column_data[col]) + 2
+                            end
+                        end
+                        
+                        -- Highlight the marker
+                        pcall(vim.api.nvim_buf_set_extmark, buf_id, H.ns_id, i - 1, marker_col, {
+                            end_col = marker_col + vim.fn.strwidth(marker_icon),
+                            hl_group = "VenvSelectMarker",
                         })
                     end
                 end

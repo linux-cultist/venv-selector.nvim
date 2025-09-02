@@ -87,28 +87,47 @@ function M.sort_results(results)
 end
 
 function M.draw_icons_for_types(source)
-    if vim.tbl_contains({
-        "cwd",
-        "workspace",
-        "file",
+    local config = require("venv-selector.config")
+    
+    -- Check for "default" override first
+    if config.user_settings.options.picker_icons["default"] then
+        return config.user_settings.options.picker_icons["default"]
+    end
+    
+    -- Check for specific source override
+    if config.user_settings.options.picker_icons[source] then
+        return config.user_settings.options.picker_icons[source]
+    end
+    
+    -- Default icons
+    if source == "cwd" then
+        return "📍"
+    elseif source == "workspace" then
+        return "💼"
+    elseif source == "file" then
+        return "📄"
+    elseif source == "virtualenvs" then
+        return "🐍"
+    elseif source == "hatch" then
+        return "🥚"
+    elseif source == "poetry" then
+        return "📜"
+    elseif source == "pyenv" then
+        return "⚙️"
+    elseif vim.tbl_contains({
+        "anaconda_envs",
+        "anaconda_base",
     }, source) then
-        return "󰥨"
-    elseif
-        vim.tbl_contains({
-            "virtualenvs",
-            "hatch",
-            "poetry",
-            "pyenv",
-            "anaconda_envs",
-            "anaconda_base",
-            "miniconda_envs",
-            "miniconda_base",
-            "pipx",
-        }, source)
-    then
-        return ""
+        return "🐊"
+    elseif vim.tbl_contains({
+        "miniconda_envs",
+        "miniconda_base",
+    }, source) then
+        return "🔬"
+    elseif source == "pipx" then
+        return "📦"
     else
-        return "" -- user created venv icon
+        return "🐍" -- user created venv icon
     end
 end
 
@@ -127,6 +146,11 @@ function M.format_result_as_string(icon, source, name)
     else
         return string.format("%s %s", icon, name)
     end
+end
+
+function M.get_picker_columns()
+    local config = require("venv-selector.config")
+    return config.user_settings.options.picker_columns or { "marker", "search_icon", "search_name", "search_result" }
 end
 
 function M.select(entry)

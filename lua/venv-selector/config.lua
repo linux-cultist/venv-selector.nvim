@@ -235,7 +235,7 @@ M.default_settings = {
         require_lsp_activation = true, -- require activation of an lsp before setting env variables
         -- telescope viewer options
         on_telescope_result_callback = nil, -- callback function for modifying telescope results
-        show_telescope_search_type = true, -- Shows which of the searches found which venv in telescope
+        -- show_telescope_search_type is deprecated - use picker_columns instead
         picker_filter_type = "substring", -- When you type something in pickers, filter by "substring" or "character"
         selected_venv_marker_color = "#00FF00", -- The color of the selected venv marker
         selected_venv_marker_icon = "✔", -- The icon to use for marking the selected venv

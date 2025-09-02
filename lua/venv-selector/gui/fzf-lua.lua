@@ -85,42 +85,37 @@ function M:consume_queue()
             
             -- Format entry with configurable column order
             local config = require("venv-selector.config")
-            local entry
-            if config.user_settings.options.show_telescope_search_type then
-                -- Prepare column data
-                local type_icon = gui_utils.draw_icons_for_types(result.source)
-                local marker
-                if hl then
-                    local color = config.user_settings.options.selected_venv_marker_color or config.user_settings.options.telescope_active_venv_color
-                    local icon = config.user_settings.options.selected_venv_marker_icon or config.user_settings.options.icon or "●"
-                    -- Convert hex color to ANSI escape sequence
-                    local r = tonumber(color:sub(2, 3), 16)
-                    local g = tonumber(color:sub(4, 5), 16)
-                    local b = tonumber(color:sub(6, 7), 16)
-                    marker = string.format("\27[38;2;%d;%d;%dm%s \27[0m", r, g, b, icon)
-                else
-                    marker = "  "
-                end
-                
-                local column_data = {
-                    marker = marker,
-                    search_icon = type_icon,
-                    search_name = string.format("%-15s", result.source),
-                    search_result = result.name
-                }
-                
-                -- Build entry based on configured column order
-                local columns = gui_utils.get_picker_columns()
-                local parts = {}
-                for _, col in ipairs(columns) do
-                    if column_data[col] then
-                        table.insert(parts, column_data[col])
-                    end
-                end
-                entry = table.concat(parts, "  ")
+            -- Prepare column data
+            local type_icon = gui_utils.draw_icons_for_types(result.source)
+            local marker
+            if hl then
+                local color = config.user_settings.options.selected_venv_marker_color or config.user_settings.options.telescope_active_venv_color
+                local icon = config.user_settings.options.selected_venv_marker_icon or config.user_settings.options.icon or "●"
+                -- Convert hex color to ANSI escape sequence
+                local r = tonumber(color:sub(2, 3), 16)
+                local g = tonumber(color:sub(4, 5), 16)
+                local b = tonumber(color:sub(6, 7), 16)
+                marker = string.format("\27[38;2;%d;%d;%dm%s \27[0m", r, g, b, icon)
             else
-                entry = result.name
+                marker = "  "
             end
+            
+            local column_data = {
+                marker = marker,
+                search_icon = type_icon,
+                search_name = string.format("%-15s", result.source),
+                search_result = result.name
+            }
+            
+            -- Build entry based on configured column order
+            local columns = gui_utils.get_picker_columns()
+            local parts = {}
+            for _, col in ipairs(columns) do
+                if column_data[col] then
+                    table.insert(parts, column_data[col])
+                end
+            end
+            entry = table.concat(parts, "  ")
             require("venv-selector.logger").debug("fzf entry" .. entry)
 
             -- No need to strip ansi colors since we're not using them anymore

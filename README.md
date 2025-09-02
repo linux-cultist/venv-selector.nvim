@@ -537,7 +537,6 @@ options = {
 
         -- picker options
         on_telescope_result_callback = nil,        -- callback function for modifying telescope results
-        show_telescope_search_type = true,         -- shows which of the searches found which venv in telescope
         picker_filter_type = "substring",          -- when you type something in pickers, filter by "substring" or "character"
         selected_venv_marker_color = "#00FF00",    -- the color of the selected venv marker
         selected_venv_marker_icon = "✔",           -- the icon to use for marking the selected venv
@@ -545,7 +544,6 @@ options = {
         picker_columns = { "marker", "search_icon", "search_name", "search_result" }, -- column order in pickers (omit columns to hide them)
         picker = "auto",                           -- the picker to use. Valid options are "telescope", "fzf-lua", "snacks", "native", "mini-pick" or "auto"
         statusline_func = { nvchad = nil, lualine = nil } -- if a function is defined here for a statusline, it can be used to customize the statusline.
-
   }
 }
 ```

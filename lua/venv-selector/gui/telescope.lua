@@ -175,12 +175,10 @@ function M:make_finder()
                     marker_hl,
                 },
                 search_icon = {
-                    config.user_settings.options.show_telescope_search_type and gui_utils.draw_icons_for_types(
-                        entry.source
-                    ) or "",
+                    gui_utils.draw_icons_for_types(entry.source),
                 },
                 search_name = {
-                    config.user_settings.options.show_telescope_search_type and e.source or "",
+                    e.source,
                 },
                 search_result = { e.name },
             }

@@ -5,6 +5,7 @@ local log = require("venv-selector.logger")
 local M = {}
 M.current_python_path = nil
 M.current_venv_path = nil
+M.current_source = nil
 local previous_dir = nil
 
 function M.save_selected_python(python_path)

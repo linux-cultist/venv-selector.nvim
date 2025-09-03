@@ -46,6 +46,7 @@ function M.save(python_path, venv_type)
         [vim.fn.getcwd()] = {
             value = python_path,
             type = venv_type,
+            source = path.current_source,
         },
     }
 
@@ -128,6 +129,9 @@ function M.retrieve()
                 if cleaned_cache[vim.fn.getcwd()] ~= nil then
                     local venv = require("venv-selector.venv")
                     local venv_info = cleaned_cache[vim.fn.getcwd()]
+                    if venv_info.source ~= nil then
+                        venv.set_source(venv_info.source)
+                    end
 
                     log.debug("Activating venv `" .. venv_info.value .. "` from cache.")
                     venv.activate(venv_info.value, venv_info.type, false)

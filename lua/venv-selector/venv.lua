@@ -4,7 +4,7 @@ local log = require("venv-selector.logger")
 
 local M = {}
 
-M.current_source = nil -- contains the name of the search, like anaconda, pipx etc.
+path.current_source = nil -- contains the name of the search, like anaconda, pipx etc.
 
 function M.stop_lsp_servers()
     local hooks = require("venv-selector.config").user_settings.hooks
@@ -13,9 +13,9 @@ function M.stop_lsp_servers()
     end
 end
 
-function M.set_source(source)
+function M.set_source(source)   
     log.debug('Setting require("venv-selector").source() to \'' .. source .. "'")
-    M.current_source = source
+    path.current_source = source
 end
 
 --- Activate a virtual environment.

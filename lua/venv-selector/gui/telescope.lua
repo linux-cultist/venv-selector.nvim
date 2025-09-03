@@ -72,7 +72,7 @@ local function get_dynamic_display_config()
             table.insert(items, { width = name_width })
         end
     end
-    
+
     -- Add remaining space for the last column
     if #items > 0 then
         items[#items].remaining = true
@@ -85,7 +85,8 @@ local function get_dynamic_display_config()
 end
 
 local function get_sorter()
-    local filter_type = config.user_settings.options.picker_filter_type or config.user_settings.options.telescope_filter_type
+    local filter_type = config.user_settings.options.picker_filter_type or
+    config.user_settings.options.telescope_filter_type
 
     if filter_type == "character" then
         return require("telescope.config").values.file_sorter()
@@ -99,10 +100,11 @@ function M.new(search_opts)
 
     -- Set this as the active instance for resize handling
     active_telescope_instance = self
-    
+
     -- Setup highlight groups for marker color
-    local marker_color = config.user_settings.options.selected_venv_marker_color or config.user_settings.options.telescope_active_venv_color
-    
+    local marker_color = config.user_settings.options.selected_venv_marker_color or
+    config.user_settings.options.telescope_active_venv_color
+
     -- Create marker highlight group
     vim.api.nvim_set_hl(0, "VenvSelectMarker", { fg = marker_color })
 
@@ -161,14 +163,15 @@ function M:make_finder()
         entry.ordinal = entry.path
         entry.display = function(e)
             local picker_columns = gui_utils.get_picker_columns()
-            
+
             -- Prepare column data
             local hl = gui_utils.hl_active_venv(entry)
-            local marker_icon = config.user_settings.options.selected_venv_marker_icon or config.user_settings.options.icon or "●"
-            
+            local marker_icon = config.user_settings.options.selected_venv_marker_icon or
+            config.user_settings.options.icon or "●"
+
             -- Use pre-created highlight groups
             local marker_hl = hl and "VenvSelectMarker" or nil
-            
+
             local column_data = {
                 marker = {
                     hl and marker_icon or " ",
@@ -182,7 +185,7 @@ function M:make_finder()
                 },
                 search_result = { e.name },
             }
-            
+
             -- Build display items based on configured column order
             local display_items = {}
             for _, col in ipairs(picker_columns) do
@@ -190,7 +193,7 @@ function M:make_finder()
                     table.insert(display_items, column_data[col])
                 end
             end
-            
+
             return displayer(display_items)
         end
 

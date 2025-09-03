@@ -28,7 +28,6 @@ function M.handle_automatic_activation()
     end
 end
 
-
 function M.save(python_path, venv_type)
     if config.user_settings.options.enable_cached_venvs ~= true then
         log.debug("Option 'enable_cached_venvs' is false so will not use cache.")
@@ -59,11 +58,9 @@ function M.save(python_path, venv_type)
             local cached_json = vim.fn.json_decode(cached_file[1])
             local merged_cache = vim.tbl_deep_extend("force", cached_json, venv_cache)
             venv_cache_json = vim.fn.json_encode(merged_cache)
-
         end
     else
         venv_cache_json = vim.fn.json_encode(venv_cache)
-
     end
 
     vim.fn.writefile({ venv_cache_json }, cache_file)
@@ -98,13 +95,13 @@ function M.retrieve()
         log.debug("Option 'enable_cached_venvs' is false so will not use cache.")
         return
     end
-    
+
     -- Prevent multiple cache retrievals in the same session
     if cache_retrieval_done then
         log.debug("Cache retrieval already done in this session, skipping.")
         return
     end
-    
+
     -- Skip cache retrieval if current file has PEP 723 metadata to avoid interfering with UV
     local current_file = vim.fn.expand("%:p")
     if current_file and current_file ~= "" and vim.bo.filetype == "python" then
@@ -140,7 +137,7 @@ function M.retrieve()
             end
         end
     end
-    
+
     -- Mark as done even if no venv was activated
     cache_retrieval_done = true
 end

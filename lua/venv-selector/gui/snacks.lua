@@ -11,7 +11,8 @@ end
 
 function M:pick()
     -- Setup highlight groups for marker color
-    local marker_color = config.user_settings.options.selected_venv_marker_color or config.user_settings.options.telescope_active_venv_color
+    local marker_color = config.user_settings.options.selected_venv_marker_color or
+    config.user_settings.options.telescope_active_venv_color
     vim.api.nvim_set_hl(0, "VenvSelectMarker", { fg = marker_color })
 
     return Snacks.picker.pick({
@@ -25,8 +26,9 @@ function M:pick()
         format = function(item, picker)
             local columns = gui_utils.get_picker_columns()
             local hl = gui_utils.hl_active_venv(item)
-            local marker_icon = config.user_settings.options.selected_venv_marker_icon or config.user_settings.options.icon or "✔"
-            
+            local marker_icon = config.user_settings.options.selected_venv_marker_icon or
+            config.user_settings.options.icon or "✔"
+
             -- Prepare column data
             local column_data = {
                 marker = hl and { marker_icon, "VenvSelectMarker" } or { " " },
@@ -34,7 +36,7 @@ function M:pick()
                 search_name = { string.format("%-15s", item.source) },
                 search_result = { item.name }
             }
-            
+
             -- Build format based on configured column order
             local format_parts = {}
             for i, col in ipairs(columns) do
@@ -46,7 +48,7 @@ function M:pick()
                     end
                 end
             end
-            
+
             return format_parts
         end,
         confirm = function(picker, item)

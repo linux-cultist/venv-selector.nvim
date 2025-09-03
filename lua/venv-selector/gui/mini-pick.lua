@@ -14,7 +14,8 @@ function M.new()
     local self = setmetatable({ results = {} }, M)
 
     -- Setup highlight groups for marker color
-    local marker_color = config.user_settings.options.selected_venv_marker_color or config.user_settings.options.telescope_active_venv_color
+    local marker_color = config.user_settings.options.selected_venv_marker_color or
+    config.user_settings.options.telescope_active_venv_color
     vim.api.nvim_set_hl(0, "VenvSelectMarker", { fg = marker_color })
 
     return self
@@ -57,12 +58,13 @@ function M:search_done()
             show = function(buf_id, items_arr, query)
                 local lines = {}
                 local columns = gui_utils.get_picker_columns()
-                
+
                 -- Format each item as a string based on configured columns
                 for _, item in ipairs(items_arr) do
                     local hl = gui_utils.hl_active_venv(item)
-                    local marker_icon = config.user_settings.options.selected_venv_marker_icon or config.user_settings.options.icon or "✔"
-                    
+                    local marker_icon = config.user_settings.options.selected_venv_marker_icon or
+                    config.user_settings.options.icon or "✔"
+
                     -- Prepare column data
                     local column_data = {
                         marker = hl and marker_icon or " ",
@@ -70,7 +72,7 @@ function M:search_done()
                         search_name = string.format("%-15s", item.source),
                         search_result = item.name
                     }
-                    
+
                     -- Build line based on configured column order
                     local parts = {}
                     for _, col in ipairs(columns) do
@@ -80,12 +82,12 @@ function M:search_done()
                     end
                     table.insert(lines, table.concat(parts, "  "))
                 end
-                
+
                 -- Set the buffer lines to the formatted items
                 vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
                 -- Remove previous highlight extmarks
                 pcall(vim.api.nvim_buf_clear_namespace, buf_id, H.ns_id, 0, -1)
-                
+
                 -- Add new extmarks for marker highlighting
                 for i, item in ipairs(items_arr) do
                     local hl = gui_utils.hl_active_venv(item)
@@ -100,7 +102,7 @@ function M:search_done()
                                 marker_col = marker_col + vim.fn.strwidth(column_data[col]) + 2
                             end
                         end
-                        
+
                         -- Highlight the marker
                         pcall(vim.api.nvim_buf_set_extmark, buf_id, H.ns_id, i - 1, marker_col, {
                             end_col = marker_col + vim.fn.strwidth(marker_icon),

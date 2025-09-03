@@ -1,3 +1,3 @@
 return function()
-  return require("venv-selector.statusline.lualine").render()
+    return require("venv-selector.statusline.lualine").render()
 end

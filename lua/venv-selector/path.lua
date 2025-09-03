@@ -20,13 +20,13 @@ function M.add(newDir)
     if config.user_settings.options.activate_venv_in_terminal == true then
         if newDir ~= nil then
             local clean_dir = M.remove_trailing_slash(newDir)
-            
+
             -- Check if the new directory is the same as the previous one
             if previous_dir == clean_dir then
                 log.debug("Path unchanged - already using: " .. clean_dir)
                 return
             end
-            
+
             if previous_dir ~= nil then
                 M.remove(previous_dir)
             end

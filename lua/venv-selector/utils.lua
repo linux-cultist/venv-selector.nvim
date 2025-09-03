@@ -94,7 +94,6 @@ end
 
 -- Check if a file contains PEP-723 script metadata
 function M.has_pep723_metadata(file_path)
-
     if require("venv-selector.uv").uv_installed ~= true then
         log.debug("Uv not found on system - skipping metadata check.")
         return
@@ -150,7 +149,7 @@ function M.has_pep723_metadata(file_path)
     end
 
     file:close()
-    
+
     -- Cache the result in buffer-local variable
     vim.b.has_uv_metadata = found_metadata
     log.debug("PEP-723 check result: " .. tostring(found_metadata) .. " (cached)")

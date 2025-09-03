@@ -9,13 +9,13 @@ function my_custom_lsp_hook(venv_python)
   -- Get the LSP client
   local client = vim.lsp.get_clients({name = "my_custom_lsp"})[1]
   if not client then return 0 end
-  
+
   if venv_python == nil then
     -- Deactivation: stop the client
     vim.lsp.stop_client(client.id)
     return 1
   end
-  
+
   -- Configure with custom settings structure
   client.settings = vim.tbl_deep_extend("force", client.settings or {}, {
     customLsp = {
@@ -24,10 +24,10 @@ function my_custom_lsp_hook(venv_python)
       enableFeatures = true,
     }
   })
-  
+
   -- Notify the LSP of changes
   client:notify("workspace/didChangeConfiguration", { settings = nil })
-  
+
   print("Configured my_custom_lsp with: " .. venv_python)
   return 1  -- Return number of clients configured
 end
@@ -48,22 +48,6 @@ M.notifications_memory = {}
 -- Track configured LSP client + venv combinations to prevent redundant configurations
 -- Format: { client_id = venv_python_path }
 M.configured_clients = {}
-
--- Dynamic fallback hook for unknown Python LSPs
-function M.dynamic_python_lsp_hook(venv_python)
-    local count = 0
-    local known_clients = { "basedpyright", "pyright", "jedi_language_server", "pylsp", "ruff" }
-
-    for _, client in pairs(vim.lsp.get_clients()) do
-        -- Skip clients that already have explicit hooks
-        if not vim.tbl_contains(known_clients, client.name) then
-            if client.config and client.config.filetypes and vim.tbl_contains(client.config.filetypes, "python") then
-                count = count + M.configure_lsp_client(client.name, venv_python)
-            end
-        end
-    end
-    return count
-end
 
 -- LSP-specific configuration for different Python language servers
 local LSP_CONFIGS = {
@@ -109,6 +93,22 @@ local LSP_CONFIGS = {
     }
 }
 
+-- Dynamic fallback hook for unknown Python LSPs
+function M.dynamic_python_lsp_hook(venv_python)
+    local count = 0
+    local known_clients = vim.tbl_keys(LSP_CONFIGS)
+
+    for _, client in pairs(vim.lsp.get_clients()) do
+        -- Skip clients that already have explicit hooks
+        if not vim.tbl_contains(known_clients, client.name) then
+            if client.config and client.config.filetypes and vim.tbl_contains(client.config.filetypes, "python") then
+                count = count + M.configure_lsp_client(client.name, venv_python)
+            end
+        end
+    end
+    return count
+end
+
 function M.send_notification(message)
     local now = vim.loop.hrtime()
 
@@ -129,7 +129,8 @@ end
 function M.configure_lsp_client(client_name, venv_python)
     local lsp_config = LSP_CONFIGS[client_name]
     if not lsp_config then
-        log.debug("No specific configuration found for LSP client: " .. client_name .. ". Using default python.pythonPath configuration.")
+        log.debug("No specific configuration found for LSP client: " ..
+        client_name .. ". Using default python.pythonPath configuration.")
         -- Default fallback configuration for unknown Python LSPs
         lsp_config = {
             settings_wrapper = function(venv_python)
@@ -149,13 +150,14 @@ function M.configure_lsp_client(client_name, venv_python)
 
         -- Check if this client is already configured with this venv
         if M.configured_clients[client.id] == venv_python then
-            log.debug("Client " .. client_name .. " already configured with venv: " .. venv_python .. ". Skipping configuration.")
+            log.debug("Client " ..
+            client_name .. " already configured with venv: " .. venv_python .. ". Skipping configuration.")
             return
         end
 
         local config = require("venv-selector.config")
         local new_settings = lsp_config.settings_wrapper(venv_python)
-        
+
         -- Update client settings
         if client.settings then
             client.settings = vim.tbl_deep_extend("force", client.settings, new_settings)
@@ -195,8 +197,6 @@ end
 function M.pyright_hook(venv_python)
     return M.configure_lsp_client("pyright", venv_python)
 end
-
-
 
 function M.jedi_language_server_hook(venv_python)
     return M.configure_lsp_client("jedi_language_server", venv_python)

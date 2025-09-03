@@ -106,7 +106,7 @@ local function handle_job_event(job_id, data, event, context)
         -- Log job completion status
         local exit_code = data
         local has_errors = search_config.stderr_output and #search_config.stderr_output > 0
-        
+
         if exit_code == 0 and not has_errors then
             log.debug("Search job '" .. search_config.name .. "' completed successfully")
         else

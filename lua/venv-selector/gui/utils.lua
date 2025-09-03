@@ -17,7 +17,7 @@ function M.remove_dups(results)
                 (v.source == "file" or v.source == "cwd")
                 and (prev_entry.source ~= "file" and prev_entry.source ~= "cwd")
             then
-            -- Current item has less priority, do not add it
+                -- Current item has less priority, do not add it
             elseif
                 (prev_entry.source == "file" or prev_entry.source == "cwd")
                 and (v.source ~= "file" and v.source ~= "cwd")
@@ -88,17 +88,17 @@ end
 
 function M.draw_icons_for_types(source)
     local config = require("venv-selector.config")
-    
+
     -- Check for "default" override first
     if config.user_settings.options.picker_icons["default"] then
         return config.user_settings.options.picker_icons["default"]
     end
-    
+
     -- Check for specific source override
     if config.user_settings.options.picker_icons[source] then
         return config.user_settings.options.picker_icons[source]
     end
-    
+
     -- Default icons
     if source == "cwd" then
         return "📍"
@@ -115,14 +115,14 @@ function M.draw_icons_for_types(source)
     elseif source == "pyenv" then
         return "⚙️"
     elseif vim.tbl_contains({
-        "anaconda_envs",
-        "anaconda_base",
-    }, source) then
+            "anaconda_envs",
+            "anaconda_base",
+        }, source) then
         return "🐊"
     elseif vim.tbl_contains({
-        "miniconda_envs",
-        "miniconda_base",
-    }, source) then
+            "miniconda_envs",
+            "miniconda_base",
+        }, source) then
         return "🔬"
     elseif source == "pipx" then
         return "📦"

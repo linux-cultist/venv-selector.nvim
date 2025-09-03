@@ -13,7 +13,7 @@ function M.stop_lsp_servers()
     end
 end
 
-function M.set_source(source)   
+function M.set_source(source)
     log.debug('Setting require("venv-selector").source() to \'' .. source .. "'")
     path.current_source = source
 end

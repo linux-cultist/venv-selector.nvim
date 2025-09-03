@@ -24,8 +24,9 @@ function M:search_done()
         format_item = function(result)
             local columns = gui_utils.get_picker_columns()
             local hl = gui_utils.hl_active_venv(result)
-            local marker_icon = config.user_settings.options.selected_venv_marker_icon or config.user_settings.options.icon or "✔"
-            
+            local marker_icon = config.user_settings.options.selected_venv_marker_icon or
+            config.user_settings.options.icon or "✔"
+
             -- Prepare column data (no colors since vim.ui.select doesn't support them)
             local column_data = {
                 marker = hl and marker_icon or " ",
@@ -33,7 +34,7 @@ function M:search_done()
                 search_name = string.format("%-15s", result.source),
                 search_result = result.name
             }
-            
+
             -- Build format based on configured column order
             local parts = {}
             for _, col in ipairs(columns) do

@@ -3,28 +3,22 @@ local gui_utils = require("venv-selector.gui.utils")
 local M = {}
 M.__index = M
 
-
-
-
-
-
-
 local function get_dynamic_winopts()
     local columns = vim.o.columns
     local lines = vim.o.lines
-    
+
     -- Calculate dynamic width (80-95% of terminal width, with min/max constraints)
     local width_ratio = 0.9
     local min_width = 60
     local max_width = 120
     local dynamic_width = math.max(min_width, math.min(max_width, math.floor(columns * width_ratio)))
-    
+
     -- Calculate dynamic height (30-50% of terminal height, with min/max constraints)
     local height_ratio = 0.4
     local min_height = 0.3
     local max_height = 0.6
     local dynamic_height = math.max(min_height, math.min(max_height, height_ratio))
-    
+
     return {
         height = dynamic_height,
         width = dynamic_width,
@@ -36,7 +30,8 @@ function M.new(search_opts)
     local self = setmetatable({ is_done = false, queue = {}, entries = {} }, M)
 
     local config = require("venv-selector.config")
-    local filter_type = config.user_settings.options.picker_filter_type or config.user_settings.options.telescope_filter_type or "substring"
+    local filter_type = config.user_settings.options.picker_filter_type or
+        config.user_settings.options.telescope_filter_type or "substring"
     local algo = filter_type == "substring" and "v2" or "v1"
 
     local fzf_lua = require("fzf-lua")
@@ -82,15 +77,17 @@ function M:consume_queue()
             local fzf = require("fzf-lua")
 
             local hl = gui_utils.hl_active_venv(result)
-            
+
             -- Format entry with configurable column order
             local config = require("venv-selector.config")
             -- Prepare column data
             local type_icon = gui_utils.draw_icons_for_types(result.source)
             local marker
             if hl then
-                local color = config.user_settings.options.selected_venv_marker_color or config.user_settings.options.telescope_active_venv_color
-                local icon = config.user_settings.options.selected_venv_marker_icon or config.user_settings.options.icon or "●"
+                local color = config.user_settings.options.selected_venv_marker_color or
+                    config.user_settings.options.telescope_active_venv_color
+                local icon = config.user_settings.options.selected_venv_marker_icon or config.user_settings.options.icon or
+                    "●"
                 -- Convert hex color to ANSI escape sequence
                 local r = tonumber(color:sub(2, 3), 16)
                 local g = tonumber(color:sub(4, 5), 16)
@@ -99,14 +96,14 @@ function M:consume_queue()
             else
                 marker = "  "
             end
-            
+
             local column_data = {
                 marker = marker,
                 search_icon = type_icon,
                 search_name = string.format("%-15s", result.source),
                 search_result = result.name
             }
-            
+
             -- Build entry based on configured column order
             local columns = gui_utils.get_picker_columns()
             local parts = {}
@@ -159,7 +156,5 @@ function M:search_done()
     self.queue = results
     require("fzf-lua").actions.resume()
 end
-
-
 
 return M

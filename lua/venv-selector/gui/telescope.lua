@@ -95,8 +95,11 @@ local function get_sorter()
     end
 end
 
-function M.new(search_opts)
-    local self = setmetatable({ results = {} }, M)
+
+
+-- Create empty picker for streaming (doesn't start search automatically)
+function M.new_streaming(search_opts)
+    local self = setmetatable({ results = {}, telescope_picker = nil }, M)
 
     -- Set this as the active instance for resize handling
     active_telescope_instance = self
@@ -108,6 +111,34 @@ function M.new(search_opts)
     -- Create marker highlight group
     vim.api.nvim_set_hl(0, "VenvSelectMarker", { fg = marker_color })
 
+    return self
+end
+
+-- Setup streaming events for this picker instance
+function M:setup_streaming_events(search_opts)
+    local picker_id = tostring(self)
+    local result_event = "search_result_found_" .. picker_id
+    local complete_event = "search_complete_" .. picker_id
+    local events = require("venv-selector.events")
+    
+    events.on(result_event, function(args)
+        local result = args.data.result
+        self:insert_result(result)
+    end, { once = false })
+    
+    events.on(complete_event, function(args)
+        self:search_done()
+    end, { once = true })
+    
+    -- Start streaming search
+    require("venv-selector.search").run_search_streaming(self, search_opts, {
+        result_event = result_event,
+        complete_event = complete_event
+    })
+end
+
+-- Open the telescope picker (called after event listeners are set up)
+function M:open_picker(search_opts)
     local opts = {
         prompt_title = "Virtual environments (ctrl-r to refresh)",
         finder = self:make_finder(),
@@ -118,7 +149,9 @@ function M.new(search_opts)
         sorting_strategy = "ascending",
         sorter = get_sorter(),
         selection_strategy = "reset",
+        scroll_strategy = "limit",
         multi_selection = false,
+        default_selection_index = 1,
         attach_mappings = function(bufnr, map)
             map({ "i", "n" }, "<cr>", function()
                 local selected_entry = require("telescope.actions.state").get_selected_entry()
@@ -128,7 +161,9 @@ function M.new(search_opts)
 
             map("i", "<C-r>", function()
                 self.results = {}
-                require("venv-selector.search").run_search(self, search_opts)
+                -- Clear cache and trigger fresh streaming search
+                require("venv-selector.gui").clear_cache()
+                self:setup_streaming_events(search_opts)
             end)
 
             -- Disable multi-selection mappings
@@ -148,9 +183,18 @@ function M.new(search_opts)
     -- Set up autocmd for window resize
     self:setup_resize_autocmd()
 
-    require("telescope.pickers").new({}, opts):find()
-
-    return self
+    -- Store reference to telescope picker
+    self.telescope_picker = require("telescope.pickers").new({}, opts)
+    self.telescope_picker:find()
+    
+    -- Force selection to first result immediately after opening
+    vim.schedule(function()
+        if self.telescope_picker and #self.results > 0 then
+            pcall(function()
+                self.telescope_picker:set_selection(1)
+            end)
+        end
+    end)
 end
 
 function M:make_finder()
@@ -207,27 +251,63 @@ function M:make_finder()
 end
 
 function M:update_results()
-    local bufnr = vim.api.nvim_get_current_buf()
-    local picker = require("telescope.actions.state").get_current_picker(bufnr)
-    if picker ~= nil then
-        -- Update layout configuration for new window size
-        picker.layout_config = get_dynamic_layout_config()
-        picker:full_layout_update()
-        -- Then refresh the finder with new column widths
-        picker:refresh(self:make_finder(), { reset_prompt = false })
+    if self.telescope_picker then
+        -- Check if telescope picker is still valid before updating
+        local ok = pcall(function()
+            -- Update layout configuration for new window size
+            self.telescope_picker.layout_config = get_dynamic_layout_config()
+            self.telescope_picker:full_layout_update()
+            -- Then refresh the finder with new column widths
+            self.telescope_picker:refresh(self:make_finder(), { reset_prompt = false })
+        end)
+        
+        if not ok then
+            -- Telescope picker is no longer valid, ignore further updates
+            self.telescope_picker = nil
+        end
     end
 end
 
 function M:insert_result(result)
     table.insert(self.results, result)
-    self:update_results()
+    
+    -- Batch updates to reduce visual jumping - update every 5 results or for first 10
+    if #self.results % 5 == 0 or #self.results <= 10 then
+        self:update_results()
+        
+        -- For first result, ensure it's selected
+        if #self.results == 1 then
+            vim.schedule(function()
+                if self.telescope_picker then
+                    pcall(function()
+                        self.telescope_picker:set_selection(1)
+                    end)
+                end
+            end)
+        end
+    end
 end
 
 function M:search_done()
+    -- Final sort and cleanup
     self.results = gui_utils.remove_dups(self.results)
     gui_utils.sort_results(self.results)
-
+    
+    -- Force final update to ensure all results are displayed with proper sorting
     self:update_results()
+    
+    -- Ensure first result is selected after final sort
+    self:ensure_selection()
+end
+
+function M:ensure_selection()
+    if self.telescope_picker and #self.results > 0 then
+        vim.schedule(function()
+            pcall(function()
+                self.telescope_picker:set_selection(1)
+            end)
+        end)
+    end
 end
 
 function M:setup_resize_autocmd()

@@ -1,6 +1,20 @@
+local config = require("venv-selector.config")
+local events = require("venv-selector.events")
 local log = require("venv-selector.logger")
 
 local M = {}
+
+-- Cache for search results to avoid re-searching on every open
+local search_cache = {
+    results = {},
+    has_results = false
+}
+
+-- Function to clear search cache
+function M.clear_cache()
+    search_cache.results = {}
+    search_cache.has_results = false
+end
 
 local function resolve_picker()
     local picker = require("venv-selector.config").user_settings.options.picker
@@ -73,9 +87,47 @@ function M.open(opts)
 
     local selected_picker = resolve_picker()
     if selected_picker ~= nil then
-        local picker = require("venv-selector.gui." .. selected_picker).new(opts)
-        require("venv-selector.search").run_search(picker, opts)
+        if selected_picker == "telescope" then
+            -- Use streaming for telescope
+            local picker = require("venv-selector.gui." .. selected_picker).new_streaming(opts)
+            
+            -- Open picker first
+            picker:open_picker(opts)
+            
+            -- Check if we have cached results
+            if search_cache.has_results and #search_cache.results > 0 then
+                -- Use cached results
+                for _, result in ipairs(search_cache.results) do
+                    picker:insert_result(result)
+                end
+                picker:search_done()
+            else
+                -- Setup events to cache results during streaming
+                local picker_id = tostring(picker)
+                local result_event = "search_result_found_" .. picker_id
+                local complete_event = "search_complete_" .. picker_id
+                
+                events.on(result_event, function(args)
+                    -- Cache the result
+                    table.insert(search_cache.results, args.data.result)
+                end, { once = false })
+                
+                events.on(complete_event, function(args)
+                    search_cache.has_results = true
+                end, { once = true })
+                
+                -- Start streaming search
+                picker:setup_streaming_events(opts)
+            end
+        else
+            -- Use regular approach for other pickers
+            local picker = require("venv-selector.gui." .. selected_picker).new(opts)
+            require("venv-selector.search").run_search(picker, opts)
+        end
     end
 end
+
+-- Expose cache clearing function
+M.clear_cache = M.clear_cache
 
 return M

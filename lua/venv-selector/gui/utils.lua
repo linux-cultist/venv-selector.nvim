@@ -101,7 +101,7 @@ function M.draw_icons_for_types(source)
 
     -- Default icons
     if source == "cwd" then
-        return "📍"
+        return "🏠"
     elseif source == "workspace" then
         return "💼"
     elseif source == "file" then

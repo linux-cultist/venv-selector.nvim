@@ -39,7 +39,7 @@ function M.new(search_opts)
         self.fzf_cb = fzf_cb
         self:consume_queue()
     end, {
-        prompt = "Virtual environments (ctrl-r to refresh) > ",
+        prompt = "Virtual environments > ",
         winopts = get_dynamic_winopts(),
         fzf_opts = {
             ["--tabstop"] = "1",
@@ -55,16 +55,7 @@ function M.new(search_opts)
                     gui_utils.select(selected_entry)
                 end
             end,
-            ["ctrl-r"] = {
-                function()
-                    self.is_done = false
-                    self.fzf_cb = nil
-                    self.queue = {}
-                    self.entries = {}
-                    require("venv-selector.search").run_search(self, search_opts)
-                end,
-                fzf_lua.actions.resume,
-            },
+
         },
     })
 

@@ -2,7 +2,6 @@ local workspace = require("venv-selector.workspace")
 local path = require("venv-selector.path")
 local utils = require("venv-selector.utils")
 local log = require("venv-selector.logger")
-local events = require("venv-selector.events")
 
 
 local M = {}
@@ -90,13 +89,7 @@ local function handle_job_event(job_id, data, event, context)
         for _, line in ipairs(data) do
             if line ~= "" and line ~= nil then
                 local result = create_result_entry(line, search_config, context, callback)
-                if context.streaming then
-                    -- Emit streaming event with custom event name
-                    events.emit(context.result_event, { result = result })
-                else
-                    -- Direct picker insertion for non-streaming mode
-                    context.picker:insert_result(result)
-                end
+                context.picker:insert_result(result)
             end
         end
     elseif event == "stderr" and data then
@@ -177,11 +170,7 @@ local function start_search_job(search_name, search_config, context)
                 context.job_count = context.job_count - 1
                 if context.job_count == 0 then
                     log.info("Searching finished.")
-                    if context.streaming then
-                        events.emit(context.complete_event, {})
-                    else
-                        context.picker:search_done()
-                    end
+                    context.picker:search_done()
                     M.search_in_progress = false
                 end
             end
@@ -266,43 +255,6 @@ function M.run_search(picker, opts)
         job_count = 0, -- Simple counter for active jobs
         picker = picker,
         options = options
-    }
-
-    -- Process all searches
-    for search_name, search_config in pairs(search_settings.search) do
-        if search_config ~= false then
-            process_search_by_type(search_name, search_config, context)
-        end
-    end
-end
-
--- Streaming version that opens picker immediately and streams results
-function M.run_search_streaming(picker, opts, events_config)
-    local user_settings = require("venv-selector.config").user_settings
-    local options = user_settings.options
-
-    if M.search_in_progress == true then
-        log.info("Not starting new search because previous search is still running.")
-        return
-    end
-
-    M.search_in_progress = true
-
-    local search_settings = set_interactive_search(opts) or user_settings
-
-    if options.enable_default_searches == false then
-        disable_default_searches(search_settings)
-    end
-
-    -- Create search context object for streaming
-    local context = {
-        jobs = {},     -- Job tracking dictionary - needed for storing job info by job_id
-        job_count = 0, -- Simple counter for active jobs
-        picker = picker,
-        options = options,
-        streaming = true, -- Flag to indicate streaming mode
-        result_event = events_config.result_event,
-        complete_event = events_config.complete_event
     }
 
     -- Process all searches

@@ -83,7 +83,7 @@ function M.update_paths(venv_path, type)
         M.unset_env("VIRTUAL_ENV")
         local base_path
 
-        if vim.fn.has("Win32") then
+        if vim.fn.has("Win32") == 1 then
             base_path = path.get_base(venv_path)
         else
             base_path = path.get_base(path.get_base(venv_path))

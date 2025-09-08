@@ -262,7 +262,7 @@ function M.pyrefly_hook(venv_python)
             vim.defer_fn(function()
                 local clients = vim.lsp.get_clients({ name = "pyrefly" })
                 if #clients == 0 then
-                    log.debug("Trying alternative server start method for LazyVim")
+                    -- log.debug("Trying alternative server start method for LazyVim")
                     local root_dir = lspconfig.util.root_pattern("pyproject.toml", "pyrefly.toml", ".git")(vim.fn.expand(
                         "%:p"))
                     if root_dir then
@@ -293,7 +293,7 @@ function M.pyrefly_hook(venv_python)
         log.debug("Pyrefly client configuration returned: " .. tostring(result))
         return result
     else
-        log.debug("Pyrefly server setup failed - cannot configure client")
+        -- log.debug("Pyrefly server setup failed - cannot configure client")
         return 0 -- Server setup failed
     end
 end

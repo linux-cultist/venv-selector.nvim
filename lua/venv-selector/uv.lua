@@ -208,8 +208,8 @@ end
 function M.setup_auto_activation()
     if M.uv_installed == true then
         -- Handle opening/switching files
-        vim.api.nvim_create_autocmd({ "BufEnter" }, {
-            pattern = "*.py",
+        vim.api.nvim_create_autocmd({ "BufEnter", "FileType" }, {
+            pattern = "python",
             callback = function()
                 vim.defer_fn(function()
                     local current_file = vim.fn.expand("%:p")
@@ -220,8 +220,8 @@ function M.setup_auto_activation()
         })
 
         -- Handle file saves (force recheck since metadata may have changed)
-        vim.api.nvim_create_autocmd({ "BufWrite" }, {
-            pattern = "*.py",
+        vim.api.nvim_create_autocmd({ "BufWrite", "FileType" }, {
+            pattern = "python",
             callback = function()
                 vim.defer_fn(function()
                     local current_file = vim.fn.expand("%:p")

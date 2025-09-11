@@ -91,12 +91,6 @@ local LSP_CONFIGS = {
         end,
         use_settings_directly = true -- pylsp needs settings passed directly to notify
     },
-    pyrefly = {
-        settings_path = { "python", "pythonPath" },
-        settings_wrapper = function(venv_python)
-            return { python = { pythonPath = venv_python } }
-        end
-    }
 }
 
 -- Dynamic fallback hook for unknown Python LSPs
@@ -144,6 +138,7 @@ function M.configure_lsp_client(client_name, venv_python)
             end
         }
     end
+
 
     return M.execute_for_client(client_name, function(client)
         if venv_python == nil then
@@ -214,88 +209,6 @@ end
 
 function M.pylsp_hook(venv_python)
     return M.configure_lsp_client("pylsp", venv_python)
-end
-
-function M.pyrefly_hook(venv_python)
-    -- Auto-setup Pyrefly server definition if needed. It doesnt work currently with just calling setup().
-    local function setup_pyrefly_server()
-        local has_lspconfig, lspconfig = pcall(require, "lspconfig")
-        if not has_lspconfig then
-            return false
-        end
-
-        local has_configs, configs = pcall(require, "lspconfig.configs")
-        if not has_configs then
-            return false
-        end
-
-        -- Only setup if pyrefly isn't already configured
-        if not configs.pyrefly then
-            -- Check for pyrefly in Mason first, then system PATH
-            local pyrefly_cmd = nil
-
-            -- Check Mason installation (respect NVIM_APPNAME)
-            local data_path = vim.fn.stdpath("data")
-            local mason_bin = data_path .. "/mason/bin/pyrefly"
-            if vim.fn.executable(mason_bin) == 1 then
-                pyrefly_cmd = mason_bin
-                -- Check system PATH
-            elseif vim.fn.executable("pyrefly") == 1 then
-                pyrefly_cmd = "pyrefly"
-            else
-                return false -- Pyrefly not found
-            end
-
-            configs.pyrefly = {
-                default_config = {
-                    cmd = { pyrefly_cmd, "lsp" },
-                    filetypes = { "python" },
-                    root_dir = lspconfig.util.root_pattern("pyproject.toml", "pyrefly.toml", ".git"),
-                    settings = {},
-                },
-            }
-
-            -- Setup the server - try multiple approaches for LazyVim compatibility
-            lspconfig.pyrefly.setup({})
-
-            -- Force server start with vim.lsp.start as fallback
-            vim.defer_fn(function()
-                local clients = vim.lsp.get_clients({ name = "pyrefly" })
-                if #clients == 0 then
-                    -- log.debug("Trying alternative server start method for LazyVim")
-                    local root_dir = lspconfig.util.root_pattern("pyproject.toml", "pyrefly.toml", ".git")(vim.fn.expand(
-                        "%:p"))
-                    if root_dir then
-                        vim.lsp.start({
-                            name = "pyrefly",
-                            cmd = { pyrefly_cmd, "lsp" },
-                            root_dir = root_dir,
-                            filetypes = { "python" },
-                            settings = {},
-                        })
-                        log.debug("Started Pyrefly server manually with vim.lsp.start")
-                    end
-                end
-            end, 500)
-
-            log.debug("Auto-configured Pyrefly LSP server using: " .. pyrefly_cmd)
-
-            return true
-        end
-
-        return true -- Already configured
-    end
-
-    -- Ensure server is set up before configuring it
-    if setup_pyrefly_server() then
-        log.debug("Attempting to configure Pyrefly client with venv: " .. tostring(venv_python))
-        local result = M.configure_lsp_client("pyrefly", venv_python)
-        log.debug("Pyrefly client configuration returned: " .. tostring(result))
-        return result
-    else
-        -- log.debug("Pyrefly server setup failed - cannot configure client")
-        return 0 -- Server setup failed
-    end
 end
 
 -- Add support for new LSPs easily

@@ -25,9 +25,9 @@ end
 
 
 local function default_lsp_settings(venv_python, env_type)
-    local venv_dir  = vim.fn.fnamemodify(venv_python, ":h:h") -- .../upsales/venv
-    local venv_name = vim.fn.fnamemodify(venv_dir, ":t")      -- "venv"
-    local venv_path = vim.fn.fnamemodify(venv_dir, ":h")      -- .../upsales
+    local venv_dir  = vim.fn.fnamemodify(venv_python, ":h:h")
+    local venv_name = vim.fn.fnamemodify(venv_dir, ":t")
+    local venv_path = vim.fn.fnamemodify(venv_dir, ":h")
 
     local settings  = {
         python = {
@@ -103,19 +103,18 @@ local function pylsp_lsp_settings(venv_python, env_type)
     }
 
     return append_cmd_env(venv_python, env_type, settings)
-
 end
 
 
 -- LSP-specific configuration for different Python language servers
 local LSP_CONFIGS = { -- these all get venv_python, env_type as parameters
-    -- basedpyright = { settings_wrapper = basedpyright_lsp_settings },
-    pyright = { settings_wrapper = default_lsp_settings },
-    jedi_language_server = { settings_wrapper = default_lsp_settings },
-    -- ruff = { settings_wrapper = default_lsp_settings },
-    -- ty = { settings_wrapper = default_lsp_settings },
-    -- pyrefly = { settings_wrapper = pyrefly_lsp_settings },
-    pylsp = { settings_wrapper = pylsp_lsp_settings },
+    -- basedpyright = { settings_wrapper = basedpyright_lsp_settings }, -- works with default hook
+    pyright = { settings_wrapper = default_lsp_settings }, -- not tested yet
+    jedi_language_server = { settings_wrapper = default_lsp_settings }, -- not tested yet
+    -- ruff = { settings_wrapper = default_lsp_settings }, -- works with default hook
+    -- ty = { settings_wrapper = default_lsp_settings }, -- works with default hook
+    -- pyrefly = { settings_wrapper = pyrefly_lsp_settings }, -- works with default hook
+    pylsp = { settings_wrapper = pylsp_lsp_settings }, -- not tested yet
 }
 
 -- Dynamic fallback hook for unknown Python LSPs

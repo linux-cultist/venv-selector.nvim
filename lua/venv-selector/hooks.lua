@@ -108,7 +108,7 @@ end
 
 -- LSP-specific configuration for different Python language servers
 local LSP_CONFIGS = { -- these all get venv_python, env_type as parameters
-    -- basedpyright = { settings_wrapper = basedpyright_lsp_settings }, -- works with default hook
+    -- basedpyright = { settings_wrapper = basedpyright_lsp_settings },
     pyright = { settings_wrapper = default_lsp_settings }, -- not tested yet
     jedi_language_server = { settings_wrapper = default_lsp_settings }, -- not tested yet
     -- ruff = { settings_wrapper = default_lsp_settings }, -- works with default hook

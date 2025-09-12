@@ -219,7 +219,7 @@ M.default_settings = {
         hooks.pylsp_hook,
         hooks.ruff_hook,
         hooks.ty_hook,
-        -- hooks.pyrefly_hook,
+        hooks.pyrefly_hook,
         -- Dynamic fallback for any other Python LSPs
         hooks.dynamic_python_lsp_hook,
     },

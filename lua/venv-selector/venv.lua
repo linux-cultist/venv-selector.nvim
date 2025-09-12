@@ -9,7 +9,7 @@ path.current_source = nil -- contains the name of the search, like anaconda, pip
 function M.stop_lsp_servers()
     local hooks = require("venv-selector.config").user_settings.hooks
     for _, hook in pairs(hooks) do
-        hook(nil)
+        hook(nil, nil)
     end
 end
 
@@ -44,7 +44,7 @@ function M.activate(python_path, type, check_lsp)
     local count = 0
     local hooks = require("venv-selector.config").user_settings.hooks
     for _, hook in pairs(hooks) do
-        count = count + hook(python_path)
+        count = count + hook(python_path, type)
     end
 
     if check_lsp and count == 0 and config.user_settings.options.require_lsp_activation == true then
@@ -107,15 +107,15 @@ end
 function M.unset_env(env_variable_name)
     if config.user_settings.options.set_environment_variables == true then
         if vim.fn.getenv(env_variable_name) ~= nil then
-            vim.fn.setenv(env_variable_name, nil)
+            vim.fn.setenv(env_variable_name, "")
             log.debug("$" .. env_variable_name .. " has been unset.")
         end
     end
 end
 
 function M.unset_env_variables()
-    vim.fn.setenv("VIRTUAL_ENV", nil)
-    vim.fn.setenv("CONDA_PREFIX", nil)
+    vim.fn.setenv("VIRTUAL_ENV", "")
+    vim.fn.setenv("CONDA_PREFIX", "")
 end
 
 return M

@@ -6,30 +6,34 @@ local log = require("venv-selector.logger")
 Example: Custom hook with custom settings format
 
 function my_custom_lsp_hook(venv_python)
-  -- Get the LSP client
-  local client = vim.lsp.get_clients({name = "my_custom_lsp"})[1]
-  if not client then return 0 end
-
-  if venv_python == nil then
-    -- Deactivation: stop the client
-    vim.lsp.stop_client(client.id)
-    return 1
+  -- Only configure if the LSP is already enabled by the user
+  if not vim.lsp.is_enabled('my_custom_lsp') then
+    return 0
   end
 
-  -- Configure with custom settings structure
-  client.settings = vim.tbl_deep_extend("force", client.settings or {}, {
-    customLsp = {
-      pythonExecutable = venv_python,
-      workspaceFolder = vim.fn.fnamemodify(venv_python, ":h:h"),
-      enableFeatures = true,
+  -- Update the LSP config with new Python path
+  vim.lsp.config('my_custom_lsp', {
+    settings = {
+      customLsp = {
+        pythonExecutable = venv_python,
+        workspaceFolder = venv_python and vim.fn.fnamemodify(venv_python, ":h:h") or nil,
+        enableFeatures = venv_python ~= nil,
+      }
     }
   })
 
-  -- Notify the LSP of changes
-  client:notify("workspace/didChangeConfiguration", { settings = nil })
+  -- Restart the LSP to apply new settings
+  vim.lsp.enable('my_custom_lsp', false)
+  vim.defer_fn(function()
+    vim.lsp.enable('my_custom_lsp', true)
+  end, 500)
 
-  print("Configured my_custom_lsp with: " .. venv_python)
-  return 1  -- Return number of clients configured
+  if venv_python == nil then
+    print("Cleared Python path from my_custom_lsp")
+  else
+    print("Configured my_custom_lsp with: " .. venv_python)
+  end
+  return 1
 end
 
 Usage in setup:
@@ -45,39 +49,53 @@ local M = {}
 
 M.notifications_memory = {}
 
--- Track configured LSP client + venv combinations to prevent redundant configurations
--- Format: { client_id = venv_python_path }
-M.configured_clients = {}
+-- Track which LSP configs have been activated to prevent redundant operations
+-- Format: { lsp_name = venv_python_path }
+M.activated_configs = {}
 
 -- LSP-specific configuration for different Python language servers
 local LSP_CONFIGS = {
     basedpyright = {
-        settings_path = { "python", "pythonPath" },
         settings_wrapper = function(venv_python)
-            return { python = { pythonPath = venv_python } }
+            if not venv_python then
+                return { python = { pythonPath = vim.NIL, venv = vim.NIL, venvPath = vim.NIL } }
+            end
+            local venv_path = vim.fn.fnamemodify(venv_python, ":h:h")
+            return { 
+                python = { 
+                    pythonPath = venv_python,
+                    venv = vim.fn.fnamemodify(venv_path, ":t"),
+                    venvPath = venv_path
+                } 
+            }
         end
     },
     pyright = {
-        settings_path = { "python", "pythonPath" },
         settings_wrapper = function(venv_python)
-            return { python = { pythonPath = venv_python } }
+            if not venv_python then
+                return { python = { pythonPath = vim.NIL, venv = vim.NIL, venvPath = vim.NIL } }
+            end
+            local venv_path = vim.fn.fnamemodify(venv_python, ":h:h")
+            return { 
+                python = { 
+                    pythonPath = venv_python,
+                    venv = vim.fn.fnamemodify(venv_path, ":t"),
+                    venvPath = venv_path
+                } 
+            }
         end
     },
     jedi_language_server = {
-        settings_path = { "python", "pythonPath" },
         settings_wrapper = function(venv_python)
             return { python = { pythonPath = venv_python } }
-        end,
-        skip_notify = true -- jedi-language-server doesn't handle didChangeConfiguration well
+        end
     },
     ruff = {
         settings_wrapper = function(venv_python)
             return { python = { pythonPath = venv_python } }
-        end,
-        skip_notify = true -- ruff LSP doesn't handle didChangeConfiguration properly
+        end
     },
     pylsp = {
-        settings_path = { "pylsp", "plugins", "jedi", "environment" },
         settings_wrapper = function(venv_python)
             return {
                 pylsp = {
@@ -88,8 +106,22 @@ local LSP_CONFIGS = {
                     },
                 },
             }
-        end,
-        use_settings_directly = true -- pylsp needs settings passed directly to notify
+        end
+    },
+    ty = {
+        settings_wrapper = function(venv_python)
+            if not venv_python then
+                return { python = { pythonPath = vim.NIL, venv = vim.NIL, venvPath = vim.NIL } }
+            end
+            local venv_path = vim.fn.fnamemodify(venv_python, ":h:h")
+            return { 
+                python = { 
+                    pythonPath = venv_python,
+                    venv = vim.fn.fnamemodify(venv_path, ":t"),
+                    venvPath = venv_path
+                } 
+            }
+        end
     },
 }
 
@@ -98,11 +130,57 @@ function M.dynamic_python_lsp_hook(venv_python)
     local count = 0
     local known_clients = vim.tbl_keys(LSP_CONFIGS)
 
+    -- Get all currently running clients and check if they're Python LSPs
     for _, client in pairs(vim.lsp.get_clients()) do
         -- Skip clients that already have explicit hooks
         if not vim.tbl_contains(known_clients, client.name) then
-            if client.config and client.config.filetypes and vim.tbl_contains(client.config.filetypes, "python") then
-                count = count + M.configure_lsp_client(client.name, venv_python)
+            -- Check if this is a Python LSP by examining filetypes
+            local filetypes = vim.tbl_get(client, "config", "filetypes") or {}
+            local is_python_lsp = type(filetypes) == "table" and vim.tbl_contains(filetypes, "python")
+            
+            if is_python_lsp then
+                -- Only configure if settings changed
+                if M.activated_configs[client.name] ~= venv_python then
+                    -- Configure with default python settings including venv info
+                    local new_settings
+                    if not venv_python then
+                        new_settings = { python = { pythonPath = vim.NIL, venv = vim.NIL, venvPath = vim.NIL } }
+                    else
+                        local venv_path = vim.fn.fnamemodify(venv_python, ":h:h")
+                        new_settings = { 
+                            python = { 
+                                pythonPath = venv_python,
+                                venv = vim.fn.fnamemodify(venv_path, ":t"),
+                                venvPath = venv_path
+                            } 
+                        }
+                    end
+                    
+                    -- Update config and restart client
+                    vim.lsp.config(client.name, { settings = new_settings })
+                    log.debug("Stopping unknown Python LSP client " .. client.name .. " (id: " .. client.id .. ") before restart")
+                    vim.lsp.enable(client.name, false)
+                    
+                    -- Wait for client to fully stop before restarting
+                    vim.defer_fn(function()
+                        local remaining_clients = vim.lsp.get_clients({ name = client.name })
+                        if #remaining_clients > 0 then
+                            -- Force stop any remaining clients
+                            for _, remaining_client in pairs(remaining_clients) do
+                                vim.lsp.stop_client(remaining_client.id, true)
+                            end
+                            vim.defer_fn(function()
+                                vim.lsp.enable(client.name, true)
+                            end, 100)
+                        else
+                            vim.lsp.enable(client.name, true)
+                        end
+                    end, 500)
+                    
+                    M.activated_configs[client.name] = venv_python
+                    log.debug("Configured unknown Python LSP client " .. client.name .. " with venv: " .. (venv_python or "nil"))
+                    count = count + 1
+                end
             end
         end
     end
@@ -139,48 +217,79 @@ function M.configure_lsp_client(client_name, venv_python)
         }
     end
 
+    -- Only configure if the LSP is user-enabled
+    if not vim.lsp.is_enabled(client_name) then
+        return 0
+    end
 
-    return M.execute_for_client(client_name, function(client)
-        if venv_python == nil then
-            vim.lsp.stop_client(client.id)
-            log.debug("Stopped lsp server for " .. client_name)
-            -- Clean up tracking when client is stopped
-            M.configured_clients[client.id] = nil
-            return
+    -- Check if this client is already configured with this venv
+    if M.activated_configs[client_name] == venv_python then
+        log.debug("Client " ..
+            client_name .. " already configured with venv: " .. (venv_python or "nil") .. ". Skipping configuration.")
+        return 0
+    end
+
+    local config = require("venv-selector.config")
+    local new_settings = lsp_config.settings_wrapper(venv_python)
+
+    -- Update the LSP configuration and restart the client
+    vim.lsp.config(client_name, { settings = new_settings })
+    
+    -- Get current clients to track restart
+    local current_clients = vim.lsp.get_clients({ name = client_name })
+    for _, client in pairs(current_clients) do
+        log.debug("Stopping client " .. client_name .. " (id: " .. client.id .. ") before restart")
+    end
+    
+    -- Clear workspace state and properly shutdown
+    M.clear_lsp_workspace(client_name)
+    
+    -- Disable the client
+    vim.lsp.enable(client_name, false)
+    
+    -- Wait longer and ensure all clients are actually stopped before restart
+    vim.defer_fn(function()
+        local remaining_clients = vim.lsp.get_clients({ name = client_name })
+        if #remaining_clients > 0 then
+            log.debug("Warning: " .. #remaining_clients .. " clients still running for " .. client_name .. ", force stopping")
+            -- Force stop any remaining clients
+            for _, client in pairs(remaining_clients) do
+                vim.lsp.stop_client(client.id, true)  -- force stop
+                log.debug("Force stopped client " .. client_name .. " (id: " .. client.id .. ")")
+            end
         end
+        
+        -- Wait additional time after any force stops, then restart
+        vim.defer_fn(function()
+            log.debug("Starting fresh client " .. client_name .. " with new Python environment")
+            vim.lsp.enable(client_name, true)
+            
+            -- Verify the restart
+            vim.defer_fn(function()
+                local new_clients = vim.lsp.get_clients({ name = client_name })
+                for _, client in pairs(new_clients) do
+                    log.debug("New client started: " .. client_name .. " (id: " .. client.id .. ")")
+                end
+            end, 1000)
+        end, 1000)  -- Wait 1 second for clean restart
+    end, 500)
 
-        -- Check if this client is already configured with this venv
-        if M.configured_clients[client.id] == venv_python then
-            log.debug("Client " ..
-                client_name .. " already configured with venv: " .. venv_python .. ". Skipping configuration.")
-            return
-        end
+    -- Track this configuration
+    M.activated_configs[client_name] = venv_python
+    log.debug("Configured client " .. client_name .. " with venv: " .. (venv_python or "nil"))
 
-        local config = require("venv-selector.config")
-        local new_settings = lsp_config.settings_wrapper(venv_python)
+    local message
+    if venv_python then
+        message = "Registered '" .. venv_python .. "' with " .. client_name .. " LSP."
+    else
+        message = "Cleared Python path from " .. client_name .. " LSP."
+    end
+    
+    if config.user_settings.options.notify_user_on_venv_activation == true then
+        M.send_notification(message)
+    end
 
-        -- Update client settings
-        if client.settings then
-            client.settings = vim.tbl_deep_extend("force", client.settings, new_settings)
-        else
-            client.config.settings = vim.tbl_deep_extend("force", client.config.settings or {}, new_settings)
-        end
-
-        -- Notify client of configuration change (skip for problematic clients)
-        if not lsp_config.skip_notify then
-            local notify_settings = lsp_config.use_settings_directly and new_settings or nil
-            client:notify("workspace/didChangeConfiguration", { settings = notify_settings })
-        end
-
-        -- Track this configuration
-        M.configured_clients[client.id] = venv_python
-        log.debug("Configured client " .. client_name .. " (id: " .. client.id .. ") with venv: " .. venv_python)
-
-        local message = "Registered '" .. venv_python .. "' with " .. client_name .. " LSP."
-        if config.user_settings.options.notify_user_on_venv_activation == true then
-            M.send_notification(message)
-        end
-    end)
+    return 1
 end
 
 -- Generic hook function that works for all supported LSPs
@@ -211,42 +320,45 @@ function M.pylsp_hook(venv_python)
     return M.configure_lsp_client("pylsp", venv_python)
 end
 
+function M.ty_hook(venv_python)
+    return M.configure_lsp_client("ty", venv_python)
+end
+
 -- Add support for new LSPs easily
 function M.add_lsp_support(client_name, settings_wrapper, options)
     LSP_CONFIGS[client_name] = vim.tbl_deep_extend("force", {
         settings_wrapper = settings_wrapper,
-        use_settings_directly = false
     }, options or {})
 end
 
-function M.execute_for_client(name, callback)
-    -- get_active_clients deprecated in neovim v0.10
-    local client = vim.lsp.get_clients({ name = name })[1]
-
-    if not client then
-        --print('No client named: ' .. name .. ' found')
-        return 0
-    else
-        callback(client)
-        return 1
+-- Helper function to clear LSP workspace state and force a clean restart
+function M.clear_lsp_workspace(client_name)
+    local clients = vim.lsp.get_clients({ name = client_name })
+    for _, client in pairs(clients) do
+        -- Clear any cached workspace state
+        if client.workspace_folders then
+            for _, folder in pairs(client.workspace_folders) do
+                client:notify("workspace/didChangeWorkspaceFolders", {
+                    event = {
+                        removed = { folder },
+                        added = {}
+                    }
+                })
+            end
+        end
+        
+        -- Send shutdown request
+        client:request("shutdown", nil, function()
+            client:notify("exit")
+        end)
+        
+        -- Force stop after a brief delay if still running
+        vim.defer_fn(function()
+            if not client:is_stopped() then
+                client:stop(true)
+            end
+        end, 100)
     end
 end
-
--- Clean up tracking data when LSP clients detach
-local function setup_client_cleanup()
-    vim.api.nvim_create_autocmd("LspDetach", {
-        group = vim.api.nvim_create_augroup("VenvSelectorHooks", { clear = true }),
-        callback = function(args)
-            local client_id = args.data.client_id
-            if M.configured_clients[client_id] then
-                log.debug("Cleaning up configuration tracking for detached client: " .. client_id)
-                M.configured_clients[client_id] = nil
-            end
-        end,
-    })
-end
-
--- Initialize cleanup autocmd
-setup_client_cleanup()
 
 return M

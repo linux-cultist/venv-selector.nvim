@@ -220,6 +220,7 @@ M.default_settings = {
         hooks.ruff_hook,
         hooks.ty_hook,
         hooks.pyrefly_hook,
+        hooks.zuban_hook,
         -- Dynamic fallback for any other Python LSPs
         hooks.dynamic_python_lsp_hook,
     },

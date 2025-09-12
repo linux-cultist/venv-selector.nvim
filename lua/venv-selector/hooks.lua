@@ -61,7 +61,7 @@ M.activated_configs = {}
 -- Generic settings wrapper for most Python LSP servers
 local function generic_python_settings_wrapper(venv_python, env_type)
     log.debug("generic_python_settings_wrapper called with: " ..
-    (venv_python or "nil") .. ", env_type: " .. (env_type or "nil"))
+        (venv_python or "nil") .. ", env_type: " .. (env_type or "nil"))
     if not venv_python then
         return {
             python = { pythonPath = vim.NIL, venv = vim.NIL, venvPath = vim.NIL },
@@ -81,12 +81,12 @@ local function generic_python_settings_wrapper(venv_python, env_type)
     -- Set appropriate environment variable based on environment type
     if env_type == "anaconda" then
         settings.cmd_env.CONDA_PREFIX = venv_path
-        settings.cmd_env.VIRTUAL_ENV = ""  -- Clear VIRTUAL_ENV for conda
-        log.debug("Setting CONDA_PREFIX for conda environment: " .. venv_path .. " and clearing VIRTUAL_ENV")
+        settings.cmd_env.VIRTUAL_ENV = vim.NIL -- Properly unset VIRTUAL_ENV for conda
+        log.debug("Setting CONDA_PREFIX for conda environment: " .. venv_path .. " and unsetting VIRTUAL_ENV")
     else
         settings.cmd_env.VIRTUAL_ENV = venv_path
-        settings.cmd_env.CONDA_PREFIX = ""  -- Clear CONDA_PREFIX for regular venv
-        log.debug("Setting VIRTUAL_ENV for regular environment: " .. venv_path .. " and clearing CONDA_PREFIX")
+        settings.cmd_env.CONDA_PREFIX = vim.NIL -- Properly unset CONDA_PREFIX for regular venv
+        log.debug("Setting VIRTUAL_ENV for regular environment: " .. venv_path .. " and unsetting CONDA_PREFIX")
     end
 
     log.debug("generic_python_settings_wrapper returning settings:", settings)
@@ -97,21 +97,22 @@ end
 local LSP_CONFIGS = {
     basedpyright = {
         settings_wrapper = function(venv_python, env_type)
-            log.debug("basedpyright settings_wrapper called with: " .. (venv_python or "nil") .. ", env_type: " .. (env_type or "nil"))
+            log.debug("basedpyright settings_wrapper called with: " ..
+            (venv_python or "nil") .. ", env_type: " .. (env_type or "nil"))
             if not venv_python then
-                return { 
+                return {
                     python = { pythonPath = vim.NIL, venv = vim.NIL, venvPath = vim.NIL },
                     cmd_env = {}
                 }
             end
             local venv_path = vim.fn.fnamemodify(venv_python, ":h:h")
-            local settings = { 
-                python = { 
+            local settings = {
+                python = {
                     pythonPath = venv_python,
                     venv = vim.fn.fnamemodify(venv_path, ":t"),
                     venvPath = venv_path
                 },
-                cmd_env = {}  -- No environment variables for basedpyright
+                cmd_env = {} -- No environment variables for basedpyright
             }
             log.debug("basedpyright: Not setting VIRTUAL_ENV or CONDA_PREFIX (relies on settings only)")
             return settings
@@ -121,23 +122,62 @@ local LSP_CONFIGS = {
     jedi_language_server = { settings_wrapper = generic_python_settings_wrapper },
     ruff = { settings_wrapper = generic_python_settings_wrapper },
     ty = { settings_wrapper = generic_python_settings_wrapper },
-    pyrefly = {
+    zuban = {
         settings_wrapper = function(venv_python, env_type)
-            log.debug("pyrefly settings_wrapper called with: " .. (venv_python or "nil") .. ", env_type: " .. (env_type or "nil"))
+            log.debug("zuban settings_wrapper called with: " ..
+            (venv_python or "nil") .. ", env_type: " .. (env_type or "nil"))
             if not venv_python then
-                return { 
+                return {
                     python = { pythonPath = vim.NIL, venv = vim.NIL, venvPath = vim.NIL },
                     cmd_env = {}
                 }
             end
             local venv_path = vim.fn.fnamemodify(venv_python, ":h:h")
-            local settings = { 
-                python = { 
+            local settings = {
+                python = {
                     pythonPath = venv_python,
                     venv = vim.fn.fnamemodify(venv_path, ":t"),
                     venvPath = venv_path
                 },
-                cmd_env = {}  -- No environment variables for pyrefly
+                cmd_env = {}
+            }
+
+            -- Set appropriate environment variable based on environment type
+            if env_type == "anaconda" then
+                settings.cmd_env.CONDA_PREFIX = venv_path
+                settings.cmd_env.VIRTUAL_ENV = vim.NIL -- Properly unset VIRTUAL_ENV for conda
+                log.debug("zuban: Setting CONDA_PREFIX for conda environment: " ..
+                venv_path .. " and unsetting VIRTUAL_ENV")
+            else
+                settings.cmd_env.VIRTUAL_ENV = venv_path
+                settings.cmd_env.CONDA_PREFIX = vim.NIL -- Properly unset CONDA_PREFIX for regular venv
+                log.debug("zuban: Setting VIRTUAL_ENV for regular environment: " ..
+                venv_path .. " and unsetting CONDA_PREFIX")
+            end
+
+            log.debug("zuban: Returning settings with VIRTUAL_ENV=" ..
+            (settings.cmd_env.VIRTUAL_ENV or "nil") .. ", CONDA_PREFIX=" .. (settings.cmd_env.CONDA_PREFIX or "nil"))
+            return settings
+        end
+    },
+    pyrefly = {
+        settings_wrapper = function(venv_python, env_type)
+            log.debug("pyrefly settings_wrapper called with: " ..
+            (venv_python or "nil") .. ", env_type: " .. (env_type or "nil"))
+            if not venv_python then
+                return {
+                    python = { pythonPath = vim.NIL, venv = vim.NIL, venvPath = vim.NIL },
+                    cmd_env = {}
+                }
+            end
+            local venv_path = vim.fn.fnamemodify(venv_python, ":h:h")
+            local settings = {
+                python = {
+                    pythonPath = venv_python,
+                    venv = vim.fn.fnamemodify(venv_path, ":t"),
+                    venvPath = venv_path
+                },
+                cmd_env = {} -- No environment variables for pyrefly
             }
             log.debug("pyrefly: Not setting VIRTUAL_ENV or CONDA_PREFIX (relies on settings only)")
             return settings
@@ -160,10 +200,10 @@ local LSP_CONFIGS = {
                 -- Set appropriate environment variable based on environment type
                 if env_type == "anaconda" then
                     config.cmd_env.CONDA_PREFIX = venv_path
-                    config.cmd_env.VIRTUAL_ENV = ""  -- Clear VIRTUAL_ENV for conda
+                    config.cmd_env.VIRTUAL_ENV = vim.NIL -- Properly unset VIRTUAL_ENV for conda
                 else
                     config.cmd_env.VIRTUAL_ENV = venv_path
-                    config.cmd_env.CONDA_PREFIX = ""  -- Clear CONDA_PREFIX for regular venv
+                    config.cmd_env.CONDA_PREFIX = vim.NIL -- Properly unset CONDA_PREFIX for regular venv
                 end
             else
                 config.cmd_env = {}
@@ -179,7 +219,7 @@ function M.dynamic_python_lsp_hook(venv_python, env_type)
     local known_clients = vim.tbl_keys(LSP_CONFIGS)
 
     log.debug("dynamic_python_lsp_hook called with venv_python: " ..
-    (venv_python or "nil") .. ", env_type: " .. (env_type or "nil"))
+        (venv_python or "nil") .. ", env_type: " .. (env_type or "nil"))
 
     -- Get all currently running clients and check if they're Python LSPs
     local all_clients = vim.lsp.get_clients()
@@ -200,18 +240,18 @@ function M.dynamic_python_lsp_hook(venv_python, env_type)
                     -- Configure with default python settings including venv info
                     local new_config = generic_python_settings_wrapper(venv_python, env_type)
 
-                    -- Update config and restart client  
+                    -- Update config and restart client
                     vim.lsp.config(client.name, {
                         settings = new_config.python and { python = new_config.python } or new_config,
                         cmd_env = new_config.cmd_env or {}
                     })
-                    
+
                     -- Use the standard restart mechanism
                     M.restart_lsp_client(client.name, client.id)
 
                     M.activated_configs[client.name] = venv_python
                     log.debug("Configured unknown Python LSP client " ..
-                    client.name .. " with venv: " .. (venv_python or "nil"))
+                        client.name .. " with venv: " .. (venv_python or "nil"))
                 end
                 count = count + 1 -- Always count Python LSPs, even if already configured
             end
@@ -243,7 +283,7 @@ end
 
 function M.configure_lsp_client(client_name, venv_python, env_type)
     log.debug("configure_lsp_client called for: " ..
-    client_name .. " with venv: " .. (venv_python or "nil") .. ", env_type: " .. (env_type or "nil"))
+        client_name .. " with venv: " .. (venv_python or "nil") .. ", env_type: " .. (env_type or "nil"))
     local lsp_config = LSP_CONFIGS[client_name]
     if not lsp_config then
         log.debug("No specific configuration found for LSP client: " ..
@@ -324,7 +364,7 @@ end
 -- Specific hook functions for backward compatibility
 function M.basedpyright_hook(venv_python, env_type)
     log.debug("basedpyright_hook called with venv_python: " ..
-    (venv_python or "nil") .. ", env_type: " .. (env_type or "nil"))
+        (venv_python or "nil") .. ", env_type: " .. (env_type or "nil"))
     local result = M.configure_lsp_client("basedpyright", venv_python, env_type)
     log.debug("basedpyright_hook returning: " .. result)
     return result
@@ -339,7 +379,7 @@ end
 
 function M.jedi_language_server_hook(venv_python, env_type)
     log.debug("jedi_language_server_hook called with venv_python: " ..
-    (venv_python or "nil") .. ", env_type: " .. (env_type or "nil"))
+        (venv_python or "nil") .. ", env_type: " .. (env_type or "nil"))
     local result = M.configure_lsp_client("jedi_language_server", venv_python, env_type)
     log.debug("jedi_language_server_hook returning: " .. result)
     return result
@@ -373,6 +413,98 @@ function M.pyrefly_hook(venv_python, env_type)
     return result
 end
 
+function M.zuban_hook(venv_python, env_type)
+    log.debug("zuban_hook called with venv_python: " .. (venv_python or "nil") .. ", env_type: " .. (env_type or "nil"))
+
+    local running_clients = vim.lsp.get_clients({ name = "zuban" })
+    if #running_clients == 0 then
+        log.debug("No running Zuban clients found, skipping configuration")
+        return 0
+    end
+
+    -- Check if this client is already configured with this venv
+    if M.activated_configs["zuban"] == venv_python then
+        log.debug("Zuban already configured with venv: " .. (venv_python or "nil") .. ". Skipping configuration.")
+        return 1
+    end
+
+    log.debug("Found " .. #running_clients .. " running Zuban clients, proceeding with restart")
+
+    -- Get Zuban-specific configuration
+    local lsp_config = LSP_CONFIGS["zuban"]
+    local new_config = lsp_config.settings_wrapper(venv_python, env_type)
+
+    -- Update the LSP configuration first
+    local lsp_config_update = {
+        settings = new_config.python and { python = new_config.python } or new_config,
+        cmd_env = new_config.cmd_env or {}
+    }
+
+    log.debug("Updating Zuban LSP config with cmd_env:", lsp_config_update.cmd_env)
+    vim.lsp.config("zuban", lsp_config_update)
+
+    -- Custom restart logic for Zuban
+    for _, client in pairs(running_clients) do
+        log.debug("Restarting Zuban client " .. client.id .. " with robust restart mechanism")
+        M.restart_zuban_client(client.id)
+    end
+
+    -- Track this configuration
+    M.activated_configs["zuban"] = venv_python
+    log.debug("Configured Zuban with venv: " .. (venv_python or "nil"))
+
+    return 1
+end
+
+-- Zuban-specific restart function with more robust logic
+function M.restart_zuban_client(client_id)
+    log.debug("Starting robust Zuban restart for client ID: " .. client_id)
+
+    -- Stop the client
+    vim.lsp.stop_client(client_id, true)
+
+    -- Wait longer for Zuban to fully stop, then restart
+    vim.defer_fn(function()
+        -- Check if client is actually stopped
+        local check_client = vim.lsp.get_client_by_id(client_id)
+        if check_client and not check_client:is_stopped() then
+            log.debug("Zuban client " .. client_id .. " still running, force stopping again")
+            check_client:stop(true)
+        end
+
+        -- Clear any remaining Zuban clients
+        local remaining_clients = vim.lsp.get_clients({ name = "zuban" })
+        for _, remaining in pairs(remaining_clients) do
+            log.debug("Force stopping remaining Zuban client " .. remaining.id)
+            vim.lsp.stop_client(remaining.id, true)
+        end
+
+        -- Wait a bit more, then restart
+        vim.defer_fn(function()
+            log.debug("Attempting to restart Zuban LSP")
+
+            -- Try to restart Zuban
+            vim.lsp.enable("zuban", true)
+
+            -- Verify restart after a delay
+            vim.defer_fn(function()
+                local new_clients = vim.lsp.get_clients({ name = "zuban" })
+                if #new_clients > 0 then
+                    log.debug("Zuban successfully restarted with " .. #new_clients .. " clients")
+                else
+                    log.debug("WARNING: Zuban failed to restart, attempting manual start")
+                    -- Force start by opening the current buffer again if it's a Python file
+                    local buf = vim.api.nvim_get_current_buf()
+                    local filetype = vim.bo[buf].filetype
+                    if filetype == "python" then
+                        vim.cmd("edit")
+                    end
+                end
+            end, 500)
+        end, 400)
+    end, 600)
+end
+
 -- Add support for new LSPs easily
 function M.add_lsp_support(client_name, settings_wrapper, options)
     LSP_CONFIGS[client_name] = vim.tbl_deep_extend("force", {
@@ -383,10 +515,10 @@ end
 -- Unified client restart function
 function M.restart_lsp_client(client_name, client_id)
     log.debug("Restarting LSP client: " .. client_name .. " (id: " .. client_id .. ")")
-    
+
     -- First, stop the specific client
-    vim.lsp.stop_client(client_id, true)  -- force stop immediately
-    
+    vim.lsp.stop_client(client_id, true) -- force stop immediately
+
     -- Wait for client to be fully stopped, then restart
     vim.defer_fn(function()
         -- Check if this specific client is gone
@@ -395,7 +527,7 @@ function M.restart_lsp_client(client_name, client_id)
             log.debug("Client " .. client_id .. " still running, force stopping again")
             check_client:stop(true)
         end
-        
+
         -- Stop any other clients with the same name to avoid duplicates
         local remaining_clients = vim.lsp.get_clients({ name = client_name })
         for _, remaining in pairs(remaining_clients) do
@@ -404,7 +536,7 @@ function M.restart_lsp_client(client_name, client_id)
                 vim.lsp.stop_client(remaining.id, true)
             end
         end
-        
+
         -- Start fresh client
         vim.defer_fn(function()
             log.debug("Starting fresh client: " .. client_name)
@@ -428,12 +560,12 @@ function M.clear_lsp_workspace(client_name)
                 })
             end
         end
-        
+
         -- Send shutdown request
         client:request("shutdown", nil, function()
             client:notify("exit")
         end)
-        
+
         -- Force stop after a brief delay if still running
         vim.defer_fn(function()
             if not client:is_stopped() then

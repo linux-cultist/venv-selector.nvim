@@ -8,19 +8,22 @@ M.notifications_memory = {}
 -- Format: { lsp_name = venv_python_path }
 M.activated_configs = {}
 
-local function append_cmd_env(venv_python, env_type, settings)
+local function create_cmd_env(venv_python, env_type)
     local venv_path = vim.fn.fnamemodify(venv_python, ":h:h")
-    -- Initialize cmd_env table if it doesn't exist
-    settings.cmd_env = settings.cmd_env or {}
-    -- Set python.cmd_env based on environment
+    local env = {
+        cmd_env = {}
+    }
     if env_type == "anaconda" then
-        settings.cmd_env.CONDA_PREFIX = venv_path
+        env.cmd_env.CONDA_PREFIX = venv_path
         log.debug("Setting CONDA_PREFIX for conda environment: " .. venv_path)
-    else
-        settings.cmd_env.VIRTUAL_ENV = venv_path
+    elseif env_type == "venv" then
+        env.cmd_env.VIRTUAL_ENV = venv_path
         log.debug("Setting VIRTUAL_ENV for regular environment: " .. venv_path)
+    else
+        log.debug("Unknown venv type: " .. env_type)
     end
-    return settings
+
+    return env
 end
 
 
@@ -32,19 +35,22 @@ local function default_lsp_settings(venv_python, env_type)
     local settings  = {
         python = {
             pythonPath = venv_python,
-            venv       = venv_name, -- "venv"
-            venvPath   = venv_path, -- .../upsales
+            venv       = venv_name,
+            venvPath   = venv_path,
         },
     }
 
-    return append_cmd_env(venv_python, env_type, settings)
+    local cmd_env   = create_cmd_env(venv_python, env_type)
+    local result    = vim.tbl_extend("force", settings.python, cmd_env)
+
+    return result
 end
 
 
 -- Common hook function to handle shared logic before calling individual hooks
 -- Returns: { continue = boolean, result = number }
 -- If continue = false, the individual hook should return the result immediately
-function M.ok_to_activate(client_name, venv_python, env_type)
+function M.ok_to_activate(client_name, venv_python)
     local running_clients = vim.lsp.get_clients({ name = client_name })
     if #running_clients == 0 then
         return false
@@ -90,20 +96,6 @@ end
 --     settings.cmd_env = nil -- Remove cmd_env for pyrefly, doesn't work.
 --     return settings
 -- end
-
-local function pylsp_lsp_settings(venv_python, env_type)
-    local settings = {
-        pylsp = {
-            plugins = {
-                jedi = {
-                    environment = venv_python
-                },
-            },
-        },
-    }
-
-    return append_cmd_env(venv_python, env_type, settings)
-end
 
 
 -- LSP-specific configuration for different Python language servers
@@ -174,7 +166,7 @@ function M.send_notification(message)
     end
 end
 
-function M.configure_lsp_client(client_name, venv_python, env_type)
+function M.configure_lsp_client(client_name, venv_python)
     local lsp_config = LSP_CONFIGS[client_name]
     if not lsp_config then
         log.debug("No specific configuration found for LSP client: " ..
@@ -187,12 +179,11 @@ function M.configure_lsp_client(client_name, venv_python, env_type)
     local running_clients = vim.lsp.get_clients({ name = client_name })
 
     local config = require("venv-selector.config")
-    local new_config = lsp_config.settings_wrapper(venv_python, env_type)
-    local lsp_config_update = format_lsp_config(new_config)
+    -- local new_config = lsp_config.settings_wrapper(venv_python, env_type)
+    -- local lsp_config_update = format_lsp_config(new_config)
 
-    log.debug("Updating LSP config for " .. client_name .. " with:", lsp_config_update)
-    vim.lsp.config(client_name, lsp_config_update)
-
+    log.debug("Updating LSP config for " .. client_name .. " with:", config)
+    vim.lsp.config(client_name, config)
 
     -- Restart all running clients for this LSP
     for _, client in pairs(running_clients) do
@@ -230,7 +221,7 @@ function M.actual_hook(lspserver_name, venv_python, env_type)
         return 1 -- Count as success since the LSP is running with correct venv
     end
 
-    return M.configure_lsp_client(lspserver_name, venv_python, env_type)
+    return M.configure_lsp_client(lspserver_name, venv_python)
 end
 
 -- Example custom hook (basedpyright works with default hook so its just an example)

@@ -39,6 +39,7 @@ function M.activate(python_path, type, check_lsp)
     -- Set the below two variables as quick as possible since its used in sorting results in telescope
     path.current_python_path = python_path
     path.current_venv_path = path.get_base(python_path)
+    path.current_type = type
 
     -- Inform lsp servers
     local count = 0

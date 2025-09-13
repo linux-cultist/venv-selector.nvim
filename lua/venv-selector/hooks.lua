@@ -133,7 +133,6 @@ function M.dynamic_python_lsp_hook(venv_python, env_type)
             local is_python_lsp = type(filetypes) == "table" and vim.tbl_contains(filetypes, "python")
 
             if is_python_lsp == true then
-                log.debug("New python lsp server found: " .. client.name)
                 -- Only configure if settings changed
                 if M.activated_configs[client.name] ~= venv_python then
                     -- Configure with default python settings including venv info

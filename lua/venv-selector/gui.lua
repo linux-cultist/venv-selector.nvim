@@ -62,6 +62,19 @@ local function resolve_picker()
 end
 
 function M.open(opts)
+    -- Check Neovim version requirement
+    local req_version = "0.11"
+    if vim.fn.has("nvim-" .. req_version) ~= 1 then
+        vim.notify(
+            "venv-selector.nvim now requires neovim " .. req_version .. " or higher (your version is " ..
+            vim.version().major .. "." .. vim.version().minor .. ").",
+            vim.log.levels.ERROR,
+            { title = "VenvSelector" }
+        )
+        return M
+    end
+
+
     local options = require("venv-selector.config").user_settings.options
     if options.fd_binary_name == nil then
         local message =

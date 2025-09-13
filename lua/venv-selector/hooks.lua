@@ -68,49 +68,18 @@ function M.ok_to_activate(client_name, venv_python)
     return true
 end
 
--- Format LSP configuration for vim.lsp.config
-local function format_lsp_config(new_config)
-    local lsp_config_update = {
-        settings = {},
-        cmd_env = new_config.cmd_env or nil
-    }
-
-    if new_config.python then
-        lsp_config_update.settings.python = new_config.python
-    elseif new_config.pylsp then
-        lsp_config_update.settings.pylsp = new_config.pylsp
-    else
-        lsp_config_update.settings = new_config.settings or {}
-    end
-
-    return lsp_config_update
-end
-
--- local function basedpyright_lsp_settings(venv_python, env_type)
---     local settings = default_lsp_settings(venv_python, env_type)
---     settings.cmd_env = nil -- Remove cmd_env for basedpyright, doesn't work.
---     return settings
--- end
-
--- local function pyrefly_lsp_settings(venv_python, env_type)
---     local settings = default_lsp_settings(venv_python, env_type)
---     settings.cmd_env = nil -- Remove cmd_env for pyrefly, doesn't work.
---     return settings
--- end
-
-
 -- LSP-specific configuration for different Python language servers
-local LSP_CONFIGS = { -- these all get venv_python, env_type as parameters
-    -- basedpyright = { settings_wrapper = basedpyright_lsp_settings },
+local LSP_CONFIGS = { -- these all get venv_python, env_type as parameters when called
+    -- basedpyright = { settings_wrapper = basedpyright_lsp_settings }, -- works with default hook
     -- pyright = { settings_wrapper = default_lsp_settings }, -- works with default hook
     -- jedi_language_server = { settings_wrapper = default_lsp_settings }, -- works with default hook
     -- ruff = { settings_wrapper = default_lsp_settings }, -- works with default hook
     -- ty = { settings_wrapper = default_lsp_settings }, -- works with default hook
     -- pyrefly = { settings_wrapper = pyrefly_lsp_settings }, -- works with default hook
-    -- pylsp = { settings_wrapper = pylsp_lsp_settings }, -- not tested yet
+    -- pylsp = { settings_wrapper = pylsp_lsp_settings }, -- works with default hook
 }
 
--- Dynamic fallback hook for unknown Python LSPs
+-- Dynamic fallback hook for almost all python LSPs
 function M.dynamic_python_lsp_hook(venv_python, env_type)
     local count = 0
     local known_clients = vim.tbl_keys(LSP_CONFIGS)

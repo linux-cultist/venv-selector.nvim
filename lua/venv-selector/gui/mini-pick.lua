@@ -15,7 +15,7 @@ function M.new()
 
     -- Setup highlight groups for marker color
     local marker_color = config.user_settings.options.selected_venv_marker_color or
-    config.user_settings.options.telescope_active_venv_color
+        config.user_settings.options.telescope_active_venv_color
     vim.api.nvim_set_hl(0, "VenvSelectMarker", { fg = marker_color })
 
     return self
@@ -63,7 +63,7 @@ function M:search_done()
                 for _, item in ipairs(items_arr) do
                     local hl = gui_utils.hl_active_venv(item)
                     local marker_icon = config.user_settings.options.selected_venv_marker_icon or
-                    config.user_settings.options.icon or "✔"
+                        config.user_settings.options.icon or "✔"
 
                     -- Prepare column data
                     local column_data = {
@@ -92,6 +92,17 @@ function M:search_done()
                 for i, item in ipairs(items_arr) do
                     local hl = gui_utils.hl_active_venv(item)
                     if hl ~= nil then
+                        -- Recreate column data for this item
+                        local marker_icon = config.user_settings.options.selected_venv_marker_icon or
+                            config.user_settings.options.icon or "✔"
+
+                        local column_data = {
+                            marker = hl and marker_icon or " ",
+                            search_icon = gui_utils.draw_icons_for_types(item.source),
+                            search_name = string.format("%-15s", item.source),
+                            search_result = item.name
+                        }
+
                         -- Find marker position in the configured columns
                         local marker_col = 0
                         for j, col in ipairs(columns) do

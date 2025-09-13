@@ -27,6 +27,7 @@ local function create_cmd_env(venv_python, env_type)
 end
 
 
+
 local function default_lsp_settings(venv_python, env_type)
     local venv_dir  = vim.fn.fnamemodify(venv_python, ":h:h")
     local venv_name = vim.fn.fnamemodify(venv_dir, ":t")
@@ -125,21 +126,23 @@ function M.dynamic_python_lsp_hook(venv_python, env_type)
             local is_python_lsp = type(filetypes) == "table" and vim.tbl_contains(filetypes, "python")
 
             if is_python_lsp == true then
-                -- Only configure if settings changed
-                if M.activated_configs[client.name] ~= venv_python then
-                    -- Configure with default python settings including venv info
-                    local new_config = default_lsp_settings(venv_python, env_type)
-                    -- local lsp_config_update = format_lsp_config(new_config)
+                -- Handle deactivation when venv_python is nil
+                if venv_python == nil then
+                    vim.lsp.enable(client.name, false)
+                    M.activated_configs[client.name] = nil
+                    log.debug("Deactivated lsp for " .. client.name)
+                else
+                    -- Only configure if settings changed
+                    if M.activated_configs[client.name] ~= venv_python then
+                        local new_config = default_lsp_settings(venv_python, env_type)
 
-                    log.debug(client.name .. ": Using default lsp config (no specific hook exists): ", new_config)
-                    -- Update config and restart client
-                    vim.lsp.config(client.name, new_config)
+                        log.debug(client.name .. ": Using default lsp config (no specific hook exists): ", new_config)
+                        vim.lsp.config(client.name, new_config)
+                        M.restart_lsp_client(client.name, client.id)
 
-                    -- Use the standard restart mechanism
-                    M.restart_lsp_client(client.name, client.id)
-
-                    M.activated_configs[client.name] = venv_python
-                    log.debug("Configured " .. client.name .. " with venv: " .. (venv_python or "nil"))
+                        M.activated_configs[client.name] = venv_python
+                        log.debug("Configured " .. client.name .. " with venv: " .. (venv_python or "nil"))
+                    end
                 end
                 count = count + 1 -- Always count Python LSPs, even if already configured
             end

@@ -11,19 +11,6 @@ local function on_lsp_attach(args)
     if vim.bo.filetype == "python" then
         local cache = require("venv-selector.cached_venv")
         cache.handle_automatic_activation()
-
-        -- If a venv is already activated from cache,
-        -- ensure this newly attached LSP server gets configured with it
-        local config = require("venv-selector.config")
-        if config.user_settings.options.cached_venv_automatic_activation then
-            local path = require("venv-selector.path")
-            if path.current_python_path and path.current_type then
-                local hooks = config.user_settings.hooks
-                for _, hook in pairs(hooks) do
-                    hook(path.current_python_path, path.current_type)
-                end
-            end
-        end
     end
 end
 

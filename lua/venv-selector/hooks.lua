@@ -109,12 +109,12 @@ end
 -- LSP-specific configuration for different Python language servers
 local LSP_CONFIGS = { -- these all get venv_python, env_type as parameters
     -- basedpyright = { settings_wrapper = basedpyright_lsp_settings },
-    pyright = { settings_wrapper = default_lsp_settings }, -- not tested yet
-    jedi_language_server = { settings_wrapper = default_lsp_settings }, -- not tested yet
+    -- pyright = { settings_wrapper = default_lsp_settings }, -- works with default hook
+    -- jedi_language_server = { settings_wrapper = default_lsp_settings }, -- works with default hook
     -- ruff = { settings_wrapper = default_lsp_settings }, -- works with default hook
     -- ty = { settings_wrapper = default_lsp_settings }, -- works with default hook
     -- pyrefly = { settings_wrapper = pyrefly_lsp_settings }, -- works with default hook
-    pylsp = { settings_wrapper = pylsp_lsp_settings }, -- not tested yet
+    -- pylsp = { settings_wrapper = pylsp_lsp_settings }, -- not tested yet
 }
 
 -- Dynamic fallback hook for unknown Python LSPs
@@ -234,32 +234,9 @@ function M.actual_hook(lspserver_name, venv_python, env_type)
     return M.configure_lsp_client(lspserver_name, venv_python, env_type)
 end
 
-function M.basedpyright_hook(venv_python, env_type)
+-- Example custom hook (basedpyright works with default hook so its just an example)
+function M.basedpyright(venv_python, env_type)
     return M.actual_hook("basedpyright", venv_python, env_type)
-end
-
-function M.pyright_hook(venv_python, env_type)
-    return M.actual_hook("pyright", venv_python, env_type)
-end
-
-function M.jedi_language_server_hook(venv_python, env_type)
-    return M.actual_hook("jedi", venv_python, env_type)
-end
-
-function M.ruff_hook(venv_python, env_type)
-    return M.actual_hook("jedi", venv_python, env_type)
-end
-
-function M.pylsp_hook(venv_python, env_type)
-    return M.actual_hook("pylsp", venv_python, env_type)
-end
-
-function M.ty_hook(venv_python, env_type)
-    return M.actual_hook("ty", venv_python, env_type)
-end
-
-function M.pyrefly_hook(venv_python, env_type)
-    return M.actual_hook("pyrefly", venv_python, env_type)
 end
 
 -- Unified client restart function

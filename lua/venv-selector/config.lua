@@ -212,17 +212,8 @@ M.default_settings = {
         file = "~/.cache/venv-selector/venvs2.json",
     },
     hooks = {
-        -- Default hooks for common Python LSPs
-        hooks.basedpyright_hook,
-        hooks.pyright_hook,
-        hooks.jedi_language_server_hook,
-        hooks.pylsp_hook,
-        hooks.ruff_hook,
-        hooks.ty_hook,
-        hooks.pyrefly_hook,
-        hooks.zuban_hook,
-        -- Dynamic fallback for any other Python LSPs
-        hooks.dynamic_python_lsp_hook,
+        hooks.dynamic_python_lsp_hook, -- Default hook for python lsps, seems to work with all so far.
+        -- hooks.basedpyright, -- example hook for lsp that may not work with default hook
     },
     options = {
         on_venv_activate_callback = nil, -- callback function for after a venv activates

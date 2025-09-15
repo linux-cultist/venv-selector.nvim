@@ -168,7 +168,7 @@ function M.configure_lsp_client(client_name, venv_python)
 
         -- Notify client of configuration change (skip for problematic clients)
         if not lsp_config.skip_notify then
-            local notify_settings = lsp_config.use_settings_directly and new_settings or nil
+            local notify_settings = lsp_config.use_settings_directly and client.settings or nil
             client:notify("workspace/didChangeConfiguration", { settings = notify_settings })
         end
 

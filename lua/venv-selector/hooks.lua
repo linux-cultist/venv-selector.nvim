@@ -28,12 +28,23 @@ end
 
 
 
-local function default_lsp_settings(venv_python, env_type)
+local function default_lsp_settings(client_name, venv_python, env_type)
     local venv_dir  = vim.fn.fnamemodify(venv_python, ":h:h")
     local venv_name = vim.fn.fnamemodify(venv_dir, ":t")
     local venv_path = vim.fn.fnamemodify(venv_dir, ":h")
 
-    local settings  = {
+    -- Get existing client configuration to preserve user settings
+    local existing_clients = vim.lsp.get_clients({ name = client_name })
+    local existing_settings = {}
+    
+    if #existing_clients > 0 then
+        local client_config = existing_clients[1].config or {}
+        existing_settings = vim.deepcopy(client_config.settings or {})
+        log.debug("Found existing settings for " .. client_name .. ":", existing_settings)
+    end
+
+    -- Create venv-specific settings
+    local venv_settings = {
         python = {
             pythonPath = venv_python,
             venv       = venv_name,
@@ -41,10 +52,24 @@ local function default_lsp_settings(venv_python, env_type)
         },
     }
 
-    local cmd_env   = create_cmd_env(venv_python, env_type)
-    local result    = vim.tbl_extend("force", settings.python, cmd_env)
+    -- Merge existing user settings with venv settings (venv settings take precedence for python path)
+    local merged_settings = vim.tbl_deep_extend("force", existing_settings, venv_settings)
+    
+    -- Create cmd_env for the client config
+    local cmd_env = create_cmd_env(venv_python, env_type)
+    
+    -- Return proper ClientConfig structure
+    local client_config = {
+        settings = merged_settings,
+    }
+    
+    -- Add cmd_env to the client config if it has values
+    if cmd_env.cmd_env and next(cmd_env.cmd_env) then
+        client_config.cmd_env = cmd_env.cmd_env
+    end
 
-    return result
+    log.debug("Generated client config for " .. client_name .. ":", client_config)
+    return client_config
 end
 
 
@@ -69,7 +94,7 @@ function M.ok_to_activate(client_name, venv_python)
 end
 
 -- LSP-specific configuration for different Python language servers
-local LSP_CONFIGS = { -- these all get venv_python, env_type as parameters when called
+local LSP_CONFIGS = { -- these all get client_name, venv_python, env_type as parameters when called
     -- basedpyright = { settings_wrapper = basedpyright_lsp_settings }, -- works with default hook
     -- pyright = { settings_wrapper = default_lsp_settings }, -- works with default hook
     -- jedi_language_server = { settings_wrapper = default_lsp_settings }, -- works with default hook
@@ -103,7 +128,7 @@ function M.dynamic_python_lsp_hook(venv_python, env_type)
                 else
                     -- Only configure if settings changed
                     if M.activated_configs[client.name] ~= venv_python then
-                        local new_config = default_lsp_settings(venv_python, env_type)
+                        local new_config = default_lsp_settings(client.name, venv_python, env_type)
 
                         log.debug(client.name .. ": Using default lsp config (no specific hook exists): ", new_config)
                         vim.lsp.config(client.name, new_config)
@@ -138,7 +163,7 @@ function M.send_notification(message)
     end
 end
 
-function M.configure_lsp_client(client_name, venv_python)
+function M.configure_lsp_client(client_name, venv_python, env_type)
     local lsp_config = LSP_CONFIGS[client_name]
     if not lsp_config then
         log.debug("No specific configuration found for LSP client: " ..
@@ -150,12 +175,10 @@ function M.configure_lsp_client(client_name, venv_python)
     -- Get running clients (common logic should have already validated this)
     local running_clients = vim.lsp.get_clients({ name = client_name })
 
-    local config = require("venv-selector.config")
-    -- local new_config = lsp_config.settings_wrapper(venv_python, env_type)
-    -- local lsp_config_update = format_lsp_config(new_config)
+    local new_config = lsp_config.settings_wrapper(client_name, venv_python, env_type)
 
-    log.debug("Updating LSP config for " .. client_name .. " with:", config)
-    vim.lsp.config(client_name, config)
+    log.debug("Updating LSP config for " .. client_name .. " with:", new_config)
+    vim.lsp.config(client_name, new_config)
 
     -- Restart all running clients for this LSP
     for _, client in pairs(running_clients) do
@@ -193,7 +216,7 @@ function M.actual_hook(lspserver_name, venv_python, env_type)
         return 1 -- Count as success since the LSP is running with correct venv
     end
 
-    return M.configure_lsp_client(lspserver_name, venv_python)
+    return M.configure_lsp_client(lspserver_name, venv_python, env_type)
 end
 
 -- Example custom hook (basedpyright works with default hook so its just an example)

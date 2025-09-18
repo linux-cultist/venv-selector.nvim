@@ -28,12 +28,69 @@ end
 
 
 
+-- LSP-specific settings functions
+local function pyright_lsp_settings(client_name, venv_python, env_type)
+    local existing_clients = vim.lsp.get_clients({ name = client_name })
+    local existing_settings = {}
+    
+    if #existing_clients > 0 then
+        local client_config = existing_clients[1].config or {}
+        existing_settings = vim.deepcopy(client_config.settings or {})
+    end
+
+    local venv_settings = {
+        python = {
+            pythonPath = venv_python,
+        },
+    }
+
+    local merged_settings = vim.tbl_deep_extend("force", existing_settings, venv_settings)
+    local cmd_env = create_cmd_env(venv_python, env_type)
+    
+    local client_config = { settings = merged_settings }
+    if cmd_env.cmd_env and next(cmd_env.cmd_env) then
+        client_config.cmd_env = cmd_env.cmd_env
+    end
+    
+    return client_config
+end
+
+local function pylsp_lsp_settings(client_name, venv_python, env_type)
+    local existing_clients = vim.lsp.get_clients({ name = client_name })
+    local existing_settings = {}
+    
+    if #existing_clients > 0 then
+        local client_config = existing_clients[1].config or {}
+        existing_settings = vim.deepcopy(client_config.settings or {})
+    end
+
+    local venv_settings = {
+        pylsp = {
+            plugins = {
+                jedi = {
+                    environment = venv_python,
+                },
+            },
+        },
+    }
+
+    local merged_settings = vim.tbl_deep_extend("force", existing_settings, venv_settings)
+    local cmd_env = create_cmd_env(venv_python, env_type)
+    
+    local client_config = { settings = merged_settings }
+    if cmd_env.cmd_env and next(cmd_env.cmd_env) then
+        client_config.cmd_env = cmd_env.cmd_env
+    end
+    
+    return client_config
+end
+
+-- Default settings for servers that support standard python settings
 local function default_lsp_settings(client_name, venv_python, env_type)
     local venv_dir  = vim.fn.fnamemodify(venv_python, ":h:h")
     local venv_name = vim.fn.fnamemodify(venv_dir, ":t")
     local venv_path = vim.fn.fnamemodify(venv_dir, ":h")
 
-    -- Get existing client configuration to preserve user settings
     local existing_clients = vim.lsp.get_clients({ name = client_name })
     local existing_settings = {}
     
@@ -43,7 +100,6 @@ local function default_lsp_settings(client_name, venv_python, env_type)
         log.debug("Found existing settings for " .. client_name .. ":", existing_settings)
     end
 
-    -- Create venv-specific settings
     local venv_settings = {
         python = {
             pythonPath = venv_python,
@@ -52,23 +108,41 @@ local function default_lsp_settings(client_name, venv_python, env_type)
         },
     }
 
-    -- Merge existing user settings with venv settings (venv settings take precedence for python path)
     local merged_settings = vim.tbl_deep_extend("force", existing_settings, venv_settings)
-    
-    -- Create cmd_env for the client config
     local cmd_env = create_cmd_env(venv_python, env_type)
     
-    -- Return proper ClientConfig structure
-    local client_config = {
-        settings = merged_settings,
-    }
-    
-    -- Add cmd_env to the client config if it has values
+    local client_config = { settings = merged_settings }
     if cmd_env.cmd_env and next(cmd_env.cmd_env) then
         client_config.cmd_env = cmd_env.cmd_env
     end
 
     log.debug("Generated client config for " .. client_name .. ":", client_config)
+    return client_config
+end
+
+-- For LSP servers that don't support/need workspace configuration
+local function env_only_lsp_settings(client_name, venv_python, env_type)
+    local cmd_env = create_cmd_env(venv_python, env_type)
+    
+    local client_config = {}
+    if cmd_env.cmd_env and next(cmd_env.cmd_env) then
+        client_config.cmd_env = cmd_env.cmd_env
+    end
+    
+    log.debug("Generated env-only client config for " .. client_name .. ":", client_config)
+    return client_config
+end
+
+-- For ZubanLS - basic environment variables only (alpha version has limited venv support)
+local function zuban_lsp_settings(client_name, venv_python, env_type)
+    local cmd_env = create_cmd_env(venv_python, env_type)
+    
+    local client_config = {}
+    if cmd_env.cmd_env and next(cmd_env.cmd_env) then
+        client_config.cmd_env = cmd_env.cmd_env
+    end
+    
+    log.debug("Generated ZubanLS client config for " .. client_name .. ":", client_config)
     return client_config
 end
 
@@ -95,54 +169,61 @@ end
 
 -- LSP-specific configuration for different Python language servers
 local LSP_CONFIGS = { -- these all get client_name, venv_python, env_type as parameters when called
-    -- basedpyright = { settings_wrapper = basedpyright_lsp_settings }, -- works with default hook
-    -- pyright = { settings_wrapper = default_lsp_settings }, -- works with default hook
-    -- jedi_language_server = { settings_wrapper = default_lsp_settings }, -- works with default hook
-    -- ruff = { settings_wrapper = default_lsp_settings }, -- works with default hook
-    -- ty = { settings_wrapper = default_lsp_settings }, -- works with default hook
-    -- pyrefly = { settings_wrapper = pyrefly_lsp_settings }, -- works with default hook
-    -- pylsp = { settings_wrapper = pylsp_lsp_settings }, -- works with default hook
+    pyright = { settings_wrapper = pyright_lsp_settings },
+    basedpyright = { settings_wrapper = pyright_lsp_settings }, -- uses same format as pyright
+    pylsp = { settings_wrapper = pylsp_lsp_settings },
+    jedi_language_server = { settings_wrapper = default_lsp_settings },
+    -- LSP servers that don't support/need workspace configuration changes
+    ruff = { settings_wrapper = env_only_lsp_settings }, -- ruff doesn't need python path settings
+    zuban = { settings_wrapper = zuban_lsp_settings }, -- zubanls needs python path via init_options
+    -- Add more server-specific configs as needed
 }
 
--- Dynamic fallback hook for almost all python LSPs
+-- Dynamic hook for all python LSPs
 function M.dynamic_python_lsp_hook(venv_python, env_type)
     local count = 0
-    local known_clients = vim.tbl_keys(LSP_CONFIGS)
 
     -- Get all currently running clients and check if they're Python LSPs
     local all_clients = vim.lsp.get_clients()
-
+    
+    log.debug("Found " .. #all_clients .. " total LSP clients running")
     for _, client in pairs(all_clients) do
-        -- Skip clients that already have explicit hooks
-        if not vim.tbl_contains(known_clients, client.name) then
-            -- Check if this is a Python LSP by examining filetypes
-            local filetypes = vim.tbl_get(client, "config", "filetypes") or {}
-            local is_python_lsp = type(filetypes) == "table" and vim.tbl_contains(filetypes, "python")
+        log.debug("Checking client: " .. client.name .. " (filetypes: " .. vim.inspect(vim.tbl_get(client, "config", "filetypes") or {}) .. ")")
+        -- Check if this is a Python LSP by examining filetypes
+        local filetypes = vim.tbl_get(client, "config", "filetypes") or {}
+        local is_python_lsp = type(filetypes) == "table" and vim.tbl_contains(filetypes, "python")
 
-            if is_python_lsp == true then
-                -- Handle deactivation when venv_python is nil
-                if venv_python == nil then
-                    vim.lsp.enable(client.name, false)
-                    M.activated_configs[client.name] = nil
-                    log.debug("Deactivated lsp for " .. client.name)
-                else
-                    -- Only configure if settings changed
-                    if M.activated_configs[client.name] ~= venv_python then
-                        local new_config = default_lsp_settings(client.name, venv_python, env_type)
-
-                        log.debug(client.name .. ": Using default lsp config (no specific hook exists): ", new_config)
-                        vim.lsp.config(client.name, new_config)
-                        M.restart_lsp_client(client.name, client.id)
-
-                        M.activated_configs[client.name] = venv_python
-                        log.debug("Configured " .. client.name .. " with venv: " .. (venv_python or "nil"))
+        if is_python_lsp == true then
+            -- Handle deactivation when venv_python is nil
+            if venv_python == nil then
+                vim.lsp.enable(client.name, false)
+                M.activated_configs[client.name] = nil
+                log.debug("Deactivated lsp for " .. client.name)
+            else
+                -- Only configure if settings changed
+                if M.activated_configs[client.name] ~= venv_python then
+                    -- Get server-specific config or use default
+                    local lsp_config = LSP_CONFIGS[client.name]
+                    if not lsp_config then
+                        log.debug("No specific configuration found for " .. client.name .. ", using default")
+                        lsp_config = { settings_wrapper = default_lsp_settings }
                     end
+                    
+                    local new_config = lsp_config.settings_wrapper(client.name, venv_python, env_type)
+
+                    log.debug(client.name .. ": Using lsp config: ", new_config)
+                    vim.lsp.config(client.name, new_config)
+                    M.restart_lsp_client(client.name, client.id)
+
+                    M.activated_configs[client.name] = venv_python
+                    log.debug("Configured " .. client.name .. " with venv: " .. (venv_python or "nil"))
                 end
-                count = count + 1 -- Always count Python LSPs, even if already configured
             end
+            count = count + 1 -- Always count Python LSPs, even if already configured
         end
     end
 
+    log.debug("Found " .. count .. " Python LSP servers running")
     return count
 end
 
@@ -196,6 +277,7 @@ function M.configure_lsp_client(client_name, venv_python, env_type)
         message = "Cleared Python path from " .. client_name .. " LSP."
     end
 
+    local config = require("venv-selector.config")
     if config.user_settings.options.notify_user_on_venv_activation == true then
         M.send_notification(message)
     end

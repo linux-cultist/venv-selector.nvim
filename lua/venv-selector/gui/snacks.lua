@@ -20,7 +20,7 @@ function M:pick()
         finder = function(opts, ctx)
             return self.results
         end,
-        layout = {
+        layout = config.user_settings.options.snacks_layout or {
             preset = "select",
         },
         format = function(item, picker)

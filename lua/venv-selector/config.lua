@@ -1,10 +1,43 @@
 local hooks = require("venv-selector.hooks")
 
+
+---@class venv-selector.Detected
+---@field system string the detected system name
+
+---@class venv-selector.Settings
+---@field detected? venv-selector.Detected
+
+---@class venv-selector.CacheSettings
+---@field file string
+
+---@class venv-selector.SearchCommands
+---@field hatch {command: string}
+---@field poetry {command: string}
+---@field pyenv {command: string}
+---@field pipenv {command: string}
+---@field anaconda_envs {command: string}
+---@field anaconda_base {command: string}
+---@field miniconda_envs {command: string}
+---@field miniconda_base {command: string}
+---@field pipx {command: string}
+---@field cwd {command: string}
+---@field workspace {command: string}
+---@field file {command: string}
+
+---@class venv-selector.Searches
+---@field Linux fun():venv-selector.SearchCommands
+---@field Darwin fun():venv-selector.SearchCommands
+---@field Windows_NT fun():venv-selector.SearchCommands
+
 local M = {}
+
+---@type venv-selector.Settings
 M.user_settings = {}
 M.has_legacy_settings = false
 
+---@return fun(): venv-selector.SearchCommands
 function M.get_default_searches()
+    ---@type venv-selector.Searches
     local systems = {
         ["Linux"] = function()
             return {
@@ -165,6 +198,7 @@ function M.get_default_searches()
     return systems[name] or systems["Linux"]
 end
 
+---@param conf venv-selector.Settings
 function M.merge_user_settings(conf)
     if conf.settings ~= nil then
         conf = conf.settings
@@ -207,10 +241,13 @@ function M.find_fd_command_name()
     end
 end
 
+---@class venv-selector.Settings
 M.default_settings = {
+    ---@type venv-selector.CacheSettings
     cache = {
         file = "~/.cache/venv-selector/venvs2.json",
     },
+    ---@type venv-selector.Hook[]
     hooks = {
         -- Default hooks for common Python LSPs
         hooks.basedpyright_hook,
@@ -222,7 +259,9 @@ M.default_settings = {
         -- Dynamic fallback for any other Python LSPs
         hooks.dynamic_python_lsp_hook,
     },
+    ---@class venv-selector.Options
     options = {
+        ---@type nil | fun(): nil
         on_venv_activate_callback = nil, -- callback function for after a venv activates
         enable_default_searches = true, -- switches all default searches on/off
         enable_cached_venvs = true, -- use cached venvs that are activated automatically when a python file is registered with the LSP.
@@ -235,13 +274,16 @@ M.default_settings = {
         fd_binary_name = M.find_fd_command_name(), -- plugin looks for `fd` or `fdfind` but you can set something else here
         require_lsp_activation = true, -- require activation of an lsp before setting env variables
         -- telescope viewer options
+        ---@type nil | fun(filename: string): string
         on_telescope_result_callback = nil, -- callback function for modifying telescope results
         -- show_telescope_search_type is deprecated - use picker_columns instead
+        ---@type "substring"|"character"
         picker_filter_type = "substring", -- When you type something in pickers, filter by "substring" or "character"
         selected_venv_marker_color = "#00FF00", -- The color of the selected venv marker
         selected_venv_marker_icon = "✔", -- The icon to use for marking the selected venv
         picker_icons = {}, -- Override default icons for venv types (e.g., { poetry = "📝", hatch = "🔨", default = "🐍" })
         picker_columns = { "marker", "search_icon", "search_name", "search_result" }, -- Column order in pickers (omit columns to hide them)
+        ---@type "telescope"|"fzf-lua"|"native"|"mini-pick"|"auto"
         picker = "auto", -- The picker to use. Valid options are "telescope", "fzf-lua", "snacks", "native", "mini-pick" or "auto"
         statusline_func = { nvchad = nil, lualine = nil }
     },

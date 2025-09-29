@@ -105,8 +105,8 @@ local LSP_CONFIGS = { -- these all get client_name, venv_python, env_type as par
 }
 
 -- Unified LSP configuration handler that works both for immediate activation and LspAttach events
-local function configure_python_lsp(client, venv_python, env_type, source)
-    local known_clients = vim.tbl_keys(LSP_CONFIGS)
+local function configure_python_lsp(client, venv_python, env_type)
+    local known_clients = vim.tbl_keys
 
     -- Skip clients that have explicit hooks
     if vim.tbl_contains(known_clients, client.name) then return false end
@@ -129,7 +129,7 @@ local function configure_python_lsp(client, venv_python, env_type, source)
     if M.activated_configs[client.name] ~= venv_python then
         local new_config = default_lsp_settings(client.name, venv_python, env_type)
 
-        log.debug(source .. ": Configuring " .. client.name .. " with venv: " .. venv_python)
+        log.debug("Configuring " .. client.name .. " with venv: " .. venv_python)
         vim.lsp.config(client.name, new_config)
         M.restart_lsp_client(client.name, client.id)
 
@@ -166,7 +166,7 @@ local function setup_unified_lsp_attach()
                     env_type = "anaconda"
                 end
 
-                configure_python_lsp(client, current_python, env_type, "LspAttach")
+                configure_python_lsp(client, current_python, env_type)
             end
         end
     })
@@ -178,7 +178,7 @@ function M.dynamic_python_lsp_hook(venv_python, env_type)
     local all_clients = vim.lsp.get_clients()
 
     for _, client in pairs(all_clients) do
-        if configure_python_lsp(client, venv_python, env_type, "activation") then
+        if configure_python_lsp(client, venv_python, env_type) then
             count = count + 1
         end
     end

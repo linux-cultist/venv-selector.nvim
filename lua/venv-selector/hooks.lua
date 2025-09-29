@@ -93,27 +93,21 @@ function M.ok_to_activate(client_name, venv_python)
     return true
 end
 
--- LSP-specific configuration for different Python language servers
-local LSP_CONFIGS = { -- these all get client_name, venv_python, env_type as parameters when called
-    -- basedpyright = { settings_wrapper = basedpyright_lsp_settings }, -- works with default hook
-    -- pyright = { settings_wrapper = default_lsp_settings }, -- works with default hook
-    -- jedi_language_server = { settings_wrapper = default_lsp_settings }, -- works with default hook
-    -- ruff = { settings_wrapper = default_lsp_settings }, -- works with default hook
-    -- ty = { settings_wrapper = default_lsp_settings }, -- works with default hook
-    -- pyrefly = { settings_wrapper = pyrefly_lsp_settings }, -- works with default hook
-    -- pylsp = { settings_wrapper = pylsp_lsp_settings }, -- works with default hook
-}
 
 -- Unified LSP configuration handler that works both for immediate activation and LspAttach events
 local function configure_python_lsp(client, venv_python, env_type)
-    local known_clients = vim.tbl_keys
-
-    -- Skip clients that have explicit hooks
-    if vim.tbl_contains(known_clients, client.name) then return false end
+    -- Since LSP_CONFIGS is empty (all commented out), all Python LSPs use dynamic configuration
+    -- No need to check for explicit hooks since none are defined
 
     -- Check if this is a Python LSP
     local filetypes = vim.tbl_get(client, "config", "filetypes") or {}
-    local is_python_lsp = type(filetypes) == "table" and vim.tbl_contains(filetypes, "python")
+
+    -- Ensure filetypes is a table before calling vim.tbl_contains
+    if type(filetypes) ~= "table" then
+        return false
+    end
+
+    local is_python_lsp = vim.tbl_contains(filetypes, "python")
 
     if not is_python_lsp then return false end
 
@@ -158,7 +152,8 @@ local function setup_unified_lsp_attach()
             end
 
             -- Get current venv info - either from recent activation or existing state
-            local current_python = require("venv-selector").python()
+            local venv_selector = require("venv-selector")
+            local current_python = venv_selector.python()
             if current_python and current_python ~= "" then
                 -- Determine env type from the python path
                 local env_type = "venv" -- default
@@ -204,13 +199,9 @@ function M.send_notification(message)
 end
 
 function M.configure_lsp_client(client_name, venv_python, env_type)
-    local lsp_config = LSP_CONFIGS[client_name]
-    if not lsp_config then
-        log.debug("No specific configuration found for LSP client: " ..
-            client_name .. ". Attempting to use default lsp configuration.")
-        -- Default fallback configuration for unknown Python LSPs
-        lsp_config = { settings_wrapper = default_lsp_settings }
-    end
+    -- Since LSP_CONFIGS is empty, always use default configuration
+    log.debug("Using default LSP configuration for: " .. client_name)
+    local lsp_config = { settings_wrapper = default_lsp_settings }
 
     -- Get running clients (common logic should have already validated this)
     local running_clients = vim.lsp.get_clients({ name = client_name })
@@ -236,6 +227,7 @@ function M.configure_lsp_client(client_name, venv_python, env_type)
         message = "Cleared Python path from " .. client_name .. " LSP."
     end
 
+    local config = require("venv-selector.config")
     if config.user_settings.options.notify_user_on_venv_activation == true then
         M.send_notification(message)
     end

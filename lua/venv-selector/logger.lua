@@ -11,6 +11,15 @@ M.levels = {
     NONE = 5,
 }
 
+-- Color scheme for different log levels using theme colors
+M.colors = {
+    DEBUG = "Comment",        -- Use comment color (usually gray)
+    INFO = "DiagnosticInfo",  -- Use diagnostic info color (usually blue)
+    WARNING = "DiagnosticWarn", -- Use diagnostic warning color (usually orange)
+    ERROR = "DiagnosticError", -- Use diagnostic error color (usually red)
+    TIMESTAMP = "Special",     -- Use special color (usually purple/magenta)
+}
+
 M.current_level = M.levels.DEBUG
 M.enabled = false
 
@@ -78,6 +87,40 @@ function M.log_table(tbl, indent)
     end
 end
 
+function M.setup_syntax_highlighting()
+    if log_buf == nil or not vim.api.nvim_buf_is_valid(log_buf) then
+        return
+    end
+
+    -- Set buffer options for better display
+    vim.api.nvim_buf_set_option(log_buf, 'filetype', 'venv-selector-log')
+    vim.api.nvim_buf_set_option(log_buf, 'modifiable', false)
+    vim.api.nvim_buf_set_option(log_buf, 'readonly', true)
+
+    -- Create highlight groups for different log components using theme colors
+    local highlights = {
+        { name = "VenvLogTimestamp", link = M.colors.TIMESTAMP },
+        { name = "VenvLogDebug", link = M.colors.DEBUG },
+        { name = "VenvLogInfo", link = M.colors.INFO },
+        { name = "VenvLogWarning", link = M.colors.WARNING },
+        { name = "VenvLogError", link = M.colors.ERROR },
+    }
+
+    for _, hl in ipairs(highlights) do
+        vim.api.nvim_set_hl(0, hl.name, { link = hl.link })
+    end
+
+    -- Define syntax patterns
+    vim.api.nvim_buf_call(log_buf, function()
+        vim.cmd('syntax clear')
+        vim.cmd('syntax match VenvLogTimestamp /^\\d\\{4\\}-\\d\\{2\\}-\\d\\{2\\} \\d\\{2\\}:\\d\\{2\\}:\\d\\{2\\}/')
+        vim.cmd('syntax match VenvLogDebug /\\[DEBUG\\]/')
+        vim.cmd('syntax match VenvLogInfo /\\[INFO\\]/')
+        vim.cmd('syntax match VenvLogWarning /\\[WARNING\\]/')
+        vim.cmd('syntax match VenvLogError /\\[ERROR\\]/')
+    end)
+end
+
 function M.log_line(msg, level)
     if M.enabled == false then
         return
@@ -89,7 +132,11 @@ function M.log_line(msg, level)
             log_buf = vim.api.nvim_create_buf(false, true)
             vim.api.nvim_buf_set_name(log_buf, buffer_name)
             vim.api.nvim_buf_set_lines(log_buf, 0, -1, false, {})
+            M.setup_syntax_highlighting()
         end
+
+        -- Make buffer modifiable for updates
+        vim.api.nvim_buf_set_option(log_buf, 'modifiable', true)
 
         local line_count = vim.api.nvim_buf_line_count(log_buf)
         local utc_time_stamp = M.get_utc_date_time()
@@ -100,6 +147,9 @@ function M.log_line(msg, level)
         else
             vim.api.nvim_buf_set_lines(log_buf, line_count, line_count, false, { log_entry })
         end
+
+        -- Make buffer read-only again
+        vim.api.nvim_buf_set_option(log_buf, 'modifiable', false)
     end)
 end
 
@@ -134,8 +184,12 @@ function M.toggle()
         if log_buf == nil or not vim.api.nvim_buf_is_valid(log_buf) then
             log_buf = vim.api.nvim_create_buf(false, true)
             vim.api.nvim_buf_set_name(log_buf, buffer_name)
+            M.setup_syntax_highlighting()
         end
         vim.api.nvim_win_set_buf(0, log_buf)
+        
+        -- Ensure syntax highlighting is applied when toggling to log buffer
+        M.setup_syntax_highlighting()
     end
 end
 

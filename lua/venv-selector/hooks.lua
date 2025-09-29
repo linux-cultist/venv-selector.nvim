@@ -29,14 +29,14 @@ end
 
 
 local function default_lsp_settings(client_name, venv_python, env_type)
-    local venv_dir  = vim.fn.fnamemodify(venv_python, ":h:h")
-    local venv_name = vim.fn.fnamemodify(venv_dir, ":t")
-    local venv_path = vim.fn.fnamemodify(venv_dir, ":h")
+    local venv_dir          = vim.fn.fnamemodify(venv_python, ":h:h")
+    local venv_name         = vim.fn.fnamemodify(venv_dir, ":t")
+    local venv_path         = vim.fn.fnamemodify(venv_dir, ":h")
 
     -- Get existing client configuration to preserve user settings
-    local existing_clients = vim.lsp.get_clients({ name = client_name })
+    local existing_clients  = vim.lsp.get_clients({ name = client_name })
     local existing_settings = {}
-    
+
     if #existing_clients > 0 then
         local client_config = existing_clients[1].config or {}
         existing_settings = vim.deepcopy(client_config.settings or {})
@@ -54,15 +54,15 @@ local function default_lsp_settings(client_name, venv_python, env_type)
 
     -- Merge existing user settings with venv settings (venv settings take precedence for python path)
     local merged_settings = vim.tbl_deep_extend("force", existing_settings, venv_settings)
-    
+
     -- Create cmd_env for the client config
     local cmd_env = create_cmd_env(venv_python, env_type)
-    
+
     -- Return proper ClientConfig structure
     local client_config = {
         settings = merged_settings,
     }
-    
+
     -- Add cmd_env to the client config if it has values
     if cmd_env.cmd_env and next(cmd_env.cmd_env) then
         client_config.cmd_env = cmd_env.cmd_env
@@ -104,42 +104,82 @@ local LSP_CONFIGS = { -- these all get client_name, venv_python, env_type as par
     -- pylsp = { settings_wrapper = pylsp_lsp_settings }, -- works with default hook
 }
 
--- Dynamic fallback hook for almost all python LSPs
-function M.dynamic_python_lsp_hook(venv_python, env_type)
-    local count = 0
+-- Unified LSP configuration handler that works both for immediate activation and LspAttach events
+local function configure_python_lsp(client, venv_python, env_type, source)
     local known_clients = vim.tbl_keys(LSP_CONFIGS)
 
-    -- Get all currently running clients and check if they're Python LSPs
+    -- Skip clients that have explicit hooks
+    if vim.tbl_contains(known_clients, client.name) then return false end
+
+    -- Check if this is a Python LSP
+    local filetypes = vim.tbl_get(client, "config", "filetypes") or {}
+    local is_python_lsp = type(filetypes) == "table" and vim.tbl_contains(filetypes, "python")
+
+    if not is_python_lsp then return false end
+
+    -- Handle deactivation when venv_python is nil
+    if venv_python == nil then
+        vim.lsp.enable(client.name, false)
+        M.activated_configs[client.name] = nil
+        log.debug("Deactivated lsp for " .. client.name)
+        return true
+    end
+
+    -- Only configure if settings changed
+    if M.activated_configs[client.name] ~= venv_python then
+        local new_config = default_lsp_settings(client.name, venv_python, env_type)
+
+        log.debug(source .. ": Configuring " .. client.name .. " with venv: " .. venv_python)
+        vim.lsp.config(client.name, new_config)
+        M.restart_lsp_client(client.name, client.id)
+
+        M.activated_configs[client.name] = venv_python
+    end
+
+    return true
+end
+
+-- Unified LspAttach handler that handles both automatic activation and post-restart configuration
+local function setup_unified_lsp_attach()
+    local group = vim.api.nvim_create_augroup("VenvSelectorUnified", { clear = true })
+
+    vim.api.nvim_create_autocmd("LspAttach", {
+        group = group,
+        callback = function(args)
+            local client = vim.lsp.get_client_by_id(args.data.client_id)
+            if not client then return end
+
+            -- Handle automatic activation (like init.lua but integrated)
+            if vim.bo.filetype == "python" then
+                local cache = require("venv-selector.cached_venv")
+                if require("venv-selector.config").user_settings.options.cached_venv_automatic_activation then
+                    cache.retrieve() -- This will call our hook which sets current venv info
+                end
+            end
+
+            -- Get current venv info - either from recent activation or existing state
+            local current_python = require("venv-selector").python()
+            if current_python and current_python ~= "" then
+                -- Determine env type from the python path
+                local env_type = "venv" -- default
+                if string.find(current_python, "conda") or string.find(current_python, "anaconda") then
+                    env_type = "anaconda"
+                end
+
+                configure_python_lsp(client, current_python, env_type, "LspAttach")
+            end
+        end
+    })
+end
+
+-- Simplified dynamic hook that just processes currently running clients
+function M.dynamic_python_lsp_hook(venv_python, env_type)
+    local count = 0
     local all_clients = vim.lsp.get_clients()
 
     for _, client in pairs(all_clients) do
-        -- Skip clients that already have explicit hooks
-        if not vim.tbl_contains(known_clients, client.name) then
-            -- Check if this is a Python LSP by examining filetypes
-            local filetypes = vim.tbl_get(client, "config", "filetypes") or {}
-            local is_python_lsp = type(filetypes) == "table" and vim.tbl_contains(filetypes, "python")
-
-            if is_python_lsp == true then
-                -- Handle deactivation when venv_python is nil
-                if venv_python == nil then
-                    vim.lsp.enable(client.name, false)
-                    M.activated_configs[client.name] = nil
-                    log.debug("Deactivated lsp for " .. client.name)
-                else
-                    -- Only configure if settings changed
-                    if M.activated_configs[client.name] ~= venv_python then
-                        local new_config = default_lsp_settings(client.name, venv_python, env_type)
-
-                        log.debug(client.name .. ": Using default lsp config (no specific hook exists): ", new_config)
-                        vim.lsp.config(client.name, new_config)
-                        M.restart_lsp_client(client.name, client.id)
-
-                        M.activated_configs[client.name] = venv_python
-                        log.debug("Configured " .. client.name .. " with venv: " .. (venv_python or "nil"))
-                    end
-                end
-                count = count + 1 -- Always count Python LSPs, even if already configured
-            end
+        if configure_python_lsp(client, venv_python, env_type, "activation") then
+            count = count + 1
         end
     end
 
@@ -256,5 +296,8 @@ function M.restart_lsp_client(client_name, client_id)
         end, 200)
     end, 300)
 end
+
+-- Initialize the unified LspAttach handler when the module is loaded
+setup_unified_lsp_attach()
 
 return M

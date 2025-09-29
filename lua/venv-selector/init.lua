@@ -8,12 +8,7 @@ if has_notify then
     vim.notify = notify_plugin
 end
 
-local function on_lsp_attach(args)
-    if vim.bo.filetype == "python" then
-        local cache = require("venv-selector.cached_venv")
-        cache.handle_automatic_activation()
-    end
-end
+
 
 
 function M.python()
@@ -65,13 +60,7 @@ function M.setup(conf)
     local config = require("venv-selector.config")
     config.merge_user_settings(conf or {}) -- creates config.user_settings variable with configuration
 
-    -- Create autocmd with proper group
-    local group = vim.api.nvim_create_augroup("VenvSelector", { clear = true })
-    vim.api.nvim_create_autocmd("LspAttach", {
-        group = group,
-        pattern = "*",
-        callback = on_lsp_attach,
-    })
+
 
     local user_commands = require("venv-selector.user_commands")
     user_commands.register()

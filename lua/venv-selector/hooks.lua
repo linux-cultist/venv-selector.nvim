@@ -8,6 +8,8 @@ M.notifications_memory = {}
 -- Format: { lsp_name = venv_python_path }
 M.activated_configs = {}
 
+
+
 local function create_cmd_env(venv_python, env_type)
     local venv_path = vim.fn.fnamemodify(venv_python, ":h:h")
     local env = {
@@ -110,7 +112,10 @@ local function configure_python_lsp(client, venv_python, env_type)
     local is_python_lsp = vim.tbl_contains(filetypes, "python")
 
     if not is_python_lsp then return false end
-
+    
+    -- Track this as a Python LSP for log forwarding
+    log.track_python_lsp(client.name)
+    
     -- Handle deactivation when venv_python is nil
     if venv_python == nil then
         vim.lsp.enable(client.name, false)

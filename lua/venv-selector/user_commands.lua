@@ -1,7 +1,24 @@
 local M = {}
 
+-- Check if Neovim version is 0.11 or higher
+local function check_nvim_version()
+    local version = vim.version()
+    if version.major == 0 and version.minor < 11 then
+        vim.notify(
+            "venv-selector.nvim requires Neovim 0.11+. Current version: " .. 
+            version.major .. "." .. version.minor .. "." .. version.patch,
+            vim.log.levels.ERROR,
+            { title = "VenvSelect" }
+        )
+        return false
+    end
+    return true
+end
+
 function M.register()
     vim.api.nvim_create_user_command("VenvSelect", function(opts)
+        if not check_nvim_version() then return end
+        
         local gui = require("venv-selector.gui")
         gui.open(opts)
     end, { nargs = "*", desc = "Activate venv" })

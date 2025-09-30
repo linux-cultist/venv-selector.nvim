@@ -131,7 +131,10 @@ function M.retrieve()
                     end
 
                     log.debug("Activating venv `" .. venv_info.value .. "` from cache.")
-                    venv.activate(venv_info.value, venv_info.type, false)
+                    -- venv.activate(venv_info.value, venv_info.type, false)
+                    vim.schedule(function()
+                        venv.activate(venv_info.value, venv_info.type, false)
+                    end)
                     cache_retrieval_done = true
                 end
             end

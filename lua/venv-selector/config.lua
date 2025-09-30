@@ -249,15 +249,8 @@ M.default_settings = {
     },
     ---@type venv-selector.Hook[]
     hooks = {
-        -- Default hooks for common Python LSPs
-        hooks.basedpyright_hook,
-        hooks.pyright_hook,
-        hooks.jedi_language_server_hook,
-        hooks.pylsp_hook,
-        hooks.ruff_hook,
-        -- hooks.pyrefly_hook,
-        -- Dynamic fallback for any other Python LSPs
-        hooks.dynamic_python_lsp_hook,
+        hooks.dynamic_python_lsp_hook, -- Default hook for python lsps, seems to work with all so far.
+        -- hooks.basedpyright, -- example hook for lsp that may not work with default hook
     },
     ---@class venv-selector.Options
     options = {

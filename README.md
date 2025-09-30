@@ -542,8 +542,7 @@ options = {
         selected_venv_marker_icon = "✔",           -- the icon to use for marking the selected venv
         picker_icons = {},                         -- override default icons for venv types (e.g., { poetry = "📝", hatch = "🔨", default = "🐍" })
         picker_columns = { "marker", "search_icon", "search_name", "search_result" }, -- column order in pickers (omit columns to hide them)
-        picker_options = {}           -- options for pickers (only snacks for now). Example: snacks = {layout = { preset = 'default', preview = { main = false, enabled = false }, fullscreen = false },					},
-				},
+        picker_options = {}           -- options for pickers (only snacks for now). Example: snacks = {layout = { preset = 'default', preview = { main = false, enabled = false }, fullscreen = false },					},},
         picker = "auto",                           -- the picker to use. Valid options are "telescope", "fzf-lua", "snacks", "native", "mini-pick" or "auto"
         statusline_func = { nvchad = nil, lualine = nil } -- if a function is defined here for a statusline, it can be used to customize the statusline.
   }

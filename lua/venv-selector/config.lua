@@ -278,7 +278,12 @@ M.default_settings = {
         picker_columns = { "marker", "search_icon", "search_name", "search_result" }, -- Column order in pickers (omit columns to hide them)
         ---@type "telescope"|"fzf-lua"|"native"|"mini-pick"|"auto"
         picker = "auto", -- The picker to use. Valid options are "telescope", "fzf-lua", "snacks", "native", "mini-pick" or "auto"
-        statusline_func = { nvchad = nil, lualine = nil }
+        statusline_func = { nvchad = nil, lualine = nil },
+        picker_options = { -- picker-specific options
+            snacks = {
+                layout = { preset = "select" }, -- snacks layout config
+            },
+        },
     },
     search = M.get_default_searches()(),
 }

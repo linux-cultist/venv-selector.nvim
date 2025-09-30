@@ -20,9 +20,7 @@ function M:pick()
         finder = function(opts, ctx)
             return self.results
         end,
-        layout = {
-            preset = "select",
-        },
+        layout = config.user_settings.options.picker_options.snacks.layout,
         format = function(item, picker)
             local columns = gui_utils.get_picker_columns()
             local hl = gui_utils.hl_active_venv(item)

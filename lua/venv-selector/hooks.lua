@@ -216,6 +216,7 @@ function M.configure_lsp_client(client_name, venv_python, env_type)
     log.debug("Updating LSP config for " .. client_name .. " with:", new_config)
     vim.lsp.config(client_name, new_config)
 
+
     -- Restart all running clients for this LSP
     for _, client in pairs(running_clients) do
         M.restart_lsp_client(client_name, client.id)

@@ -108,15 +108,15 @@ end
 function M.unset_env(env_variable_name)
     if config.user_settings.options.set_environment_variables == true then
         if vim.fn.getenv(env_variable_name) ~= nil then
-            vim.fn.setenv(env_variable_name, "")
+            vim.fn.setenv(env_variable_name, nil)
             log.debug("$" .. env_variable_name .. " has been unset.")
         end
     end
 end
 
 function M.unset_env_variables()
-    vim.fn.setenv("VIRTUAL_ENV", "")
-    vim.fn.setenv("CONDA_PREFIX", "")
+    vim.fn.setenv("VIRTUAL_ENV", nil)
+    vim.fn.setenv("CONDA_PREFIX", nil)
 end
 
 return M

@@ -95,7 +95,6 @@ function M.ok_to_activate(client_name, venv_python)
     return true
 end
 
-
 -- Unified LSP configuration handler that works both for immediate activation and LspAttach events
 local function configure_python_lsp(client, venv_python, env_type)
     -- Since LSP_CONFIGS is empty (all commented out), all Python LSPs use dynamic configuration
@@ -112,10 +111,10 @@ local function configure_python_lsp(client, venv_python, env_type)
     local is_python_lsp = vim.tbl_contains(filetypes, "python")
 
     if not is_python_lsp then return false end
-    
+
     -- Track this as a Python LSP for log forwarding
     log.track_python_lsp(client.name)
-    
+
     -- Handle deactivation when venv_python is nil
     if venv_python == nil then
         vim.lsp.enable(client.name, false)
@@ -130,7 +129,7 @@ local function configure_python_lsp(client, venv_python, env_type)
 
         log.debug("Configuring " .. client.name .. " with venv: " .. venv_python)
         vim.lsp.config(client.name, new_config)
-        M.restart_lsp_client(client.name, client.id)
+        M.restart_lsp_client(client)
 
         M.activated_configs[client.name] = venv_python
     end
@@ -219,7 +218,7 @@ function M.configure_lsp_client(client_name, venv_python, env_type)
 
     -- Restart all running clients for this LSP
     for _, client in pairs(running_clients) do
-        M.restart_lsp_client(client_name, client.id)
+        M.restart_lsp_client(client)
     end
 
     -- Track this configuration
@@ -262,38 +261,48 @@ function M.basedpyright(venv_python, env_type)
     return M.actual_hook("basedpyright", venv_python, env_type)
 end
 
--- Unified client restart function
-function M.restart_lsp_client(client_name, client_id)
-    log.debug("Restarting LSP client: " .. client_name .. " (id: " .. client_id .. ")")
-
-    -- First, stop the specific client
-    vim.lsp.stop_client(client_id, true) -- force stop immediately
-
-    -- Wait for client to be fully stopped, then restart
-    vim.defer_fn(function()
-        -- Check if this specific client is gone
-        local check_client = vim.lsp.get_client_by_id(client_id)
-        if check_client and not check_client:is_stopped() then
-            log.debug("Client " .. client_id .. " still running, force stopping again")
-            check_client:stop(true)
-        end
-
-        -- Stop any other clients with the same name to avoid duplicates
-        local remaining_clients = vim.lsp.get_clients({ name = client_name })
-        for _, remaining in pairs(remaining_clients) do
-            if remaining.id ~= client_id then
-                log.debug("Stopping duplicate client " .. client_name .. " (id: " .. remaining.id .. ")")
-                vim.lsp.stop_client(remaining.id, true)
-            end
-        end
-
-        -- Start fresh client
-        vim.defer_fn(function()
-            -- log.debug("Starting new client: " .. client_name)
-            vim.lsp.enable(client_name, true)
-        end, 200)
-    end, 300)
+function M.restart_lsp_client(client)
+    local cfg = vim.deepcopy(client.config or {})
+    vim.lsp.stop_client(client.id, true)
+    log.debug("Stopping client: " .. client.name)
+    vim.schedule(function()
+        vim.lsp.start(cfg)
+        log.debug("Started client: " .. client.name)
+    end)
 end
+
+-- Unified client restart function
+-- function M.restart_lsp_client(client_name, client_id)
+--     log.debug("Restarting LSP client: " .. client_name .. " (id: " .. client_id .. ")")
+
+--     -- First, stop the specific client
+--     vim.lsp.stop_client(client_id, true) -- force stop immediately
+
+--     -- Wait for client to be fully stopped, then restart
+--     vim.defer_fn(function()
+--         -- Check if this specific client is gone
+--         local check_client = vim.lsp.get_client_by_id(client_id)
+--         if check_client and not check_client:is_stopped() then
+--             log.debug("Client " .. client_id .. " still running, force stopping again")
+--             check_client:stop(true)
+--         end
+
+--         -- Stop any other clients with the same name to avoid duplicates
+--         local remaining_clients = vim.lsp.get_clients({ name = client_name })
+--         for _, remaining in pairs(remaining_clients) do
+--             if remaining.id ~= client_id then
+--                 log.debug("Stopping duplicate client " .. client_name .. " (id: " .. remaining.id .. ")")
+--                 vim.lsp.stop_client(remaining.id, true)
+--             end
+--         end
+
+--         -- Start fresh client
+--         vim.defer_fn(function()
+--             -- log.debug("Starting new client: " .. client_name)
+--             vim.lsp.enable(client_name, true)
+--         end, 200)
+--     end, 300)
+-- end
 
 -- Initialize the unified LspAttach handler when the module is loaded
 setup_unified_lsp_attach()

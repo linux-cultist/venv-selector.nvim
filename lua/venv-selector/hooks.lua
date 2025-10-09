@@ -8,6 +8,16 @@ M.notifications_memory = {}
 -- Format: { lsp_name = venv_python_path }
 M.activated_configs = {}
 
+-- Track which clients are currently being restarted to prevent duplicate shutdown requests
+local restarting_clients = {}
+
+-- LSP servers that don't work with vim.lsp.enable and need client.stop() instead
+local stubborn_lsp_servers = {
+    ["jedi-language-server"] = true,
+    ["pyrefly"] = true,
+    ["zuban"] = true,
+}
+
 
 
 local function create_cmd_env(venv_python, env_type)
@@ -95,8 +105,6 @@ function M.ok_to_activate(client_name, venv_python)
     return true
 end
 
-
--- Unified LSP configuration handler that works both for immediate activation and LspAttach events
 local function configure_python_lsp(client, venv_python, env_type)
     -- Since LSP_CONFIGS is empty (all commented out), all Python LSPs use dynamic configuration
     -- No need to check for explicit hooks since none are defined
@@ -112,10 +120,10 @@ local function configure_python_lsp(client, venv_python, env_type)
     local is_python_lsp = vim.tbl_contains(filetypes, "python")
 
     if not is_python_lsp then return false end
-    
+
     -- Track this as a Python LSP for log forwarding
     log.track_python_lsp(client.name)
-    
+
     -- Handle deactivation when venv_python is nil
     if venv_python == nil then
         vim.lsp.enable(client.name, false)
@@ -126,11 +134,14 @@ local function configure_python_lsp(client, venv_python, env_type)
 
     -- Only configure if settings changed
     if M.activated_configs[client.name] ~= venv_python then
-        local new_config = default_lsp_settings(client.name, venv_python, env_type)
-
         log.debug("Configuring " .. client.name .. " with venv: " .. venv_python)
-        vim.lsp.config(client.name, new_config)
-        M.restart_lsp_client(client.name, client.id)
+
+        -- Only restart if not already restarting
+        if not restarting_clients[client.name] then
+            M.restart_lsp_client(client.name, client.id, venv_python, env_type)
+        else
+            log.debug("Client " .. client.name .. " is already restarting, skipping")
+        end
 
         M.activated_configs[client.name] = venv_python
     end
@@ -138,44 +149,17 @@ local function configure_python_lsp(client, venv_python, env_type)
     return true
 end
 
--- Unified LspAttach handler that handles both automatic activation and post-restart configuration
-local function setup_unified_lsp_attach()
-    local group = vim.api.nvim_create_augroup("VenvSelectorUnified", { clear = true })
+-- Simple function to configure all Python LSP clients with new venv
+local function configure_all_python_lsps(venv_python, env_type)
+    log.debug("configure_all_python_lsps called with venv_python: " ..
+        tostring(venv_python) .. ", env_type: " .. tostring(env_type))
+    if not venv_python then
+        log.debug("No venv specified, skipping LSP configuration")
+        return
+    end
 
-    vim.api.nvim_create_autocmd("LspAttach", {
-        group = group,
-        callback = function(args)
-            local client = vim.lsp.get_client_by_id(args.data.client_id)
-            if not client then return end
-
-            -- Handle automatic activation (like init.lua but integrated)
-            if vim.bo.filetype == "python" then
-                local cache = require("venv-selector.cached_venv")
-                if require("venv-selector.config").user_settings.options.cached_venv_automatic_activation then
-                    cache.retrieve() -- This will call our hook which sets current venv info
-                end
-            end
-
-            -- Get current venv info - either from recent activation or existing state
-            local venv_selector = require("venv-selector")
-            local current_python = venv_selector.python()
-            if current_python and current_python ~= "" then
-                -- Determine env type from the python path
-                local env_type = "venv" -- default
-                if string.find(current_python, "conda") or string.find(current_python, "anaconda") then
-                    env_type = "anaconda"
-                end
-
-                configure_python_lsp(client, current_python, env_type)
-            end
-        end
-    })
-end
-
--- Simplified dynamic hook that just processes currently running clients
-function M.dynamic_python_lsp_hook(venv_python, env_type)
-    local count = 0
     local all_clients = vim.lsp.get_clients()
+    local count = 0
 
     for _, client in pairs(all_clients) do
         if configure_python_lsp(client, venv_python, env_type) then
@@ -183,7 +167,69 @@ function M.dynamic_python_lsp_hook(venv_python, env_type)
         end
     end
 
+    log.debug("Configured " .. count .. " Python LSP clients with venv: " .. venv_python)
     return count
+end
+
+-- Unified LSP configuration that works for both cache activation and picker selection
+local function setup_python_filetype_handler()
+    local group = vim.api.nvim_create_augroup("VenvSelectorPython", { clear = true })
+
+    vim.api.nvim_create_autocmd("FileType", {
+        group = group,
+        pattern = "python",
+        callback = function()
+            -- Handle automatic activation from cache
+            if require("venv-selector.config").user_settings.options.cached_venv_automatic_activation then
+                log.debug("FileType python: attempting cache retrieval")
+                local cache = require("venv-selector.cached_venv")
+                cache.retrieve() -- This calls venv.activate which calls our hook
+                log.debug("FileType python: cache.retrieve() completed")
+            end
+        end
+    })
+
+
+    -- Handle LspAttach for clients that start after venv is already activated
+    vim.api.nvim_create_autocmd("LspAttach", {
+        group = group,
+        callback = function(args)
+            local client = vim.lsp.get_client_by_id(args.data.client_id)
+            if not client then return end
+
+            -- Only handle Python LSP clients
+            local filetypes = vim.tbl_get(client, "config", "filetypes") or {}
+            if type(filetypes) ~= "table" or not vim.tbl_contains(filetypes, "python") then
+                return
+            end
+
+
+
+            -- Get current venv info
+            local venv_selector = require("venv-selector")
+            local current_python = venv_selector.python()
+            if current_python and current_python ~= "" then
+                -- Only configure if client doesn't already have the right venv
+                if M.activated_configs[client.name] ~= current_python then
+                    -- Determine env type from the python path
+                    local env_type = "venv" -- default
+                    if string.find(current_python, "conda") or string.find(current_python, "anaconda") then
+                        env_type = "anaconda"
+                    end
+
+                    log.debug("LspAttach: configuring " .. client.name .. " with current venv: " .. current_python)
+                    configure_python_lsp(client, current_python, env_type)
+                end
+            end
+        end
+    })
+end
+
+-- Dynamic hook that processes currently running clients (called when venv is selected)
+function M.dynamic_python_lsp_hook(venv_python, env_type)
+    log.debug("dynamic_python_lsp_hook called with venv_python: " ..
+        tostring(venv_python) .. ", env_type: " .. tostring(env_type))
+    return configure_all_python_lsps(venv_python, env_type)
 end
 
 function M.send_notification(message)
@@ -262,40 +308,116 @@ function M.basedpyright(venv_python, env_type)
     return M.actual_hook("basedpyright", venv_python, env_type)
 end
 
--- Unified client restart function
-function M.restart_lsp_client(client_name, client_id)
+-- Restart function with simple enable/disable and proper waiting
+function M.restart_lsp_client(client_name, client_id, venv_python, env_type)
     log.debug("Restarting LSP client: " .. client_name .. " (id: " .. client_id .. ")")
 
-    -- First, stop the specific client
-    vim.lsp.stop_client(client_id, true) -- force stop immediately
+    -- Mark client as restarting to prevent duplicate requests
+    restarting_clients[client_name] = true
 
-    -- Wait for client to be fully stopped, then restart
-    vim.defer_fn(function()
-        -- Check if this specific client is gone
-        local check_client = vim.lsp.get_client_by_id(client_id)
-        if check_client and not check_client:is_stopped() then
-            log.debug("Client " .. client_id .. " still running, force stopping again")
-            check_client:stop(true)
-        end
+    -- Temporarily disable diagnostic and other automatic requests
+    local client = vim.lsp.get_client_by_id(client_id)
+    local use_client_stop = stubborn_lsp_servers[client_name]
 
-        -- Stop any other clients with the same name to avoid duplicates
-        local remaining_clients = vim.lsp.get_clients({ name = client_name })
-        for _, remaining in pairs(remaining_clients) do
-            if remaining.id ~= client_id then
-                log.debug("Stopping duplicate client " .. client_name .. " (id: " .. remaining.id .. ")")
-                vim.lsp.stop_client(remaining.id, true)
+    if client then
+        -- Disable client capabilities temporarily to prevent requests during shutdown
+        client.server_capabilities = client.server_capabilities or {}
+        local saved_capabilities = vim.deepcopy(client.server_capabilities)
+
+        -- Disable capabilities that might trigger requests
+        client.server_capabilities.textDocumentSync = false
+        client.server_capabilities.diagnosticProvider = false
+        client.server_capabilities.semanticTokensProvider = false
+
+        -- Store original capabilities for debugging
+        client._saved_capabilities = saved_capabilities
+    end
+
+    -- Use appropriate shutdown method based on server type
+    if use_client_stop and client then
+        log.debug("Using client.stop() for stubborn server: " .. client_name)
+        pcall(client.stop, client, true)
+    else
+        log.debug("Using vim.lsp.enable(false) for server: " .. client_name)
+        vim.lsp.enable(client_name, false)
+    end
+
+    -- Check if the specific client ID is gone
+    local function check_client_shutdown(attempts)
+        attempts = attempts or 0
+        local client = vim.lsp.get_client_by_id(client_id)
+
+        if not client then
+            -- Client is gone, safe to restart with new config
+            log.debug("Client " .. client_name .. " (id: " .. client_id .. ") has shut down, configuring and restarting")
+
+            -- Configure with new settings before restart
+            if venv_python and env_type then
+                local new_config = default_lsp_settings(client_name, venv_python, env_type)
+                vim.lsp.config(client_name, new_config)
             end
-        end
 
-        -- Start fresh client
-        vim.defer_fn(function()
-            -- log.debug("Starting new client: " .. client_name)
             vim.lsp.enable(client_name, true)
-        end, 200)
-    end, 300)
+            log.debug("Successfully restarted " .. client_name .. " with new venv configuration")
+            -- Clear the restarting flag after restart
+            vim.defer_fn(function()
+                restarting_clients[client_name] = nil
+            end, 1000)
+        elseif attempts < 10 then -- Only try 10 times (1 second)
+            log.debug("Client " ..
+                client_name .. " (id: " .. client_id .. ") still running, attempt " .. (attempts + 1) .. "/10")
+            vim.defer_fn(function()
+                check_client_shutdown(attempts + 1)
+            end, 100)
+        else
+            -- Client doesn't respond to vim.lsp.enable, skip restart
+            log.warning("Client " ..
+                client_name ..
+                " (id: " ..
+                client_id .. ") doesn't respond to vim.lsp.enable, skipping restart - client won't get new venv settings")
+            -- Clear the restarting flag and leave the existing client running
+            restarting_clients[client_name] = nil
+        end
+    end
+
+    -- Start checking after initial delay
+    vim.defer_fn(function() check_client_shutdown(0) end, 100)
 end
 
--- Initialize the unified LspAttach handler when the module is loaded
-setup_unified_lsp_attach()
+-- Unified client restart function
+-- function M.restart_lsp_client(client_name, client_id)
+--     log.debug("Restarting LSP client: " .. client_name .. " (id: " .. client_id .. ")")
+
+--     -- First, stop the specific client
+--     vim.lsp.stop_client(client_id, true) -- force stop immediately
+
+--     -- Wait for client to be fully stopped, then restart
+--     vim.defer_fn(function()
+--         -- Check if this specific client is gone
+--         local check_client = vim.lsp.get_client_by_id(client_id)
+--         if check_client and not check_client:is_stopped() then
+--             log.debug("Client " .. client_id .. " still running, force stopping again")
+--             check_client:stop(true)
+--         end
+
+--         -- Stop any other clients with the same name to avoid duplicates
+--         local remaining_clients = vim.lsp.get_clients({ name = client_name })
+--         for _, remaining in pairs(remaining_clients) do
+--             if remaining.id ~= client_id then
+--                 log.debug("Stopping duplicate client " .. client_name .. " (id: " .. remaining.id .. ")")
+--                 vim.lsp.stop_client(remaining.id, true)
+--             end
+--         end
+
+--         -- Start fresh client
+--         vim.defer_fn(function()
+--             -- log.debug("Starting new client: " .. client_name)
+--             vim.lsp.enable(client_name, true)
+--         end, 200)
+--     end, 300)
+-- end
+
+-- Initialize the Python FileType handler when the module is loaded
+setup_python_filetype_handler()
 
 return M

@@ -11,6 +11,41 @@ M.activated_configs = {}
 -- Track which clients are currently being restarted to prevent duplicate shutdown requests
 local restarting_clients = {}
 
+-- Helper function to determine if an LSP client is primarily a Python LSP
+local function is_python_lsp_client(client)
+    local filetypes = vim.tbl_get(client, "config", "filetypes") or {}
+    
+    -- Ensure filetypes is a table before processing
+    if type(filetypes) ~= "table" then
+        return false
+    end
+    
+    -- Must support Python to be considered
+    if not vim.tbl_contains(filetypes, "python") then
+        return false
+    end
+    
+    -- If it only supports a few filetypes and python is one of them, likely a Python LSP
+    if #filetypes <= 3 and (vim.tbl_contains(filetypes, "python") or vim.tbl_contains(filetypes, "pyi")) then
+        return true
+    end
+    
+    -- Check if server name contains python-related terms
+    if client.name:match("py") or client.name:match("python") then
+        return true
+    end
+    
+    -- Check if the command contains python-related terms
+    if client.config.cmd and type(client.config.cmd) == "table" and client.config.cmd[1] then
+        local cmd = client.config.cmd[1]:lower()
+        if cmd:match("py") or cmd:match("python") then
+            return true
+        end
+    end
+    
+    return false
+end
+
 -- LSP servers that don't work with vim.lsp.enable and need client.stop() instead
 local stubborn_lsp_servers = {
     ["jedi-language-server"] = true,
@@ -117,7 +152,8 @@ local function configure_python_lsp(client, venv_python, env_type)
         return false
     end
 
-    local is_python_lsp = vim.tbl_contains(filetypes, "python")
+    local is_python_lsp = is_python_lsp_client(client)
+    -- log.debug(client.name .. " is python_lsp: " .. tostring(is_python_lsp))
 
     if not is_python_lsp then return false end
 
@@ -198,8 +234,7 @@ local function setup_python_filetype_handler()
             if not client then return end
 
             -- Only handle Python LSP clients
-            local filetypes = vim.tbl_get(client, "config", "filetypes") or {}
-            if type(filetypes) ~= "table" or not vim.tbl_contains(filetypes, "python") then
+            if not is_python_lsp_client(client) then
                 return
             end
 

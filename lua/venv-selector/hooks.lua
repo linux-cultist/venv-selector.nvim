@@ -48,7 +48,7 @@ end
 
 -- LSP servers that don't work with vim.lsp.enable and need client.stop() instead
 local stubborn_lsp_servers = {
-    ["jedi-language-server"] = true,
+    ["jedi_language_server"] = true,
     ["pyrefly"] = true,
     ["zuban"] = true,
 }

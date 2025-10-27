@@ -58,6 +58,8 @@ function M.save(python_path, venv_type)
             local cached_json = vim.fn.json_decode(cached_file[1])
             local merged_cache = vim.tbl_deep_extend("force", cached_json, venv_cache)
             venv_cache_json = vim.fn.json_encode(merged_cache)
+        else
+            venv_cache_json = vim.fn.json_encode(venv_cache)
         end
     else
         venv_cache_json = vim.fn.json_encode(venv_cache)

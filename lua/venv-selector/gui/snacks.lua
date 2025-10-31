@@ -12,7 +12,7 @@ end
 function M:pick()
     -- Setup highlight groups for marker color
     local marker_color = config.user_settings.options.selected_venv_marker_color or
-    config.user_settings.options.telescope_active_venv_color
+        config.user_settings.options.telescope_active_venv_color
     vim.api.nvim_set_hl(0, "VenvSelectMarker", { fg = marker_color })
 
     return Snacks.picker.pick({
@@ -25,7 +25,7 @@ function M:pick()
             local columns = gui_utils.get_picker_columns()
             local hl = gui_utils.hl_active_venv(item)
             local marker_icon = config.user_settings.options.selected_venv_marker_icon or
-            config.user_settings.options.icon or "✔"
+                config.user_settings.options.icon or "✔"
 
             -- Prepare column data
             local column_data = {
@@ -71,7 +71,9 @@ end
 function M:search_done()
     self.results = gui_utils.remove_dups(self.results)
     gui_utils.sort_results(self.results)
-    self.picker:find()
+    if self.picker then
+        self.picker:find()
+    end
 end
 
 return M

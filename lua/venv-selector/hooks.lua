@@ -284,64 +284,64 @@ function M.send_notification(message)
     end
 end
 
-function M.configure_lsp_client(client_name, venv_python, env_type)
-    -- Since LSP_CONFIGS is empty, always use default configuration
-    log.debug("Using default LSP configuration for: " .. client_name)
-    local lsp_config = { settings_wrapper = default_lsp_settings }
+-- function M.configure_lsp_client(client_name, venv_python, env_type)
+--     -- Since LSP_CONFIGS is empty, always use default configuration
+--     log.debug("Using default LSP configuration for: " .. client_name)
+--     local lsp_config = { settings_wrapper = default_lsp_settings }
 
-    -- Get running clients (common logic should have already validated this)
-    local running_clients = vim.lsp.get_clients({ name = client_name })
+--     -- Get running clients (common logic should have already validated this)
+--     local running_clients = vim.lsp.get_clients({ name = client_name })
 
-    local new_config = lsp_config.settings_wrapper(client_name, venv_python, env_type)
+--     local new_config = lsp_config.settings_wrapper(client_name, venv_python, env_type)
 
-    log.debug("Updating LSP config for " .. client_name .. " with:", new_config)
-    vim.lsp.config(client_name, new_config)
+--     log.debug("Updating LSP config for " .. client_name .. " with:", new_config)
+--     vim.lsp.config(client_name, new_config)
 
 
-    -- Restart all running clients for this LSP
-    for _, client in pairs(running_clients) do
-        M.restart_lsp_client(client_name, client.id)
-    end
+--     -- Restart all running clients for this LSP
+--     for _, client in pairs(running_clients) do
+--         M.restart_lsp_client(client_name, client.id)
+--     end
 
-    -- Track this configuration
-    M.activated_configs[client_name] = venv_python
-    log.debug("Configured client " .. client_name .. " with venv: " .. (venv_python or "nil"))
+--     -- Track this configuration
+--     M.activated_configs[client_name] = venv_python
+--     log.debug("Configured client " .. client_name .. " with venv: " .. (venv_python or "nil"))
 
-    local message
-    if venv_python then
-        message = "Registered '" .. venv_python .. "' with " .. client_name .. " LSP."
-    else
-        message = "Cleared Python path from " .. client_name .. " LSP."
-    end
+--     local message
+--     if venv_python then
+--         message = "Registered '" .. venv_python .. "' with " .. client_name .. " LSP."
+--     else
+--         message = "Cleared Python path from " .. client_name .. " LSP."
+--     end
 
-    local config = require("venv-selector.config")
-    if config.user_settings.options.notify_user_on_venv_activation == true then
-        M.send_notification(message)
-    end
+--     local config = require("venv-selector.config")
+--     if config.user_settings.options.notify_user_on_venv_activation == true then
+--         M.send_notification(message)
+--     end
 
-    return 1
-end
+--     return 1
+-- end
 
-function M.actual_hook(lspserver_name, venv_python, env_type)
-    local running_clients = vim.lsp.get_clients({ name = lspserver_name })
-    if #running_clients == 0 then
-        return 0
-    end
+-- function M.actual_hook(lspserver_name, venv_python, env_type)
+--     local running_clients = vim.lsp.get_clients({ name = lspserver_name })
+--     if #running_clients == 0 then
+--         return 0
+--     end
 
-    -- Check if this client is already configured with this venv
-    if M.activated_configs[lspserver_name] == venv_python then
-        log.debug("Client " ..
-            lspserver_name .. " already configured with venv: " .. (venv_python or "nil") .. ". Counting as success.")
-        return 1 -- Count as success since the LSP is running with correct venv
-    end
+--     -- Check if this client is already configured with this venv
+--     if M.activated_configs[lspserver_name] == venv_python then
+--         log.debug("Client " ..
+--             lspserver_name .. " already configured with venv: " .. (venv_python or "nil") .. ". Counting as success.")
+--         return 1 -- Count as success since the LSP is running with correct venv
+--     end
 
-    return M.configure_lsp_client(lspserver_name, venv_python, env_type)
-end
+--     return M.configure_lsp_client(lspserver_name, venv_python, env_type)
+-- end
 
 -- Example custom hook (basedpyright works with default hook so its just an example)
-function M.basedpyright(venv_python, env_type)
-    return M.actual_hook("basedpyright", venv_python, env_type)
-end
+-- function M.basedpyright(venv_python, env_type)
+--     return M.actual_hook("basedpyright", venv_python, env_type)
+-- end
 
 -- Restart function with simple enable/disable and proper waiting
 function M.restart_lsp_client(client_name, client_id, venv_python, env_type)
@@ -394,6 +394,22 @@ function M.restart_lsp_client(client_name, client_id, venv_python, env_type)
 
             vim.lsp.enable(client_name, true)
             log.debug("Successfully restarted " .. client_name .. " with new venv configuration")
+ 
+ 
+            local message
+            if venv_python then
+                message = "Registered '" .. venv_python .. "' with " .. client_name .. " LSP."
+            else
+                message = "Cleared Python path from " .. client_name .. " LSP."
+            end
+           
+            local config = require("venv-selector.config")
+            if config.user_settings.options.notify_user_on_venv_activation == true then
+                M.send_notification(message)
+            end
+
+            
+            
             -- Clear the restarting flag after restart
             vim.defer_fn(function()
                 restarting_clients[client_name] = nil

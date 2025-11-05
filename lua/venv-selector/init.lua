@@ -2,11 +2,6 @@ local M = {}
 local setup_done = false
 
 
--- Use 'rcarriga/nvim-notify' if its installed to show user important alerts.
-local has_notify, notify_plugin = pcall(require, "notify")
-if has_notify then
-    vim.notify = notify_plugin
-end
 
 
 
@@ -52,6 +47,12 @@ function M.setup(conf)
     if setup_done then return end
 
 
+    -- Use 'rcarriga/nvim-notify' if its installed to show user important alerts.
+    local has_notify, notify_plugin = pcall(require, "notify")
+    if has_notify then
+        vim.notify = notify_plugin
+    end
+    
     if vim.tbl_get(conf, "options", "debug") then
         local log = require("venv-selector.logger")
         log.enabled = true

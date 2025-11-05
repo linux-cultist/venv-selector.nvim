@@ -398,7 +398,7 @@ function M.restart_lsp_client(client_name, client_id, venv_python, env_type)
             vim.defer_fn(function()
                 restarting_clients[client_name] = nil
             end, 1000)
-        elseif attempts < 10 then -- Only try 10 times (1 second)
+        elseif attempts < 20 then -- Only try 10 times (1 second)
             log.debug("Client " ..
                 client_name .. " (id: " .. client_id .. ") still running, attempt " .. (attempts + 1) .. "/10")
             vim.defer_fn(function()

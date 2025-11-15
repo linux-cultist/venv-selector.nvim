@@ -2,8 +2,10 @@ local M = {}
 
 M.uv_installed = vim.fn.executable("uv") == 1
 
--- Track recently activated files to prevent duplicates
+-- Track recently activated file-environment pairs to prevent duplicates
 local recently_activated = {}
+-- Track pending activation requests to prevent duplicates
+local pending_activations = {}
 
 -- Get path module
 local path = require("venv-selector.path")
@@ -74,9 +76,13 @@ function M.auto_activate_if_needed(file_path, force)
         return
     end
 
-    -- Only check Python files
-    local filetype = vim.bo[0].filetype
-    if filetype ~= "python" then
+    -- Skip empty or unreadable files
+    if not file_path or file_path == "" or vim.fn.filereadable(file_path) ~= 1 then
+        return
+    end
+
+    -- Skip log buffer and other special buffers
+    if file_path:match("VenvSelectLog") or file_path == "" then
         return
     end
 
@@ -89,13 +95,6 @@ function M.auto_activate_if_needed(file_path, force)
         end
     end
 
-    -- Skip if we recently activated this file (within 100ms) - check early to prevent duplicate work
-    local now = vim.loop.now()
-    if recently_activated[file_path] and (now - recently_activated[file_path]) < 100 then
-        log.debug("Skipping activation - recently activated: " .. file_path)
-        return
-    end
-
     -- Check if file has PEP-723 metadata
     if not utils.has_pep723_metadata(file_path) then
         return
@@ -103,14 +102,68 @@ function M.auto_activate_if_needed(file_path, force)
 
     log.debug("Found PEP-723 metadata in: " .. file_path)
 
+    -- Skip if we recently activated this file (within 200ms) - check after metadata check
+    local now = vim.loop.now()
+    if recently_activated[file_path] and (now - recently_activated[file_path]) < 200 then
+        log.debug("Skipping activation - recently activated: " .. file_path)
+        return
+    end
+
+    -- Skip if there's already a pending activation for this file
+    if pending_activations[file_path] then
+        log.debug("Skipping activation - already pending: " .. file_path)
+        return
+    end
+    pending_activations[file_path] = true
+
     -- Check if we already have the correct UV environment active for this specific file
     local path = require("venv-selector.path")
     local current_python = path.current_python_path
     log.debug("Current Python path: " .. (current_python or "nil"))
 
-    -- Always activate UV environment for PEP-723 files to ensure sync
-    recently_activated[file_path] = now
-    M.activate_for_script(file_path)
+    -- First, check what environment this file needs
+    run_uv_command({ "uv", "python", "find", "--script", file_path }, function(success, stdout_lines, _, _)
+        -- Clear pending flag when done
+        pending_activations[file_path] = nil
+        
+        if success then
+            for _, line in ipairs(stdout_lines) do
+                if line:match("python") then
+                    local expected_python = line:gsub("%s+$", "") -- trim whitespace
+                    
+                    -- Only activate if the expected environment is different from current
+                    if current_python == expected_python then
+                        log.debug("Already using correct UV environment: " .. expected_python)
+                        return
+                    end
+                    
+                    log.debug("Need to switch from " .. (current_python or "none") .. " to " .. expected_python)
+                    recently_activated[file_path] = now
+                    M.activate_for_script(file_path)
+                    
+                    -- Clean up old entries from recently_activated (older than 5 seconds)
+                    for old_file, old_time in pairs(recently_activated) do
+                        if (now - old_time) > 5000 then
+                            recently_activated[old_file] = nil
+                        end
+                    end
+                    return
+                end
+            end
+        end
+        
+        -- Fallback: activate anyway if we can't determine expected environment
+        log.debug("Could not determine expected environment, activating anyway")
+        recently_activated[file_path] = now
+        M.activate_for_script(file_path)
+        
+        -- Clean up old entries from recently_activated (older than 5 seconds)
+        for old_file, old_time in pairs(recently_activated) do
+            if (now - old_time) > 5000 then
+                recently_activated[old_file] = nil
+            end
+        end
+    end)
 end
 
 --- Activate UV environment for a specific script file
@@ -120,7 +173,7 @@ function M.activate_for_script(script_path)
         local log = require("venv-selector.logger")
 
         -- Always run setup to ensure environment and dependencies are up to date
-        M.setup_environment(script_path, nil, function(setup_success)
+        M.setup_environment(script_path, "", function(setup_success)
             if setup_success then
                 -- Get the actual Python path after setup
                 run_uv_command({ "uv", "python", "find", "--script", script_path },
@@ -207,33 +260,78 @@ end
 --- Set up auto-activation for PEP-723 files
 function M.setup_auto_activation()
     if M.uv_installed == true then
-        -- Handle opening/switching files
-        vim.api.nvim_create_autocmd({ "BufEnter", "FileType" }, {
-            pattern = "python",
+        -- Handle opening/switching files - only BufEnter to reduce duplicate triggers
+        vim.api.nvim_create_autocmd({ "BufEnter" }, {
+            pattern = "*",  -- Match all files, we'll filter in the callback
             callback = function()
                 vim.defer_fn(function()
                     local current_file = vim.fn.expand("%:p")
+                    
+                    -- Skip empty files and log buffer early
+                    if not current_file or current_file == "" or current_file:match("VenvSelectLog") then
+                        return
+                    end
+                    
+                    local log = require("venv-selector.logger")
+                    log.debug("UV auto-activation triggered for: " .. current_file)
                     M.auto_activate_if_needed(current_file, false) -- Normal activation on buffer enter
-                end, 300)
+                end, 100)  -- Slightly longer delay to avoid rapid triggers
             end,
             group = vim.api.nvim_create_augroup("VenvSelectorUV", { clear = true })
         })
 
         -- Handle file saves (force recheck since metadata may have changed)
-        vim.api.nvim_create_autocmd({ "BufWrite", "FileType" }, {
-            pattern = "python",
+        vim.api.nvim_create_autocmd({ "BufWrite" }, {
+            pattern = "*",
             callback = function()
+                local current_file = vim.fn.expand("%:p")
+                
+                -- Skip empty files and log buffer early
+                if not current_file or current_file == "" or current_file:match("VenvSelectLog") then
+                    return
+                end
+                
                 vim.defer_fn(function()
-                    local current_file = vim.fn.expand("%:p")
+                    local log = require("venv-selector.logger")
+                    log.debug("UV file save triggered for: " .. current_file)
                     -- Clear cache since file content may have changed
                     local utils = require("venv-selector.utils")
                     utils.clear_pep723_cache()
                     M.auto_activate_if_needed(current_file, true) -- Force activation on file save
-                end, 300)
+                end, 100)
             end,
             group = vim.api.nvim_create_augroup("VenvSelectorUVWrite", { clear = true })
         })
     end
+end
+
+--- Test function to verify UV auto-activation is working
+function M.test_auto_activation()
+    local log = require("venv-selector.logger")
+    local current_file = vim.fn.expand("%:p")
+    local filetype = vim.bo.filetype
+    
+    log.debug("=== UV Auto-Activation Test ===")
+    log.debug("Current file: " .. current_file)
+    log.debug("Filetype: " .. filetype)
+    log.debug("UV installed: " .. tostring(M.uv_installed))
+    
+    if current_file ~= "" then
+        local utils = require("venv-selector.utils")
+        local has_metadata = utils.has_pep723_metadata(current_file)
+        log.debug("Has PEP-723 metadata: " .. tostring(has_metadata))
+        
+        if has_metadata then
+            log.debug("Triggering manual activation...")
+            M.auto_activate_if_needed(current_file, false)
+        else
+            log.debug("No PEP-723 metadata found in file")
+        end
+    else
+        log.debug("No current file")
+    end
+    
+    vim.notify("UV auto-activation test completed - check logs for details", vim.log.levels.INFO)
 end
 
 return M

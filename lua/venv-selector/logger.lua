@@ -93,9 +93,9 @@ function M.setup_syntax_highlighting()
     end
 
     -- Set buffer options for better display
-    vim.api.nvim_buf_set_option(log_buf, 'filetype', 'venv-selector-log')
-    vim.api.nvim_buf_set_option(log_buf, 'modifiable', false)
-    vim.api.nvim_buf_set_option(log_buf, 'readonly', true)
+    vim.bo[log_buf].filetype = 'venv-selector-log'
+    vim.bo[log_buf].modifiable = false
+    vim.bo[log_buf].readonly = true
 
     -- Create highlight groups for different log components using theme colors
     local highlights = {
@@ -135,8 +135,13 @@ function M.log_line(msg, level)
             M.setup_syntax_highlighting()
         end
 
+        -- Temporarily suppress warnings during buffer modification
+        local old_shortmess = vim.o.shortmess
+        vim.o.shortmess = vim.o.shortmess .. "W"
+        
         -- Make buffer modifiable for updates
-        vim.api.nvim_buf_set_option(log_buf, 'modifiable', true)
+        vim.bo[log_buf].readonly = false
+        vim.bo[log_buf].modifiable = true
 
         local line_count = vim.api.nvim_buf_line_count(log_buf)
         local utc_time_stamp = M.get_utc_date_time()
@@ -148,8 +153,10 @@ function M.log_line(msg, level)
             vim.api.nvim_buf_set_lines(log_buf, line_count, line_count, false, { log_entry })
         end
 
-        -- Make buffer read-only again
-        vim.api.nvim_buf_set_option(log_buf, 'modifiable', false)
+        -- Restore buffer state and warning settings
+        vim.bo[log_buf].modifiable = false
+        vim.bo[log_buf].readonly = true
+        vim.o.shortmess = old_shortmess
     end)
 end
 

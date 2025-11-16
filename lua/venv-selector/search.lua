@@ -160,7 +160,10 @@ local function start_search_job(search_name, search_config, context)
         handle_job_event(id, data, event, context)
     end
 
-    local job_id = vim.fn.jobstart(job, {
+    local shell = vim.o.shell
+    local shellflag = vim.o.shellcmdflag
+    
+    local job_id = vim.fn.jobstart({shell, shellflag, job}, {
         stdout_buffered = true,
         stderr_buffered = true,
         on_stdout = job_event_handler,

@@ -1,10 +1,4 @@
 local M = {}
-local setup_done = false
-
-
-
-
-
 
 function M.python()
     return require("venv-selector.path").current_python_path
@@ -43,38 +37,66 @@ function M.deactivate()
     require("venv-selector.venv").unset_env_variables()
 end
 
-function M.setup(conf)
-    if setup_done then return end
-
-
-    -- Use 'rcarriga/nvim-notify' if its installed to show user important alerts.
+---Initialize nvim-notify if available
+local function setup_notify()
     local has_notify, notify_plugin = pcall(require, "notify")
     if has_notify then
         vim.notify = notify_plugin
     end
-    
-    if vim.tbl_get(conf, "options", "debug") then
+end
+
+---Check if Neovim version meets minimum requirements
+---@return boolean true if version is compatible, false otherwise
+local function check_nvim_version()
+    local version = vim.version()
+    if version.major == 0 and version.minor < 11 then
+        local error_msg = string.format(
+            "venv-selector.nvim requires Neovim 0.11+. Current version: %d.%d.%d\n" ..
+            "Please upgrade Neovim or remove venv-selector.nvim from your configuration.",
+            version.major, version.minor, version.patch
+        )
+        vim.notify(error_msg, vim.log.levels.ERROR, { title = "VenvSelect" })
+        return false
+    end
+    return true
+end
+
+---Enable debug logging if requested
+---@param conf table|nil
+local function setup_debug_logging(conf)
+    if conf and conf.options and conf.options.debug then
         local log = require("venv-selector.logger")
         log.enabled = true
     end
+end
+
+---Setup highlight group for selected venv marker
+---@param settings venv-selector.Settings
+local function setup_highlight(settings)
+    vim.api.nvim_set_hl(0, "VenvSelectActiveVenv", {
+        fg = settings.options.selected_venv_marker_color
+    })
+end
+
+---Setup plugin configuration, commands, and integrations
+---@param conf venv-selector.Settings|nil User configuration
+function M.setup(conf)
+    if not check_nvim_version() then
+        return
+    end
+
+    setup_debug_logging(conf)
+    setup_notify()
 
     local config = require("venv-selector.config")
-    config.merge_user_settings(conf or {}) -- creates config.user_settings variable with configuration
+    config.store(conf)
 
+    setup_highlight(config.user_settings)
 
+    require("venv-selector.user_commands").register()
 
-    local user_commands = require("venv-selector.user_commands")
-    user_commands.register()
-
-    vim.api.nvim_set_hl(0, "VenvSelectActiveVenv", {
-        fg = config.user_settings.options.telescope_active_venv_color
-    })
-
-    -- Initialize UV auto-activation
     local uv = require("venv-selector.uv")
     uv.setup_auto_activation()
-
-
 end
 
 return M

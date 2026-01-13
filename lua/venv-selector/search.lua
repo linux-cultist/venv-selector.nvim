@@ -5,11 +5,42 @@ local log = require("venv-selector.logger")
 
 local M = {}
 
--- Module-level state for tracking active search jobs
-M.active_jobs = {}
-M.active_job_count = 0
+---@class SearchResult
+---@field path string The file path to the virtual environment
+---@field name string Display name of the virtual environment
+---@field icon string Icon to display
+---@field type string Type of environment (e.g., "venv", "conda")
+---@field source string Search source that found this result
 
--- Stop all active search jobs
+---@class SearchCallbacks
+---@field on_result fun(result: SearchResult) Called for each result found
+---@field on_complete fun() Called when search completes
+
+---@class Picker
+---@field insert_result fun(self: Picker, result: SearchResult) Add a result to the picker
+---@field search_done fun(self: Picker) Called when search completes
+
+---@class SearchOpts
+---@field args string Command arguments for interactive search
+
+---@class SearchConfig
+---@field command string The search command to execute
+---@field type? string The type of virtual environment
+---@field on_telescope_result_callback? fun(line: string, source: string): string
+---@field on_fd_result_callback? fun(line: string, source: string): string
+---@field execute_command? string The expanded command to execute
+---@field name? string The name of this search
+---@field stderr_output? string[] Collected stderr output
+
+-- Module-level state for tracking active search jobs
+---@type table<integer, SearchConfig>
+M.active_jobs = {}
+---@type integer
+M.active_job_count = 0
+---@type boolean?
+M.search_in_progress = nil
+
+---Stop all active search jobs
 function M.stop_search()
     log.debug("stop_search() called, active jobs: " .. M.active_job_count)
 
@@ -30,7 +61,8 @@ function M.stop_search()
     M.search_in_progress = false
 end
 
--- Get current file path with fallback to alternate buffer
+---Get current file path with fallback to alternate buffer
+---@return string current_file The current file path
 local function get_current_file()
     local current_file = vim.fn.expand("%:p")
     if current_file == "" then
@@ -44,7 +76,10 @@ local function get_current_file()
     return current_file
 end
 
--- Create job event handler with closure over picker/callbacks and options
+---Create job event handler with closure over picker/callbacks and options
+---@param picker Picker|SearchCallbacks|nil Picker object or callbacks
+---@param options table Search options
+---@return fun(job_id: integer, data: any, event: string) event_handler
 local function create_job_event_handler(picker, options)
     return function(job_id, data, event)
         local search_config = M.active_jobs[job_id]
@@ -117,12 +152,26 @@ local function create_job_event_handler(picker, options)
     end
 end
 
--- Start a single search job
+---Start a single search job
+---@param search_name string Name of the search
+---@param search_config SearchConfig Search configuration
+---@param job_event_handler fun(job_id: integer, data: any, event: string) Job event callback
+---@param search_timeout integer Timeout in seconds
 local function start_search_job(search_name, search_config, job_event_handler, search_timeout)
-    local job = path.expand(search_config.execute_command)
+    if not search_config.execute_command then
+        log.error("No execute_command for search '" .. search_name .. "'")
+        return
+    end
+    
+    -- Don't expand commands, use them directly
+    local job = search_config.execute_command
 
     if vim.uv.os_uname().sysname == "Windows_NT" then
         job = utils.split_cmd_for_windows(job)
+        if not job or #job == 0 then
+            log.error("Failed to split command for Windows. Original: " .. search_config.execute_command)
+            return
+        end
     end
 
     local job_id = vim.fn.jobstart(job, {
@@ -132,6 +181,12 @@ local function start_search_job(search_name, search_config, job_event_handler, s
         on_stderr = job_event_handler,
         on_exit = job_event_handler,
     })
+    
+    if job_id <= 0 then
+        local err = job_id == 0 and "invalid arguments" or "command not executable"
+        log.error("Failed to start job '" .. search_name .. "': " .. err .. ". Command: " .. vim.inspect(job))
+        return
+    end
 
     search_config.name = search_name
     M.active_jobs[job_id] = search_config
@@ -152,7 +207,11 @@ local function start_search_job(search_name, search_config, job_event_handler, s
     end))
 end
 
--- Process and start searches based on their command patterns
+---Process and start searches based on their command patterns
+---@param search_name string Name of the search
+---@param search_config SearchConfig Search configuration
+---@param job_event_handler fun(job_id: integer, data: any, event: string) Job event callback
+---@param options table Search options
 local function process_search(search_name, search_config, job_event_handler, options)
     local cmd = search_config.command:gsub("$FD", options.fd_binary_name)
 
@@ -188,10 +247,9 @@ local function process_search(search_name, search_config, job_event_handler, opt
     end
 end
 
--- Main search function
--- @param picker (optional) Either a picker object with insert_result() and search_done() methods,
---               or a table with on_result(result) and on_complete() callbacks, or nil
--- @param opts Command options for interactive search
+---Main search function
+---@param picker Picker|SearchCallbacks|nil Either a picker object with insert_result() and search_done() methods, or a table with on_result(result) and on_complete() callbacks, or nil
+---@param opts SearchOpts|nil Command options for interactive search
 function M.run_search(picker, opts)
     -- Stop any previous search before starting a new one
     if M.search_in_progress then

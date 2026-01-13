@@ -27,7 +27,7 @@ local function get_dynamic_winopts()
 end
 
 function M.new(search_opts)
-    local self = setmetatable({ is_done = false, queue = {}, entries = {} }, M)
+    local self = setmetatable({ is_done = false, queue = {}, entries = {}, is_closed = false, picker_started = false }, M)
 
     local config = require("venv-selector.config")
     local filter_type = config.user_settings.options.picker_filter_type or
@@ -35,12 +35,41 @@ function M.new(search_opts)
     local algo = filter_type == "substring" and "v2" or "v1"
 
     local fzf_lua = require("fzf-lua")
+    
+    -- Set up autocmd to detect when fzf-lua window closes
+    local augroup = vim.api.nvim_create_augroup("VenvSelectFzfLua", { clear = true })
+    vim.api.nvim_create_autocmd("WinClosed", {
+        group = augroup,
+        callback = function(ev)
+            -- Check if this is an fzf-lua window by checking buffer name
+            local winid = tonumber(ev.match)
+            if winid then
+                local ok, bufnr = pcall(vim.api.nvim_win_get_buf, winid)
+                if ok then
+                    local bufname = vim.api.nvim_buf_get_name(bufnr)
+                    -- fzf-lua buffers typically have 'fzf' in their name
+                    if bufname:match("fzf") or vim.bo[bufnr].filetype == "fzf" then
+                        -- Mark picker as closed and stop any active search jobs
+                        self.is_closed = true
+                        self.fzf_cb = nil  -- Clear callback to prevent reopening
+                        require("venv-selector.search").stop_search()
+                        vim.api.nvim_del_augroup_by_id(augroup)
+                    end
+                end
+            end
+        end,
+    })
+    
     fzf_lua.fzf_exec(function(fzf_cb)
         self.fzf_cb = fzf_cb
         self:consume_queue()
     end, {
         prompt = "Virtual environments > ",
-        winopts = get_dynamic_winopts(),
+        winopts = vim.tbl_extend("force", get_dynamic_winopts(), {
+            on_create = function()
+                vim.cmd("startinsert")
+            end,
+        }),
         fzf_opts = {
             ["--tabstop"] = "1",
             ["--algo"] = algo,
@@ -55,7 +84,6 @@ function M.new(search_opts)
                     gui_utils.select(selected_entry)
                 end
             end,
-
         },
     })
 
@@ -63,6 +91,11 @@ function M.new(search_opts)
 end
 
 function M:consume_queue()
+    -- Don't process results if picker was closed or fzf_cb was cleared
+    if self.is_closed or not self.fzf_cb then
+        return
+    end
+    
     if self.fzf_cb then
         for _, result in ipairs(self.queue) do
             local fzf = require("fzf-lua")
@@ -104,7 +137,6 @@ function M:consume_queue()
                 end
             end
             entry = table.concat(parts, "  ")
-            require("venv-selector.logger").debug("fzf entry" .. entry)
 
             -- No need to strip ansi colors since we're not using them anymore
             self.entries[entry] = result
@@ -120,32 +152,24 @@ function M:consume_queue()
 end
 
 function M:insert_result(result)
-    -- it is possible that the search might return results before fzf-lua gives
-    -- us the `fzf_cb`, so queue the results for processing until we have the fzf_cb
+    -- Don't accept new results if picker was closed
+    if self.is_closed then
+        return
+    end
+    
+    -- Just queue results, don't consume until search is done
     self.queue[#self.queue + 1] = result
-
-    self:consume_queue()
 end
 
 function M:search_done()
-    -- consume all remaining results and notify fzf-lua that we're done
-    -- generating results
+    -- Don't do anything if picker was already closed
+    if self.is_closed then
+        return
+    end
+
+    -- Process all queued results
     self.is_done = true
     self:consume_queue()
-
-    -- results during the search are not deduplicated or sorted,
-    -- so when the search is over, deduplicate and sort the results,
-    -- re-queue them, then refresh fzf-lua
-    local results = {}
-    for _, result in pairs(self.entries) do
-        results[#results + 1] = result
-    end
-    results = gui_utils.remove_dups(results)
-    gui_utils.sort_results(results)
-
-    -- the queued results will be consumed in fzf-lua's content function
-    self.queue = results
-    require("fzf-lua").actions.resume()
 end
 
 return M

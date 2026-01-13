@@ -139,16 +139,33 @@ function M.new(search_opts)
 
             return true
         end,
-        on_close = function()
-            -- Clear active instance when telescope closes
-            active_telescope_instance = nil
-        end,
     }
+
+    -- Create the picker
+    local picker = require("telescope.pickers").new({}, opts)
+    
+    -- Set up autocmd to stop search when telescope window closes
+    local augroup = vim.api.nvim_create_augroup("VenvSelectTelescope", { clear = true })
+    vim.api.nvim_create_autocmd("WinClosed", {
+        group = augroup,
+        callback = function(ev)
+            -- Check if the closed window is the telescope prompt
+            local winid = tonumber(ev.match)
+            if winid and picker and picker.prompt_bufnr then
+                local closed_bufnr = vim.api.nvim_win_get_buf(winid)
+                if closed_bufnr == picker.prompt_bufnr then
+                    active_telescope_instance = nil
+                    require("venv-selector.search").stop_search()
+                    vim.api.nvim_del_augroup_by_id(augroup)
+                end
+            end
+        end,
+    })
+    
+    picker:find()
 
     -- Set up autocmd for window resize
     self:setup_resize_autocmd()
-
-    require("telescope.pickers").new({}, opts):find()
 
     return self
 end

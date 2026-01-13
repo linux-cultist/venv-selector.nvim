@@ -11,7 +11,7 @@ local H = {}
 H.ns_id = vim.api.nvim_create_namespace("MiniPickVenvSelect")
 
 function M.new()
-    local self = setmetatable({ results = {} }, M)
+    local self = setmetatable({ results = {}, picker_started = false }, M)
 
     -- Setup highlight groups for marker color
     local marker_color = config.user_settings.options.selected_venv_marker_color or
@@ -23,13 +23,50 @@ end
 
 function M:insert_result(result)
     table.insert(self.results, result)
+    
+    -- Start picker on first result
+    if not self.picker_started then
+        self.picker_started = true
+        self:start_picker()
+    else
+        -- Update picker with new items
+        local mini_pick = require("mini.pick")
+        if mini_pick.is_picker_active() then
+            mini_pick.set_picker_items(self.results)
+        end
+    end
 end
 
 function M:search_done()
-    local mini_pick = require("mini.pick")
+    -- Deduplicate and sort final results
     self.results = gui_utils.remove_dups(self.results)
     gui_utils.sort_results(self.results)
+    
+    -- Update picker with final sorted results
+    local mini_pick = require("mini.pick")
+    if mini_pick.is_picker_active() then
+        mini_pick.set_picker_items(self.results)
+    elseif not self.picker_started then
+        -- If no results came in, start picker with empty results
+        self:start_picker()
+    end
+end
 
+function M:start_picker()
+    local mini_pick = require("mini.pick")
+    
+    -- Set up autocmd to stop search when picker closes
+    local augroup = vim.api.nvim_create_augroup("VenvSelectMiniPick", { clear = true })
+    vim.api.nvim_create_autocmd("User", {
+        pattern = "MiniPickStop",
+        group = augroup,
+        once = true,
+        callback = function()
+            require("venv-selector.search").stop_search()
+            vim.api.nvim_del_augroup_by_id(augroup)
+        end,
+    })
+    
     mini_pick.start({
         source = {
             -- Name of the source, used for display purposes

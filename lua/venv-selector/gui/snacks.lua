@@ -55,6 +55,10 @@ function M:pick()
             end
             picker:close()
         end,
+        on_close = function()
+            -- Stop any active search jobs when picker closes
+            require("venv-selector.search").stop_search()
+        end,
     })
 end
 

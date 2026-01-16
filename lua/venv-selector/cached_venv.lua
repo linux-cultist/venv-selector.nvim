@@ -1,6 +1,7 @@
 local config = require("venv-selector.config")
 local path = require("venv-selector.path")
 local log = require("venv-selector.logger")
+local uv2 = require("venv-selector.uv2")
 
 local cache_file
 if config.user_settings and config.user_settings.cache and config.user_settings.cache.file then
@@ -22,10 +23,17 @@ local cache_retrieval_done = false
 
 local M = {}
 
-function M.handle_automatic_activation()
-    if config.user_settings.options.cached_venv_automatic_activation then
-        M.retrieve()
+function M.handle_automatic_activation(done)
+    -- done: function() called when the activation attempt finishes (success or not)
+    if not config.user_settings.options.cached_venv_automatic_activation then
+        if done then done(false) end
+        return
     end
+
+    -- M.retrieve must accept a callback and call it once when it finishes.
+    M.retrieve(function(activated)
+        if done then done(activated == true) end
+    end)
 end
 
 function M.save(python_path, venv_type)
@@ -66,7 +74,7 @@ function M.save(python_path, venv_type)
     end
 
     vim.fn.writefile({ venv_cache_json }, cache_file)
-    log.debug("Wrote cache to " .. cache_file .. " with content: " .. venv_cache_json)
+    log.debug("Cache written to file " .. cache_file)
 end
 
 function M.clean_stale_entries(venv_cache)
@@ -92,59 +100,64 @@ function M.clean_stale_entries(venv_cache)
     return cleaned_cache
 end
 
-function M.retrieve()
+function M.retrieve(done)
+    local function finish(activated)
+        cache_retrieval_done = true
+        if done then done(activated == true) end
+    end
+
     if config.user_settings.options.enable_cached_venvs ~= true then
         log.debug("Option 'enable_cached_venvs' is false so will not use cache.")
-        return
+        return finish(false)
     end
 
-    -- Prevent multiple cache retrievals in the same session
     if cache_retrieval_done then
         log.debug("Cache retrieval already done in this session, skipping.")
-        return
+        return finish(false)
     end
 
-    -- Skip cache retrieval if current file has PEP 723 metadata to avoid interfering with UV
-    local current_file = vim.fn.expand("%:p")
-    if current_file and current_file ~= "" and vim.bo.filetype == "python" then
-        local utils = require("venv-selector.utils")
-        if utils.has_pep723_metadata(current_file) then
-            log.debug("Skipping cache retrieval because current file has PEP 723 metadata: " .. current_file)
-            return
-        end
-    end
-    if vim.fn.filereadable(cache_file) == 1 then
-        local cache_file_content = vim.fn.readfile(cache_file)
-        log.debug("Read cache from " .. cache_file)
-
-
-        if cache_file_content ~= nil and cache_file_content[1] ~= nil then
-            local venv_cache = vim.fn.json_decode(cache_file_content[1])
-            if venv_cache ~= nil then
-                -- Clean up stale entries
-                local cleaned_cache = M.clean_stale_entries(venv_cache)
-
-                -- Try to activate venv for current directory
-                if cleaned_cache[vim.fn.getcwd()] ~= nil then
-                    local venv = require("venv-selector.venv")
-                    local venv_info = cleaned_cache[vim.fn.getcwd()]
-                    if venv_info.source ~= nil then
-                        venv.set_source(venv_info.source)
-                    end
-
-                    log.debug("Activating venv `" .. venv_info.value .. "` from cache.")
-                    -- venv.activate(venv_info.value, venv_info.type, false)
-                    vim.schedule(function()
-                        venv.activate(venv_info.value, venv_info.type, false)
-                    end)
-                    cache_retrieval_done = true
-                end
-            end
-        end
+    -- NEW: skip cached venvs for uv / PEP 723 buffers
+    local bufnr = vim.api.nvim_get_current_buf()
+    if vim.api.nvim_buf_is_valid(bufnr) and uv2.is_uv_buffer(bufnr) then
+        log.debug("Skipping cached venv retrieval: uv (PEP 723) buffer detected")
+        return finish(false)
     end
 
-    -- Mark as done even if no venv was activated
-    cache_retrieval_done = true
+
+    if vim.fn.filereadable(cache_file) ~= 1 then
+        return finish(false)
+    end
+
+    local cache_file_content = vim.fn.readfile(cache_file)
+    log.debug("Cache retrieved from file " .. cache_file)
+
+    if not cache_file_content or not cache_file_content[1] then
+        return finish(false)
+    end
+
+    local venv_cache = vim.fn.json_decode(cache_file_content[1])
+    if not venv_cache then
+        return finish(false)
+    end
+
+    local cleaned_cache = M.clean_stale_entries(venv_cache)
+
+    local cwd = vim.fn.getcwd()
+    local venv_info = cleaned_cache[cwd]
+    if not venv_info then
+        return finish(false)
+    end
+
+    local venv = require("venv-selector.venv")
+    if venv_info.source ~= nil then
+        venv.set_source(venv_info.source)
+    end
+
+    log.debug("Activating venv `" .. venv_info.value .. "` from cache.")
+    vim.schedule(function()
+        venv.activate(venv_info.value, venv_info.type, false)
+        finish(true)
+    end)
 end
 
 return M

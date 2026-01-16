@@ -67,6 +67,7 @@ function M.activate(python_path, type, check_lsp)
         on_venv_activate_callback()
     end
 
+    vim.g.venv_selector_activated = true
     return true
 end
 
@@ -101,7 +102,7 @@ end
 function M.set_env(env_variable_value, env_variable_name)
     if config.user_settings.options.set_environment_variables == true then
         vim.fn.setenv(env_variable_name, env_variable_value)
-        log.debug("$" .. env_variable_name .. " set to " .. env_variable_value)
+        log.debug("Shell environment variable $" .. env_variable_name .. " set to " .. env_variable_value)
     end
 end
 
@@ -109,7 +110,7 @@ function M.unset_env(env_variable_name)
     if config.user_settings.options.set_environment_variables == true then
         if vim.fn.getenv(env_variable_name) ~= nil then
             vim.fn.setenv(env_variable_name, nil)
-            log.debug("$" .. env_variable_name .. " has been unset.")
+            log.debug("Shell environment variable $" .. env_variable_name .. " has been unset.")
         end
     end
 end

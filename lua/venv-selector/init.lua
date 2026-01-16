@@ -45,6 +45,105 @@ local function setup_notify()
     end
 end
 
+local function gate_lsp_start()
+    -- install once
+    if vim.g.venv_selector_gate_installed then return end
+    vim.g.venv_selector_gate_installed = true
+
+    vim.g.venv_selector_activated = vim.g.venv_selector_activated or false
+
+    local orig_start = vim.lsp.start
+    local activation_started = false
+
+    -- queue as list (do not overwrite)
+    local queued = {} ---@type { config:any, opts:any, bufnr:number }[]
+
+    local function flush()
+        if #queued == 0 then return end
+        local items = queued
+        queued = {}
+
+        vim.schedule(function()
+            for _, it in ipairs(items) do
+                if vim.api.nvim_buf_is_valid(it.bufnr) then
+                    orig_start(it.config, it.opts)
+                end
+            end
+        end)
+    end
+
+    local function start_activation_once()
+        if activation_started or vim.g.venv_selector_activated == true then
+            return
+        end
+        activation_started = true
+
+        local function done_fail_open()
+            -- unblock even if activation fails or is skipped
+            vim.g.venv_selector_activated = true
+            activation_started = false
+            flush()
+        end
+
+        local cfg = require("venv-selector.config").user_settings.options
+        if not cfg.cached_venv_automatic_activation then
+            return done_fail_open()
+        end
+
+        -- timeout safety: if callback never arrives, unblock anyway
+        local timer = vim.uv.new_timer()
+        timer:start(2000, 0, function()
+            timer:stop()
+            timer:close()
+            vim.schedule(function()
+                if vim.g.venv_selector_activated ~= true then
+                    done_fail_open()
+                end
+            end)
+        end)
+
+        local ok = pcall(function()
+            require("venv-selector.cached_venv").handle_automatic_activation(function()
+                if timer then
+                    timer:stop()
+                    timer:close()
+                    timer = nil
+                end
+                done_fail_open()
+            end)
+        end)
+
+        if not ok then
+            if timer then
+                timer:stop()
+                timer:close()
+            end
+            done_fail_open()
+        end
+    end
+
+    vim.lsp.start = function(config, opts)
+        opts = opts or {}
+        local bufnr = opts.bufnr or opts.buffer
+
+        if not bufnr or not vim.api.nvim_buf_is_valid(bufnr) then
+            return orig_start(config, opts)
+        end
+
+        if vim.bo[bufnr].filetype ~= "python" then
+            return orig_start(config, opts)
+        end
+
+        if vim.g.venv_selector_activated ~= true then
+            queued[#queued + 1] = { config = config, opts = opts, bufnr = bufnr }
+            start_activation_once()
+            return nil
+        end
+
+        return orig_start(config, opts)
+    end
+end
+
 ---Check if Neovim version meets minimum requirements
 ---@return boolean true if version is compatible, false otherwise
 local function check_nvim_version()
@@ -78,13 +177,28 @@ local function setup_highlight(settings)
     })
 end
 
+local function valid_fd()
+    local options = require("venv-selector.config").user_settings.options
+    if options.fd_binary_name == nil then
+        local message =
+        "Cannot find any fd binary on your system. If its installed under a different name, you can set options.fd_binary_name to its name."
+        require("venv-selector.logger").error(message)
+        vim.notify(message, vim.log.levels.ERROR, { title = "VenvSelect" })
+        return false
+    end
+    return true
+end
+
+
+
 ---Setup plugin configuration, commands, and integrations
 ---@param conf venv-selector.Settings|nil User configuration
 function M.setup(conf)
-    if not check_nvim_version() then
+    if not check_nvim_version() or not valid_fd() then
         return
     end
 
+    gate_lsp_start()
     setup_debug_logging(conf)
     setup_notify()
 
@@ -95,8 +209,21 @@ function M.setup(conf)
 
     require("venv-selector.user_commands").register()
 
-    local uv = require("venv-selector.uv")
-    uv.setup_auto_activation()
+    -- local uv2 = require("venv-selector.uv2")
+
+    -- uv2.on_uv_event = function(bufnr, is_uv)
+    --     if is_uv then
+    --         require("venv-selector.logger").debug("uv event")
+    --         run_uv_sync_for_buffer(bufnr)
+    --         run_uv_python_find_and_activate(bufnr)
+    --     else
+    --         require("venv-selector.logger").debug("non uv event")
+    --     end
+    -- end
+    -- local uv2 = require("venv-selector.uv2")
+
+    -- local uv = require("venv-selector.uv")
+    -- uv.setup_auto_activation()
 end
 
 return M

@@ -162,26 +162,34 @@ local function start_search_job(search_name, search_config, job_event_handler, s
         log.error("No execute_command for search '" .. search_name .. "'")
         return
     end
-    
+
+    local cmd
     -- Don't expand commands, use them directly
     local job = search_config.execute_command
+    local options = require("venv-selector.config").get_user_options()
 
-    if vim.uv.os_uname().sysname == "Windows_NT" then
-        job = utils.split_cmd_for_windows(job)
-        if not job or #job == 0 then
+    log.debug("Executing search '" ..
+        search_name .. "' (using " .. options.shell.shell .. " " .. options.shell.shellcmdflag .. "): '" .. job .. "'")
+
+    local sysname = vim.uv.os_uname().sysname
+    if sysname == "Windows_NT" then
+        cmd = utils.split_cmd_for_windows(job)
+        if not cmd or #cmd == 0 then
             log.error("Failed to split command for Windows. Original: " .. search_config.execute_command)
             return
         end
+    else
+        cmd = { options.shell.shell, options.shell.shellcmdflag, job }
     end
 
-    local job_id = vim.fn.jobstart(job, {
+    local job_id = vim.fn.jobstart(cmd, {
         stdout_buffered = true,
         stderr_buffered = true,
         on_stdout = job_event_handler,
         on_stderr = job_event_handler,
         on_exit = job_event_handler,
     })
-    
+
     if job_id <= 0 then
         local err = job_id == 0 and "invalid arguments" or "command not executable"
         log.error("Failed to start job '" .. search_name .. "': " .. err .. ". Command: " .. vim.inspect(job))
@@ -215,7 +223,8 @@ end
 local function process_search(search_name, search_config, job_event_handler, options)
     local cmd = search_config.command:gsub("$FD", options.fd_binary_name)
 
-    log.debug("Processing search: '" .. search_name .. "' with command: '" .. cmd .. "'")
+    -- log.debug("Executing search '" ..
+    --     search_name .. "' (using " .. options.shell.shell .. " " .. options.shell.shellcmdflag .. "): '" .. cmd .. "'")
 
     -- Handle different substitution patterns
     if cmd:find("$WORKSPACE_PATH") then

@@ -41,6 +41,7 @@ local hooks = require("venv-selector.hooks")
 ---@field debug boolean Enables VenvSelectLog command to view debug logs (default: false)
 ---@field fd_binary_name? string Name of fd binary to use (fd, fdfind, etc.) (default: auto-detected)
 ---@field require_lsp_activation boolean Require activation of an lsp before setting env variables (default: true)
+---@field shell? table Allows you to override what shell and shell flags to use for the searches (may be different from your default shell)
 ---@field on_telescope_result_callback? fun(filename: string): string Callback for modifying telescope results (default: nil)
 ---@field picker_filter_type "substring"|"character" Filter by substring or character in pickers (default: "substring")
 ---@field selected_venv_marker_color string The color of the selected venv marker (default: "#00FF00")
@@ -263,6 +264,10 @@ local default_settings = {
                 layout = { preset = "select" },
             },
         },
+        shell = {
+            shellcmdflag = vim.o.shellcmdflag,
+            shell = vim.o.shell
+        }
     },
     search = get_default_searches(),
 }

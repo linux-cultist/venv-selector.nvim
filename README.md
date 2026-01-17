@@ -530,11 +530,12 @@ options = {
         activate_venv_in_terminal = true,          -- activate the selected python interpreter in terminal windows opened from neovim
         set_environment_variables = true,          -- sets VIRTUAL_ENV or CONDA_PREFIX environment variables
         notify_user_on_venv_activation = false,    -- notifies user on activation of the virtual env
-        override_notify = true                     -- uses nvim-notify plugin if its installed
+        override_notify = true,                    -- uses nvim-notify plugin if its installed
         search_timeout = 5,                        -- if a search takes longer than this many seconds, stop it and alert the user
         debug = false,                             -- enables you to run the VenvSelectLog command to view debug logs
         fd_binary_name = M.find_fd_command_name(), -- plugin looks for `fd` or `fdfind` but you can set something else here
         require_lsp_activation = true,             -- require activation of an lsp before setting env variables
+        shell = { shell = vim.o.shell, shellcmdflag = vim.o.shellcmdflag} -- allows you to override what shell and shell flags to use for the searches
 
         -- picker options
         on_telescope_result_callback = nil,        -- callback function for modifying telescope results

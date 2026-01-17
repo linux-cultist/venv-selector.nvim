@@ -1,7 +1,9 @@
 local M = {}
 
+
 local path_mod = require("venv-selector.path")
 
+local has_uv = vim.fn.executable("uv") == 1
 local group = vim.api.nvim_create_augroup("VenvSelectorUvDetect", { clear = true })
 
 function M.is_uv_buffer(bufnr)
@@ -48,7 +50,7 @@ end
 
 local function run_uv_sync_for_buffer(bufnr, done)
     local current_file = vim.api.nvim_buf_get_name(bufnr)
-    if current_file == "" then
+    if current_file == "" or has_uv == false then
         if done then done(false) end
         return
     end
@@ -72,7 +74,7 @@ end
 
 local function run_uv_python_find_and_activate(bufnr, done)
     local current_file = vim.api.nvim_buf_get_name(bufnr)
-    if current_file == "" then return done and done(false) end
+    if current_file == "" or has_uv == false then return done and done(false) end
 
     vim.system({ "uv", "python", "find", "--script", current_file }, {
         text = true,

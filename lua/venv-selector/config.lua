@@ -36,6 +36,7 @@ local hooks = require("venv-selector.hooks")
 ---@field activate_venv_in_terminal boolean Activate the selected python interpreter in terminal windows (default: true)
 ---@field set_environment_variables boolean Sets VIRTUAL_ENV or CONDA_PREFIX environment variables (default: true)
 ---@field notify_user_on_venv_activation boolean Notifies user on activation of the virtual env (default: false)
+---@field override_notify boolean  Override built-in vim.notify with nvim-notify plugin if its installed (default: true)
 ---@field search_timeout number If a search takes longer than this many seconds, stop it (default: 5)
 ---@field debug boolean Enables VenvSelectLog command to view debug logs (default: false)
 ---@field fd_binary_name? string Name of fd binary to use (fd, fdfind, etc.) (default: auto-detected)
@@ -244,6 +245,7 @@ local default_settings = {
         activate_venv_in_terminal = true,
         set_environment_variables = true,
         notify_user_on_venv_activation = false,
+        override_notify = true,
         search_timeout = 5,
         debug = false,
         fd_binary_name = find_fd_command_name(),
@@ -279,6 +281,10 @@ function M.store(settings)
     return M.get_user_settings()
 end
 
+---@return venv-selector.Settings.Options
+function M.get_user_options()
+    return M.user_settings.options
+end
 
 ---@return venv-selector.Settings
 function M.get_user_settings()

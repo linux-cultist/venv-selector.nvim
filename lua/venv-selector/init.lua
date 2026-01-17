@@ -39,9 +39,12 @@ end
 
 ---Initialize nvim-notify if available
 local function setup_notify()
-    local has_notify, notify_plugin = pcall(require, "notify")
-    if has_notify then
-        vim.notify = notify_plugin
+    local options = require("venv-selector.config").get_user_options()
+    if options and options.override_notify then
+        local has_notify, notify_plugin = pcall(require, "notify")
+        if has_notify then
+            vim.notify = notify_plugin
+        end
     end
 end
 
@@ -171,9 +174,10 @@ end
 
 ---Setup highlight group for selected venv marker
 ---@param settings venv-selector.Settings
-local function setup_highlight(settings)
+local function setup_highlight()
+    local options = require("venv-selector.config").get_user_options()
     vim.api.nvim_set_hl(0, "VenvSelectActiveVenv", {
-        fg = settings.options.selected_venv_marker_color
+        fg = options.selected_venv_marker_color
     })
 end
 
@@ -197,33 +201,18 @@ function M.setup(conf)
     if not check_nvim_version() or not valid_fd() then
         return
     end
-
-    gate_lsp_start()
+    
     setup_debug_logging(conf)
-    setup_notify()
-
+    
     local config = require("venv-selector.config")
     config.store(conf)
 
-    setup_highlight(config.user_settings)
+    gate_lsp_start()
+    setup_notify()
+    setup_highlight()
 
     require("venv-selector.user_commands").register()
 
-    -- local uv2 = require("venv-selector.uv2")
-
-    -- uv2.on_uv_event = function(bufnr, is_uv)
-    --     if is_uv then
-    --         require("venv-selector.logger").debug("uv event")
-    --         run_uv_sync_for_buffer(bufnr)
-    --         run_uv_python_find_and_activate(bufnr)
-    --     else
-    --         require("venv-selector.logger").debug("non uv event")
-    --     end
-    -- end
-    -- local uv2 = require("venv-selector.uv2")
-
-    -- local uv = require("venv-selector.uv")
-    -- uv.setup_auto_activation()
 end
 
 return M

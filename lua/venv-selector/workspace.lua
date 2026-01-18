@@ -1,7 +1,10 @@
 local M = {}
 
+---@param client vim.lsp.Client
+---@return boolean
 local function supports_python(client)
     -- Method 1: Check configured filetypes
+    ---@cast client +{config: {filetypes: string[]}}
     local filetypes = client.config and client.config.filetypes or {}
     if vim.tbl_contains(filetypes, "python") then
         return true
@@ -19,6 +22,8 @@ local function supports_python(client)
 end
 
 
+---@param bufnr? integer
+---@return string[]
 function M.list_folders(bufnr)
     local utils = require("venv-selector.utils")
     local log = require("venv-selector.logger")

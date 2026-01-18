@@ -104,10 +104,13 @@ local function create_job_event_handler(picker, options)
 
                     -- Support both picker object and callback table
                     if picker then
-                        if type(picker.insert_result) == "function" then
-                            picker:insert_result(result)
-                        elseif type(picker.on_result) == "function" then
-                            picker.on_result(result)
+                        local p = picker
+                        if type(p.insert_result) == "function" then
+                            ---@cast p Picker
+                            p:insert_result(result)
+                        elseif type(p.on_result) == "function" then
+                            ---@cast p SearchCallbacks
+                            p.on_result(result)
                         end
                     end
                 end
@@ -139,10 +142,13 @@ local function create_job_event_handler(picker, options)
 
                 -- Support both picker object and callback table
                 if picker then
-                    if type(picker.search_done) == "function" then
-                        picker:search_done()
-                    elseif type(picker.on_complete) == "function" then
-                        picker.on_complete()
+                    local p = picker
+                    if type(p.search_done) == "function" then
+                        ---@cast p Picker
+                        p:search_done()
+                    elseif type(p.on_complete) == "function" then
+                        ---@cast p SearchCallbacks
+                        p.on_complete()
                     end
                 end
 
@@ -166,12 +172,13 @@ local function start_search_job(search_name, search_config, job_event_handler, s
     local cmd
     -- Don't expand commands, use them directly
     local job = search_config.execute_command
+    ---@cast job string
     local options = require("venv-selector.config").get_user_options()
 
     log.debug("Executing search '" ..
         search_name .. "' (using " .. options.shell.shell .. " " .. options.shell.shellcmdflag .. "): '" .. job .. "'")
 
-    local sysname = vim.uv.os_uname().sysname
+    local sysname = vim.uv.os_uname().sysname or "Linux"
     if sysname == "Windows_NT" then
         cmd = utils.split_cmd_for_windows(job)
         if not cmd or #cmd == 0 then
@@ -202,17 +209,21 @@ local function start_search_job(search_name, search_config, job_event_handler, s
 
     -- Set up timeout handler
     local timer = vim.uv.new_timer()
-    timer:start(search_timeout * 1000, 0, vim.schedule_wrap(function()
-        if vim.fn.jobwait({ job_id }, 0)[1] == -1 then
-            vim.fn.jobstop(job_id)
-            local msg = "Search '" .. search_name .. "' took more than " .. search_timeout ..
-                " seconds and was stopped. Avoid using VenvSelect in $HOME directory."
-            log.warning(msg)
-            vim.notify(msg, vim.log.levels.ERROR, { title = "VenvSelect" })
-        end
-        timer:stop()
-        timer:close()
-    end))
+    if timer then
+        timer:start(search_timeout * 1000, 0, vim.schedule_wrap(function()
+            if vim.fn.jobwait({ job_id }, 0)[1] == -1 then
+                vim.fn.jobstop(job_id)
+                local msg = "Search '" .. search_name .. "' took more than " .. search_timeout ..
+                    " seconds and was stopped. Avoid using VenvSelect in $HOME directory."
+                log.warning(msg)
+                vim.notify(msg, vim.log.levels.ERROR, { title = "VenvSelect" })
+            end
+            if timer then
+                timer:stop()
+                timer:close()
+            end
+        end))
+    end
 end
 
 ---Process and start searches based on their command patterns

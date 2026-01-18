@@ -2,20 +2,33 @@ local log = require("venv-selector.logger")
 
 local M = {}
 
+---@type table
+M.user_settings = {}
+
+---@type table
+M.default_settings = {}
+
+---Check if a table has any entries
+---@param t table|nil The table to check
+---@return boolean true if the table is not empty
 function M.table_has_content(t)
-    return next(t) ~= nil
+    return t ~= nil and next(t) ~= nil
 end
 
+---Merge user configuration with plugin defaults
+---@param user_settings table User configuration settings
 function M.merge_user_settings(user_settings)
     log.debug("User plugin settings: ", user_settings.settings, "")
-    M.user_settings = vim.tbl_deep_extend("force", M.default_settings, user_settings.settings)
+    M.user_settings = vim.tbl_deep_extend("force", M.default_settings, user_settings.settings or {})
     M.user_settings.detected = {
-        system = vim.loop.os_uname().sysname,
+        system = vim.uv.os_uname().sysname,
     }
     log.debug("Complete user settings:", M.user_settings, "")
 end
 
--- split a string
+---Split a string into parts, respecting single and double quotes
+---@param str string The string to split
+---@return string[] A table of string parts
 function M.split_string(str)
     local result = {}
     local buffer = ""
@@ -61,14 +74,21 @@ function M.split_string(str)
     return result
 end
 
+---Split a command string for Windows execution
+---@param str string The command string
+---@return string[] A table of command parts
 function M.split_cmd_for_windows(str)
     return M.split_string(str)
 end
 
-function M.try(table, ...)
-    local result = table
+---Safely access nested table keys
+---@param tbl table The table to access
+---@param ... string The keys to follow
+---@return any|nil The value if found, or nil
+function M.try(tbl, ...)
+    local result = tbl
     for _, key in ipairs({ ... }) do
-        if result then
+        if result and type(result) == "table" then
             result = result[key]
         else
             return nil
@@ -77,12 +97,15 @@ function M.try(table, ...)
     return result
 end
 
+---Recursively print a table's contents for debugging
+---@param tbl table The table to print
+---@param indent? integer The current indentation level
 function M.print_table(tbl, indent)
     if not indent then
         indent = 0
     end
     for k, v in pairs(tbl) do
-        local formatting = string.rep("  ", indent) .. k .. ": "
+        local formatting = string.rep("  ", indent) .. tostring(k) .. ": "
         if type(v) == "table" then
             print(formatting)
             M.print_table(v, indent + 1)
@@ -91,77 +114,5 @@ function M.print_table(tbl, indent)
         end
     end
 end
-
--- -- Check if a file contains PEP-723 script metadata
--- function M.has_pep723_metadata(file_path)
---     if require("venv-selector.uv2").uv_installed ~= true then
---         -- log.debug("Uv not found on system - skipping metadata check.")
---         return
---     end
-
---     if not file_path or file_path == "" then
---         -- log.debug("PEP-723 check: file_path is empty or nil")
---         return false
---     end
-
---     -- Check if we already know the metadata status for this buffer
---     if vim.b.has_uv_metadata ~= nil then
---         return vim.b.has_uv_metadata
---     end
-
---     -- log.debug("Checking PEP-723 metadata for file: '" .. file_path .. "'")
-
---     -- Check if file exists and is readable
---     local file = io.open(file_path, "r")
---     if not file then
---         log.debug("PEP-723 check: cannot open file: " .. file_path)
---         return false
---     end
-
---     local line_count = 0
---     local in_script_block = false
---     local found_metadata = false
-
---     for line in file:lines() do
---         line_count = line_count + 1
-
---         -- Only check first 50 lines for performance
---         if line_count > 50 then
---             -- log.debug("PEP-723 check: reached line limit (50), stopping search")
---             break
---         end
-
---         -- Look for start of script metadata block
---         if line:match("^%s*#%s*///%s*script%s*$") then
---             -- log.debug("PEP-723 check: found script block start at line " .. line_count)
---             in_script_block = true
---         elseif in_script_block and line:match("^%s*#%s*///%s*$") then
---             -- Found end of script block
---             -- log.debug("PEP-723 check: found script block end at line " .. line_count)
---             found_metadata = true
---             break
---         elseif in_script_block and line:match("^%s*#%s*dependencies%s*=") then
---             -- Found dependencies declaration
---             -- log.debug("PEP-723 check: found dependencies declaration at line " .. line_count)
---             found_metadata = true
---             break
---         end
---     end
-
---     file:close()
-
---     -- Cache the result in buffer-local variable
---     vim.b.has_uv_metadata = found_metadata
---     -- log.debug("PEP-723 check result: " .. tostring(found_metadata) .. " (cached)")
---     return found_metadata
--- end
-
--- Clear cached PEP-723 metadata for current buffer (call when buffer content changes)
--- function M.clear_pep723_cache()
---     if vim.b.has_uv_metadata ~= nil then
---         log.debug("Clearing cached PEP-723 metadata for buffer")
---         vim.b.has_uv_metadata = nil
---     end
--- end
 
 return M

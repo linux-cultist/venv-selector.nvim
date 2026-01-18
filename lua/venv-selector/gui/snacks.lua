@@ -1,6 +1,9 @@
 local gui_utils = require("venv-selector.gui.utils")
 local config = require("venv-selector.config")
 
+---@diagnostic disable-next-line: undefined-global
+local Snacks = Snacks
+
 local M = {}
 M.__index = M
 

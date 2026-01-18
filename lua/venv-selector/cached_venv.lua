@@ -23,6 +23,8 @@ local cache_retrieval_done = false
 
 local M = {}
 
+---Handle automatic activation of cached venv on startup
+---@param done? fun(activated: boolean) Callback called when activation attempt finishes
 function M.handle_automatic_activation(done)
     -- done: function() called when the activation attempt finishes (success or not)
     if not config.user_settings.options.cached_venv_automatic_activation then
@@ -36,6 +38,9 @@ function M.handle_automatic_activation(done)
     end)
 end
 
+---Save current venv to cache for the current working directory
+---@param python_path string Path to the python executable
+---@param venv_type string Type of the virtual environment
 function M.save(python_path, venv_type)
     if config.user_settings.options.enable_cached_venvs ~= true then
         log.debug("Option 'enable_cached_venvs' is false so will not use cache.")
@@ -77,6 +82,9 @@ function M.save(python_path, venv_type)
     log.debug("Cache written to file " .. cache_file)
 end
 
+---Remove entries from cache that point to non-existent python executables
+---@param venv_cache table The loaded cache table
+---@return table The cleaned cache table
 function M.clean_stale_entries(venv_cache)
     local cleaned_cache = {}
     local cache_modified = false
@@ -100,6 +108,8 @@ function M.clean_stale_entries(venv_cache)
     return cleaned_cache
 end
 
+---Retrieve and activate the cached venv for the current working directory
+---@param done? fun(activated: boolean) Callback called when retrieval/activation finishes
 function M.retrieve(done)
     local function finish(activated)
         cache_retrieval_done = true

@@ -3,12 +3,18 @@ local utils = require("venv-selector.utils")
 local log = require("venv-selector.logger")
 
 local M = {}
+---@type string|nil
 M.current_python_path = nil
+---@type string|nil
 M.current_venv_path = nil
+---@type string|nil
 M.current_source = nil
+---@type string|nil
 M.current_type = nil
+---@type string|nil
 local previous_dir = nil
 
+---@param python_path string
 function M.save_selected_python(python_path)
     local path = require("venv-selector.path")
     M.current_python_path = python_path
@@ -17,6 +23,7 @@ function M.save_selected_python(python_path)
     log.debug('Setting require("venv-selector").venv() to \'' .. M.current_venv_path .. "'")
 end
 
+---@param newDir string|nil
 function M.add(newDir)
     if config.user_settings.options.activate_venv_in_terminal == true then
         if newDir ~= nil then
@@ -41,6 +48,7 @@ function M.add(newDir)
     end
 end
 
+---@param python_path string
 function M.update_python_dap(python_path)
     local dap_python_installed, dap_python = pcall(require, "dap-python")
     local dap_installed, dap = pcall(require, "dap")
@@ -54,6 +62,8 @@ function M.update_python_dap(python_path)
     end
 end
 
+---@param path string
+---@return string
 function M.remove_trailing_slash(path)
     -- Check if the last character is a slash
     if path:sub(-1) == "/" or path:sub(-1) == "\\" then
@@ -65,10 +75,14 @@ end
 
 function M.remove_current()
     if M.current_python_path ~= nil then
-        M.remove(M.get_base(M.current_python_path))
+        local base = M.get_base(M.current_python_path)
+        if base then
+            M.remove(base)
+        end
     end
 end
 
+---@param removalDir string
 function M.remove(removalDir)
     local clean_dir = M.remove_trailing_slash(removalDir)
     local path = vim.fn.getenv("PATH")
@@ -85,6 +99,7 @@ function M.remove(removalDir)
     log.debug("Terminal path after venv removal: " .. updatedPath)
 end
 
+---@return string|nil
 function M.get_current_file_directory()
     local opened_filepath = vim.fn.expand("%:p")
     if opened_filepath ~= nil then
@@ -92,11 +107,15 @@ function M.get_current_file_directory()
     end
 end
 
+---@param path string
+---@return string
 function M.expand(path)
     local expanded_path = vim.fn.expand(path)
     return expanded_path
 end
 
+---@param path string|nil
+---@return string|nil
 function M.get_base(path)
     if path ~= nil then
         -- Check if the path ends with a slash and remove it, unless it's a root path

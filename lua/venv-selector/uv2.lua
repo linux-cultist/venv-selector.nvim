@@ -6,6 +6,9 @@ local path_mod = require("venv-selector.path")
 local has_uv = vim.fn.executable("uv") == 1
 local group = vim.api.nvim_create_augroup("VenvSelectorUvDetect", { clear = true })
 
+---Check if a buffer contains PEP-723 script metadata
+---@param bufnr integer The buffer number
+---@return boolean true if PEP-723 metadata is found
 function M.is_uv_buffer(bufnr)
     if vim.bo[bufnr].buftype ~= "" then return false end
     if vim.bo[bufnr].filetype ~= "python" then return false end
@@ -29,6 +32,8 @@ function M.is_uv_buffer(bufnr)
     return false
 end
 
+---@param bufnr integer
+---@param event string
 local function log_uv_detection(bufnr, event)
     if not vim.api.nvim_buf_is_valid(bufnr) then return end
 
@@ -40,6 +45,8 @@ local function log_uv_detection(bufnr, event)
     )
 end
 
+---@param prefix string
+---@param text string|nil
 local function log_multiline(prefix, text)
     if not text or text == "" then return end
     local log = require("venv-selector.logger")
@@ -48,6 +55,9 @@ local function log_multiline(prefix, text)
     end
 end
 
+---Run 'uv sync' for a buffer's script
+---@param bufnr integer
+---@param done? fun(ok: boolean)
 local function run_uv_sync_for_buffer(bufnr, done)
     local current_file = vim.api.nvim_buf_get_name(bufnr)
     if current_file == "" or has_uv == false then
@@ -72,9 +82,15 @@ local function run_uv_sync_for_buffer(bufnr, done)
     end)
 end
 
+---Run 'uv python find' and activate the result
+---@param bufnr integer
+---@param done? fun(ok: boolean, python_path?: string)
 local function run_uv_python_find_and_activate(bufnr, done)
     local current_file = vim.api.nvim_buf_get_name(bufnr)
-    if current_file == "" or has_uv == false then return done and done(false) end
+    if current_file == "" or has_uv == false then
+        if done then done(false) end
+        return
+    end
 
     vim.system({ "uv", "python", "find", "--script", current_file }, {
         text = true,
@@ -83,7 +99,8 @@ local function run_uv_python_find_and_activate(bufnr, done)
         vim.schedule(function()
             local out = (res.stderr and res.stderr ~= "") and res.stderr or res.stdout
             if res.code ~= 0 or not out or out == "" then
-                return done and done(false)
+                if done then done(false) end
+                return
             end
 
             local python_path
@@ -93,7 +110,8 @@ local function run_uv_python_find_and_activate(bufnr, done)
                 end
             end
             if not python_path or python_path == "" then
-                return done and done(false)
+                if done then done(false) end
+                return
             end
 
             -- Activate immediately for first-time resolution (or if it differs)
@@ -106,6 +124,7 @@ local function run_uv_python_find_and_activate(bufnr, done)
     end)
 end
 
+---@param bufnr integer
 local function run_uv_flow(bufnr)
     run_uv_sync_for_buffer(bufnr, function(_sync_ok)
         run_uv_python_find_and_activate(bufnr, function(ok, python_path)
@@ -119,6 +138,8 @@ local function run_uv_flow(bufnr)
 end
 
 
+---Check if buffer content changed and run uv flow if needed
+---@param bufnr integer
 local function run_uv_flow_if_needed(bufnr)
     if not vim.api.nvim_buf_is_valid(bufnr) then return end
     if not M.is_uv_buffer(bufnr) then return end
@@ -134,6 +155,8 @@ local function run_uv_flow_if_needed(bufnr)
     run_uv_flow(bufnr)
 end
 
+---Ensure the correct venv is activated for a uv buffer
+---@param bufnr integer
 local function ensure_uv_buffer_activated(bufnr)
     if not vim.api.nvim_buf_is_valid(bufnr) then return end
     if not M.is_uv_buffer(bufnr) then return end

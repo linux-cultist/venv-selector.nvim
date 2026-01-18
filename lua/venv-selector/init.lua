@@ -95,15 +95,19 @@ local function gate_lsp_start()
 
         -- timeout safety: if callback never arrives, unblock anyway
         local timer = vim.uv.new_timer()
-        timer:start(2000, 0, function()
-            timer:stop()
-            timer:close()
-            vim.schedule(function()
-                if vim.g.venv_selector_activated ~= true then
-                    done_fail_open()
+        if timer then
+            timer:start(2000, 0, function()
+                if timer then
+                    timer:stop()
+                    timer:close()
                 end
+                vim.schedule(function()
+                    if vim.g.venv_selector_activated ~= true then
+                        done_fail_open()
+                    end
+                end)
             end)
-        end)
+        end
 
         local ok = pcall(function()
             require("venv-selector.cached_venv").handle_automatic_activation(function()
@@ -125,9 +129,10 @@ local function gate_lsp_start()
         end
     end
 
-    vim.lsp.start = function(config, opts)
-        opts = opts or {}
-        local bufnr = opts.bufnr or opts.buffer
+    rawset(vim.lsp, "start", function(config, opts)
+        local o = opts or {}
+        ---@cast o +{bufnr: integer, buffer: integer}
+        local bufnr = o.bufnr or o.buffer
 
         if not bufnr or not vim.api.nvim_buf_is_valid(bufnr) then
             return orig_start(config, opts)
@@ -144,7 +149,7 @@ local function gate_lsp_start()
         end
 
         return orig_start(config, opts)
-    end
+    end)
 end
 
 ---Check if Neovim version meets minimum requirements
@@ -173,7 +178,6 @@ local function setup_debug_logging(conf)
 end
 
 ---Setup highlight group for selected venv marker
----@param settings venv-selector.Settings
 local function setup_highlight()
     local options = require("venv-selector.config").get_user_options()
     vim.api.nvim_set_hl(0, "VenvSelectActiveVenv", {
@@ -201,9 +205,9 @@ function M.setup(conf)
     if not check_nvim_version() or not valid_fd() then
         return
     end
-    
+
     setup_debug_logging(conf)
-    
+
     local config = require("venv-selector.config")
     config.store(conf)
 
@@ -212,7 +216,6 @@ function M.setup(conf)
     setup_highlight()
 
     require("venv-selector.user_commands").register()
-
 end
 
 return M

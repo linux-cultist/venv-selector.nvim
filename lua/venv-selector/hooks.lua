@@ -5,7 +5,13 @@ local M = {}
 M.notifications_memory = {}
 
 
+---Create environment variables for the LSP client command
+---@param client_name string The name of the LSP client
+---@param venv_python string|nil The path to the python executable
+---@param env_type string|nil The type of the virtual environment
+---@return table env A table containing the cmd_env configuration
 local function create_cmd_env(client_name, venv_python, env_type)
+    if venv_python == nil then return { cmd_env = {} } end
     local venv_path = vim.fn.fnamemodify(venv_python, ":h:h")
     local env = {
         cmd_env = {}
@@ -27,7 +33,13 @@ local function create_cmd_env(client_name, venv_python, env_type)
 end
 
 
+---Generate default LSP settings and environment for a venv
+---@param client_name string The name of the LSP client
+---@param venv_python string|nil The path to the python executable
+---@param env_type string|nil The type of the virtual environment
+---@return table client_config The configuration structure for the LSP client
 local function default_lsp_settings(client_name, venv_python, env_type)
+    if venv_python == nil then return { settings = {} } end
     local venv_dir          = vim.fn.fnamemodify(venv_python, ":h:h")
     local venv_name         = vim.fn.fnamemodify(venv_dir, ":t")
     local venv_path         = vim.fn.fnamemodify(venv_dir, ":h")
@@ -74,6 +86,10 @@ end
 
 
 
+---Restart all active python LSP clients with the new venv configuration
+---@param venv_python string|nil The path to the python executable
+---@param env_type string|nil The type of the virtual environment
+---@return boolean success, string? error Whether any clients were found and restart was attempted
 local function restart_all_python_lsps(venv_python, env_type)
     local function contains(list, item)
         return list and vim.tbl_contains(list, item)
@@ -125,8 +141,11 @@ local function restart_all_python_lsps(venv_python, env_type)
         end
     end
 
+    if venv_python == nil then return true end
+
     -- Restart each server with your merged settings
     vim.defer_fn(function()
+        if venv_python == nil then return end
         for name, entry in pairs(by_name) do
             local old_cfg    = entry.client.config or {}
             local cfg        = vim.deepcopy(old_cfg)
@@ -168,12 +187,17 @@ end
 
 
 
--- Dynamic hook that processes currently running clients (called when venv is selected)
+---Dynamic hook that processes currently running clients (called when venv is selected)
+---@param venv_python string|nil The path to the python executable
+---@param env_type string|nil The type of the virtual environment
+---@return integer count The number of hooks that were processed
 function M.dynamic_python_lsp_hook(venv_python, env_type)
     local rc = restart_all_python_lsps(venv_python, env_type)
     if rc == true then return 1 else return 0 end
 end
 
+---Send a notification to the user, throttled to once per second for unique messages
+---@param message string The message to notify
 function M.send_notification(message)
     local now = vim.loop.hrtime()
 

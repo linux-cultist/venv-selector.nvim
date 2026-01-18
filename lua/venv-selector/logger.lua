@@ -13,11 +13,11 @@ M.levels = {
 
 -- Color scheme for different log levels using theme colors
 M.colors = {
-    DEBUG = "Comment",        -- Use comment color (usually gray)
-    INFO = "DiagnosticInfo",  -- Use diagnostic info color (usually blue)
+    DEBUG = "Comment",          -- Use comment color (usually gray)
+    INFO = "DiagnosticInfo",    -- Use diagnostic info color (usually blue)
     WARNING = "DiagnosticWarn", -- Use diagnostic warning color (usually orange)
-    ERROR = "DiagnosticError", -- Use diagnostic error color (usually red)
-    TIMESTAMP = "Special",     -- Use special color (usually purple/magenta)
+    ERROR = "DiagnosticError",  -- Use diagnostic error color (usually red)
+    TIMESTAMP = "Special",      -- Use special color (usually purple/magenta)
 }
 
 M.current_level = M.levels.DEBUG
@@ -100,10 +100,10 @@ function M.setup_syntax_highlighting()
     -- Create highlight groups for different log components using theme colors
     local highlights = {
         { name = "VenvLogTimestamp", link = M.colors.TIMESTAMP },
-        { name = "VenvLogDebug", link = M.colors.DEBUG },
-        { name = "VenvLogInfo", link = M.colors.INFO },
-        { name = "VenvLogWarning", link = M.colors.WARNING },
-        { name = "VenvLogError", link = M.colors.ERROR },
+        { name = "VenvLogDebug",     link = M.colors.DEBUG },
+        { name = "VenvLogInfo",      link = M.colors.INFO },
+        { name = "VenvLogWarning",   link = M.colors.WARNING },
+        { name = "VenvLogError",     link = M.colors.ERROR },
     }
 
     for _, hl in ipairs(highlights) do
@@ -138,7 +138,7 @@ function M.log_line(msg, level)
         -- Temporarily suppress warnings during buffer modification
         local old_shortmess = vim.o.shortmess
         vim.o.shortmess = vim.o.shortmess .. "W"
-        
+
         -- Make buffer modifiable for updates
         vim.bo[log_buf].readonly = false
         vim.bo[log_buf].modifiable = true
@@ -194,7 +194,7 @@ function M.toggle()
             M.setup_syntax_highlighting()
         end
         vim.api.nvim_win_set_buf(0, log_buf)
-        
+
         -- Ensure syntax highlighting is applied when toggling to log buffer
         M.setup_syntax_highlighting()
     end
@@ -220,7 +220,7 @@ local log_forwarding_enabled = false
 -- Setup comprehensive LSP message forwarding
 function M.setup_lsp_message_forwarding()
     log_forwarding_enabled = true
-    
+
     -- Store original functions if not already stored
     if not original_lsp_log.error then
         original_lsp_log.error = vim.lsp.log.error
@@ -229,10 +229,10 @@ function M.setup_lsp_message_forwarding()
         original_lsp_log.debug = vim.lsp.log.debug
         original_lsp_log.trace = vim.lsp.log.trace
     end
-    
+
     -- Helper function to safely convert arguments to string
     local function args_to_string(...)
-        local args = {...}
+        local args = { ... }
         local parts = {}
         for i, arg in ipairs(args) do
             if type(arg) == "table" then
@@ -245,11 +245,11 @@ function M.setup_lsp_message_forwarding()
         local message = table.concat(parts, " ")
         return message:gsub("\n", " "):gsub("\r", ""):gsub("%s+", " "):match("^%s*(.-)%s*$")
     end
-    
+
     -- Override log functions to capture Python LSP messages
     vim.lsp.log.error = function(...)
         local message = args_to_string(...)
-        
+
         -- Check if message contains Python LSP client names
         for client_name, _ in pairs(M.python_lsp_clients) do
             if message:find(client_name) then
@@ -257,33 +257,33 @@ function M.setup_lsp_message_forwarding()
                 break
             end
         end
-        
+
         return original_lsp_log.error(...)
     end
-    
+
     vim.lsp.log.warn = function(...)
         local message = args_to_string(...)
-        
+
         for client_name, _ in pairs(M.python_lsp_clients) do
             if message:find(client_name) then
                 M.debug("[" .. client_name .. " LSP] " .. message)
                 break
             end
         end
-        
+
         return original_lsp_log.warn(...)
     end
-    
+
     vim.lsp.log.info = function(...)
         local message = args_to_string(...)
-        
+
         for client_name, _ in pairs(M.python_lsp_clients) do
             if message:find(client_name) then
                 M.debug("[" .. client_name .. " LSP] " .. message)
                 break
             end
         end
-        
+
         return original_lsp_log.info(...)
     end
 end
@@ -291,13 +291,13 @@ end
 -- Restore original LSP log functions
 function M.disable_lsp_log_forwarding()
     if not log_forwarding_enabled then return end
-    
+
     vim.lsp.log.error = original_lsp_log.error
-    vim.lsp.log.warn = original_lsp_log.warn  
+    vim.lsp.log.warn = original_lsp_log.warn
     vim.lsp.log.info = original_lsp_log.info
     vim.lsp.log.debug = original_lsp_log.debug
     vim.lsp.log.trace = original_lsp_log.trace
-    
+
     log_forwarding_enabled = false
 end
 

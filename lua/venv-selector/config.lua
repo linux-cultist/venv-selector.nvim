@@ -20,7 +20,7 @@ local hooks = require("venv-selector.hooks")
 ---@field workspace? venv-selector.SearchCommand
 ---@field file? venv-selector.SearchCommand
 
----@alias venv-selector.Hook fun(venv_python: string, env_type: string)
+---@alias venv-selector.Hook fun(venv_python: string|nil, env_type: string|nil)
 
 ---@class venv-selector.CacheSettings
 ---@field file string Path to cache file (default: "~/.cache/venv-selector/venvs2.json")
@@ -60,10 +60,9 @@ local hooks = require("venv-selector.hooks")
 ---@field hooks venv-selector.Hook[] Hook functions called on venv activation (default: { hooks.dynamic_python_lsp_hook })
 ---@field options venv-selector.Options Plugin options (see venv-selector.Options for defaults)
 ---@field search venv-selector.SearchCommands Search commands for finding virtual environments (default: OS-specific searches)
+---@field detected? table Detected system information
 
 local M = {}
-
-M.has_legacy_settings = false
 
 ---Find the fd command name available on the system
 ---@return string|nil
@@ -81,23 +80,27 @@ end
 ---@return venv-selector.SearchCommands
 local function get_default_searches()
     local system = vim.loop.os_uname().sysname
-    
+
     if system == "Windows_NT" then
         return {
             hatch = {
-                command = "$FD python.exe $HOME/AppData/Local/hatch/env/virtual --no-ignore-vcs --full-path --color never",
+                command =
+                "$FD python.exe $HOME/AppData/Local/hatch/env/virtual --no-ignore-vcs --full-path --color never",
             },
             poetry = {
-                command = "$FD python.exe$ $HOME/AppData/Local/pypoetry/Cache/virtualenvs --no-ignore-vcs --full-path --color never",
+                command =
+                "$FD python.exe$ $HOME/AppData/Local/pypoetry/Cache/virtualenvs --no-ignore-vcs --full-path --color never",
             },
             pyenv = {
-                command = "$FD python.exe$ $HOME/.pyenv/pyenv-win/versions $HOME/.pyenv-win-venv/envs --no-ignore-vcs -E Lib",
+                command =
+                "$FD python.exe$ $HOME/.pyenv/pyenv-win/versions $HOME/.pyenv-win-venv/envs --no-ignore-vcs -E Lib",
             },
             pipenv = {
                 command = "$FD python.exe$ $HOME/.virtualenvs --no-ignore-vcs --full-path --color never",
             },
             pixi = {
-                command = "$FD python.exe$ $CWD/.pixi/envs $WORKSPACE_PATH/.pixi/envs $FILE_DIR/.pixi/envs $HOME/.pixi/envs -d 2 --no-ignore-vcs --full-path --color never",
+                command =
+                "$FD python.exe$ $CWD/.pixi/envs $WORKSPACE_PATH/.pixi/envs $FILE_DIR/.pixi/envs $HOME/.pixi/envs -d 2 --no-ignore-vcs --full-path --color never",
             },
             anaconda_envs = {
                 command = "$FD python.exe$ $HOME/anaconda3/envs --no-ignore-vcs --full-path -a -E Lib",
@@ -134,13 +137,15 @@ local function get_default_searches()
                 command = "$FD 'python$' ~/.virtualenvs --no-ignore-vcs --color never",
             },
             hatch = {
-                command = "$FD 'python$' ~/Library/Application\\\\ Support/hatch/env/virtual --no-ignore-vcs --color never -E '*-build*'",
+                command =
+                "$FD 'python$' ~/Library/Application\\\\ Support/hatch/env/virtual --no-ignore-vcs --color never -E '*-build*'",
             },
             poetry = {
                 command = "$FD '/bin/python$' ~/Library/Caches/pypoetry/virtualenvs --no-ignore-vcs --full-path",
             },
             pyenv = {
-                command = "$FD '/bin/python$' ~/.pyenv/versions --no-ignore-vcs --full-path --color never -E pkgs/ -E envs/ -L",
+                command =
+                "$FD '/bin/python$' ~/.pyenv/versions --no-ignore-vcs --full-path --color never -E pkgs/ -E envs/ -L",
             },
             pipenv = {
                 command = "$FD '/bin/python$' ~/.local/share/virtualenvs --no-ignore-vcs --full-path --color never",
@@ -165,10 +170,12 @@ local function get_default_searches()
                 type = "anaconda",
             },
             pipx = {
-                command = "$FD '/bin/python$' ~/.local/share/pipx/venvs ~/.local/pipx/venvs --no-ignore-vcs --full-path --color never",
+                command =
+                "$FD '/bin/python$' ~/.local/share/pipx/venvs ~/.local/pipx/venvs --no-ignore-vcs --full-path --color never",
             },
             cwd = {
-                command = "$FD '/bin/python$' '$CWD' --full-path --color never -HI -a -L -E /proc -E .git/ -E .wine/ -E .steam/ -E Steam/ -E site-packages/",
+                command =
+                "$FD '/bin/python$' '$CWD' --full-path --color never -HI -a -L -E /proc -E .git/ -E .wine/ -E .steam/ -E Steam/ -E site-packages/",
             },
             workspace = {
                 command = "$FD '/bin/python$' '$WORKSPACE_PATH' --full-path --color never -E /proc -HI -a -L",
@@ -189,7 +196,8 @@ local function get_default_searches()
                 command = "$FD '/bin/python$' ~/.cache/pypoetry/virtualenvs --no-ignore-vcs --full-path",
             },
             pyenv = {
-                command = "$FD '/bin/python$' ~/.pyenv/versions --no-ignore-vcs --full-path --color never -E pkgs/ -E envs/ -L",
+                command =
+                "$FD '/bin/python$' ~/.pyenv/versions --no-ignore-vcs --full-path --color never -E pkgs/ -E envs/ -L",
             },
             pipenv = {
                 command = "$FD '/bin/python$' ~/.local/share/virtualenvs --no-ignore-vcs --full-path --color never",
@@ -214,10 +222,12 @@ local function get_default_searches()
                 type = "anaconda",
             },
             pipx = {
-                command = "$FD '/bin/python$' ~/.local/share/pipx/venvs ~/.local/pipx/venvs --no-ignore-vcs --full-path --color never",
+                command =
+                "$FD '/bin/python$' ~/.local/share/pipx/venvs ~/.local/pipx/venvs --no-ignore-vcs --full-path --color never",
             },
             cwd = {
-                command = "$FD '/bin/python$' '$CWD' --full-path --color never -HI -a -L -E /proc -E .git/ -E .wine/ -E .steam/ -E Steam/ -E site-packages/",
+                command =
+                "$FD '/bin/python$' '$CWD' --full-path --color never -HI -a -L -E /proc -E .git/ -E .wine/ -E .steam/ -E Steam/ -E site-packages/",
             },
             workspace = {
                 command = "$FD '/bin/python$' '$WORKSPACE_PATH' --full-path --color never -E /proc -HI -a -L",
@@ -259,6 +269,7 @@ local default_settings = {
         picker_columns = { "marker", "search_icon", "search_name", "search_result" },
         picker = "auto",
         statusline_func = { nvchad = nil, lualine = nil },
+        show_telescope_search_type = false,
         picker_options = {
             snacks = {
                 layout = { preset = "select" },
@@ -286,7 +297,7 @@ function M.store(settings)
     return M.get_user_settings()
 end
 
----@return venv-selector.Settings.Options
+---@return venv-selector.Options
 function M.get_user_options()
     return M.user_settings.options
 end

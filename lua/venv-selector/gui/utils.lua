@@ -1,8 +1,13 @@
 local path = require("venv-selector.path")
 local log = require("venv-selector.logger")
 
+---@class venv-selector.Options
+---@field show_telescope_search_type? boolean
+
 local M = {}
 
+---@param results SearchResult[]
+---@return SearchResult[]
 function M.remove_dups(results)
     -- If a venv is found both by another search AND (cwd or file) search, then keep the one found by another search.
     local seen = {}
@@ -35,18 +40,24 @@ function M.remove_dups(results)
     return filtered_results
 end
 
--- sort results (in-place)
+---Sort results (in-place)
+---@param results SearchResult[]
 function M.sort_results(results)
     local selected_python = path.current_python_path
     local current_file_dir = vim.fn.expand("%:p:h")
 
     log.debug("Calculating path similarity based on: '" .. current_file_dir .. "'")
-    -- Normalize path by converting all separators to a common one (e.g., '/')
+    ---Normalize path by converting all separators to a common one (e.g., '/')
+    ---@param p string
+    ---@return string
     local function normalize_path(p)
-        return p:gsub("\\", "/")
+        return (p:gsub("\\", "/"))
     end
 
-    -- Calculate the path similarity
+    ---Calculate the path similarity
+    ---@param path1 string
+    ---@param path2 string
+    ---@return integer
     local function path_similarity(path1, path2)
         path1 = normalize_path(path1)
         path2 = normalize_path(path2)
@@ -86,6 +97,8 @@ function M.sort_results(results)
     end)
 end
 
+---@param source string
+---@return string
 function M.draw_icons_for_types(source)
     local config = require("venv-selector.config")
 
@@ -131,6 +144,8 @@ function M.draw_icons_for_types(source)
     end
 end
 
+---@param entry SearchResult
+---@return string|nil
 function M.hl_active_venv(entry)
     local icon_highlight = "VenvSelectActiveVenv"
     if entry.path == path.current_python_path then
@@ -139,6 +154,10 @@ function M.hl_active_venv(entry)
     return nil
 end
 
+---@param icon string
+---@param source string
+---@param name string
+---@return string
 function M.format_result_as_string(icon, source, name)
     local config = require("venv-selector.config")
     if config.user_settings.options.show_telescope_search_type then
@@ -148,11 +167,13 @@ function M.format_result_as_string(icon, source, name)
     end
 end
 
+---@return string[]
 function M.get_picker_columns()
     local config = require("venv-selector.config")
     return config.user_settings.options.picker_columns or { "marker", "search_icon", "search_name", "search_result" }
 end
 
+---@param entry SearchResult|nil
 function M.select(entry)
     if entry == nil then
         return

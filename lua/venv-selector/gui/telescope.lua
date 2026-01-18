@@ -86,7 +86,7 @@ end
 
 local function get_sorter()
     local filter_type = config.user_settings.options.picker_filter_type or
-    config.user_settings.options.telescope_filter_type
+        config.user_settings.options.telescope_filter_type or "substring"
 
     if filter_type == "character" then
         return require("telescope.config").values.file_sorter()
@@ -177,7 +177,7 @@ function M:make_finder()
     local entry_maker = function(entry)
         local icon = entry.icon
         entry.value = entry.name
-        entry.ordinal = entry.path
+        entry.ordinal = entry.name .. " " .. entry.source .. " " .. entry.path
         entry.display = function(e)
             local picker_columns = gui_utils.get_picker_columns()
 

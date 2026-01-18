@@ -40,6 +40,7 @@ end
 ---Initialize nvim-notify if available
 local function setup_notify()
     local options = require("venv-selector.config").get_user_options()
+
     if options and options.override_notify then
         local has_notify, notify_plugin = pcall(require, "notify")
         if has_notify then

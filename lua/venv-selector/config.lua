@@ -78,7 +78,7 @@ end
 
 ---Get default search commands for the current operating system
 ---@return venv-selector.SearchCommands
-local function get_default_searches()
+function M.get_default_searches()
     local system = vim.loop.os_uname().sysname
 
     if system == "Windows_NT" then
@@ -280,7 +280,7 @@ local default_settings = {
             shell = vim.o.shell
         }
     },
-    search = get_default_searches(),
+    search = M.get_default_searches(),
 }
 
 ---Initialize user_settings with defaults for immediate autocomplete support

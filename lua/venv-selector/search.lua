@@ -299,8 +299,8 @@ function M.run_search(picker, opts)
 
     -- Disable default searches that user has overridden
     if not options.enable_default_searches then
-        local default_searches = require("venv-selector.config").user_settings.search
-        for search_name, _ in pairs(search_settings.search) do
+        local default_searches = require("venv-selector.config").get_default_searches()
+        for search_name, search_config in pairs(search_settings.search) do
             if default_searches[search_name] then
                 log.debug("Disabling default search: '" .. search_name .. "'")
                 search_settings.search[search_name] = nil
@@ -315,7 +315,7 @@ function M.run_search(picker, opts)
 
     -- Process all searches
     for search_name, search_config in pairs(search_settings.search) do
-        if search_config ~= false then
+        if search_config ~= true and search_config ~= false then
             process_search(search_name, search_config, job_event_handler, options)
         end
     end

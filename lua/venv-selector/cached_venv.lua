@@ -7,8 +7,8 @@ local cache_file
 if config.user_settings and config.user_settings.cache and config.user_settings.cache.file then
     cache_file = path.expand(config.user_settings.cache.file)
 else
-    -- Fall back to default cache file if the user setting is not present
-    cache_file = path.expand(config.default_settings.cache.file)
+    -- -- Fall back to default cache file if the user setting is not present
+    -- cache_file = path.expand(config.default_settings.cache.file)
 end
 
 -- Ensure the cache directory exists

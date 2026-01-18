@@ -2,11 +2,11 @@ local log = require("venv-selector.logger")
 
 local M = {}
 
----@type table
-M.user_settings = {}
+-- ---@type table
+-- M.user_settings = {}
 
----@type table
-M.default_settings = {}
+-- ---@type table
+-- M.default_settings = {}
 
 ---Check if a table has any entries
 ---@param t table|nil The table to check
@@ -15,16 +15,16 @@ function M.table_has_content(t)
     return t ~= nil and next(t) ~= nil
 end
 
----Merge user configuration with plugin defaults
----@param user_settings table User configuration settings
-function M.merge_user_settings(user_settings)
-    log.debug("User plugin settings: ", user_settings.settings, "")
-    M.user_settings = vim.tbl_deep_extend("force", M.default_settings, user_settings.settings or {})
-    M.user_settings.detected = {
-        system = vim.uv.os_uname().sysname,
-    }
-    log.debug("Complete user settings:", M.user_settings, "")
-end
+-- ---Merge user configuration with plugin defaults
+-- ---@param user_settings table User configuration settings
+-- function M.merge_user_settings(user_settings)
+--     log.debug("User plugin settings: ", user_settings.settings, "")
+--     M.user_settings = vim.tbl_deep_extend("force", M.default_settings, user_settings.settings or {})
+--     M.user_settings.detected = {
+--         system = vim.uv.os_uname().sysname,
+--     }
+--     log.debug("Complete user settings:", M.user_settings, "")
+-- end
 
 ---Split a string into parts, respecting single and double quotes
 ---@param str string The string to split

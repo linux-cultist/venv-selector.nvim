@@ -13,17 +13,45 @@
 
 
 
-# 📰 Recent News
+## Quick Start
 
-- *2025-09-30*: The plugin now requires neovim 0.11 since its using the new [vim.lsp.config() and vim.lsp.enable()](https://neovim.io/doc/user/lsp.html) methods of configuring lsp servers. If you havent switched over yet, here is helpful [blog post](https://lugh.ch/switching-to-neovim-native-lsp.html) to follow.
+A short, focused place to get the plugin installed and working.
 
-- *2025-09-01*: New docs site: https://venvselector.homelab.today. Its searchable and has a lot more room for proper documentation of plugin features and options.
+Requirements
+- `fd` (or `fdfind`) installed and available in your PATH
+- A picker: `telescope`, `fzf-lua`, `snacks`, `mini-pick` or use the native `vim.ui.select`
 
-- *2025-08-27*: The new version of VenvSelect (from the `regexp` branch) has been merged into the `main` branch. This updates the plugin with the last 9 months of changes from the `regexp` branch. Users who prefer the old version can set their branch to `v1`, but its not updated anymore.
+Install (lazy.nvim) — minimal example
+```lua
+{
+  "linux-cultist/venv-selector.nvim",
+  dependencies = {
+    "neovim/nvim-lspconfig",
+    { "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } }, -- optional: you can also use fzf-lua, snacks, mini-pick instead.
+  },
+  ft = "python", -- Load when opening Python files
+  keys = {
+    { ",v", "<cmd>VenvSelect<cr>" }, -- Open picker on keymap
+  },
+}
+```
 
-- *2025-08-26*: Support for [mini-pick](https://github.com/echasnovski/mini.pick) added.
+Open a Python file, press `,v` (or your chosen keymap), and pick a venv to activate.
 
-- *2025-08-26*: The plugin can now be lazy loaded. Remove `lazy = false` from your config and neovim will start faster. Readme has also been updated with how you load the plugin automatically when opening python files.
+Latest and changelog
+- Recent news and releases have been moved to `CHANGELOG.md`. See that file for release notes and important upgrades (for example, the minimum Neovim requirement and recent feature additions).
+- For complete documentation, examples, and references, see the docs folder or the docs site: https://venvselector.homelab.today
+
+Table of Contents
+- Quick Start
+- Features
+- Requirements
+- Configuration & Options (see docs/OPTIONS.md)
+- API / Exposed functions (see docs/API.md)
+- Examples (statusline, callbacks)
+- Troubleshooting / FAQ
+- Changelog
+
 
 
 
@@ -518,54 +546,17 @@ options = {
 
 
 
-## Global options to the plugin
+## Configuration & API reference
 
-```lua
-{
-  options = {
-        on_venv_activate_callback = nil,           -- callback function for after a venv activates
-        enable_default_searches = true,            -- switches all default searches on/off
-        enable_cached_venvs = true,                -- use cached venvs that are activated automatically when a python file is registered with the LSP.
-        cached_venv_automatic_activation = true,   -- if set to false, the VenvSelectCached command becomes available to manually activate them.
-        activate_venv_in_terminal = true,          -- activate the selected python interpreter in terminal windows opened from neovim
-        set_environment_variables = true,          -- sets VIRTUAL_ENV or CONDA_PREFIX environment variables
-        notify_user_on_venv_activation = false,    -- notifies user on activation of the virtual env
-        override_notify = true,                    -- uses nvim-notify plugin if its installed
-        search_timeout = 5,                        -- if a search takes longer than this many seconds, stop it and alert the user
-        debug = false,                             -- enables you to run the VenvSelectLog command to view debug logs
-        fd_binary_name = M.find_fd_command_name(), -- plugin looks for `fd` or `fdfind` but you can set something else here
-        require_lsp_activation = true,             -- require activation of an lsp before setting env variables
-        shell = { shell = vim.o.shell, shellcmdflag = vim.o.shellcmdflag} -- allows you to override what shell and shell flags to use for the searches
+To keep the README concise, the full configuration reference and the API (exposed functions) are available in the docs folder:
 
-        -- picker options
-        on_telescope_result_callback = nil,        -- callback function for modifying telescope results
-        picker_filter_type = "substring",          -- when you type something in pickers, filter by "substring" or "character"
-        selected_venv_marker_color = "#00FF00",    -- the color of the selected venv marker
-        selected_venv_marker_icon = "✔",           -- the icon to use for marking the selected venv
-        picker_icons = {},                         -- override default icons for venv types (e.g., { poetry = "📝", hatch = "🔨", default = "🐍" })
-        picker_columns = { "marker", "search_icon", "search_name", "search_result" }, -- column order in pickers (omit columns to hide them)
-        picker_options = {}           -- options for pickers (only snacks for now). Example: snacks = {layout = { preset = 'default', preview = { main = false, enabled = false }, fullscreen = false },					},},
-        picker = "auto",                           -- the picker to use. Valid options are "telescope", "fzf-lua", "snacks", "native", "mini-pick" or "auto"
-        statusline_func = { nvchad = nil, lualine = nil } -- if a function is defined here for a statusline, it can be used to customize the statusline.
-  }
-}
-```
+- Full options and configuration reference: `docs/OPTIONS.md`
+- Public API (functions you can call from your config or statusline): `docs/API.md`
 
-## Exposed functions
+These documents include examples and detailed descriptions of every option and function. Below are two short notes:
 
-These functions can be used to easily get the selected python interpreter and the active venv.
+- Quick note about searches: default search templates and their patterns live in `lua/venv-selector/config.lua`. You can override or add searches via the top-level `search` table in your plugin `opts`.
+- Activating a Python path programmatically: use `require("venv-selector").activate_from_path(<path_to_python>)`. This is intended for venv interpreter paths — avoid passing the system Python if you want environment variables to be set correctly.
 
-- `require("venv-selector").python()`           -- Gives back absolute path to python or nil if none is selected
-- `require("venv-selector").venv()`             -- Gives back absolute path to the venv or nil if none is selected
-- `require("venv-selector").source()`           -- Gives back the name of the search that found the venv
-- `require("venv-selector").workspace_paths()`  -- Gives back the workspace paths your LSP is using
-- `require("venv-selector").cwd()`              -- Gives back the current working directory
-- `require("venv-selector").file_dir()`         -- Gives back the directory of the currently opened file
-- `require("venv-selector").deactivate()`       -- Removes the venv from terminal path and unsets environment variables
-- `require("venv-selector").stop_lsp_servers()` -- Stops the lsp servers used by the plugin
-- `require("venv-selector").activate_from_path(python_path)` -- Activates a python interpreter given a path to it
+For examples (statusline integration, callbacks, and advanced usages) see the `examples/` directory and the docs site: https://venvselector.homelab.today
 
-> [!IMPORTANT]
-> The last function, `activate_from_path`, is only intended as a way to select a virtual environment python without using the telescope picker.
-> Trying to activate the system python this way is not supported and will set environment variables like `VIRTUAL_ENV` to the wrong values,
-> since the plugin expects the path to be a virtual environment.

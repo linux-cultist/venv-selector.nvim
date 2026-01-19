@@ -1,0 +1,150 @@
+# Plugin options — venv-selector.nvim
+
+This document describes the global configuration options available for venv-selector.nvim.
+Place these options in your plugin setup (for example in the `opts` table for `lazy.nvim`
+or when calling the plugin setup function) to customize behavior.
+
+Quick links:
+- Default searches and search-related configuration are in `lua/venv-selector/config.lua`.
+- For exposed functions and API usage see `docs/API.md` (created separately).
+- For examples (statusline, callbacks, picker customizations) check `examples/` or the docs site.
+
+---
+
+## How options are applied
+
+Options may be supplied as part of your plugin configuration. Example location for `lazy.nvim`:
+
+```/dev/null/example.lua#L1-12
+{
+  "linux-cultist/venv-selector.nvim",
+  opts = {
+    options = {
+      -- your plugin options here
+    },
+    -- optional: add or override searches here
+    search = { }
+  }
+}
+```
+
+---
+
+## Global options reference
+
+Key | Default | Type | Description
+--- | --- | --- | ---
+`on_venv_activate_callback` | `nil` | function or nil | Callback invoked after a venv activates. Useful to run autocommands or custom shell commands after activation.
+`enable_default_searches` | `true` | boolean | Enable/disable built-in default searches. Set to `false` to disable all built-in searches; or override individual searches in `search`.
+`enable_cached_venvs` | `true` | boolean | Use cached venvs that are reactivated automatically for known working directories.
+`cached_venv_automatic_activation` | `true` | boolean | If `false`, cached venvs won't activate automatically; the `VenvSelectCached` command can be used to activate them manually.
+`activate_venv_in_terminal` | `true` | boolean | If `true`, the plugin attempts to activate the selected interpreter inside terminals created from Neovim.
+`set_environment_variables` | `true` | boolean | Control whether the plugin sets environment variables like `VIRTUAL_ENV` or `CONDA_PREFIX` when activating a venv.
+`notify_user_on_venv_activation` | `false` | boolean | Display a notification when a venv is activated.
+`override_notify` | `true` | boolean | If `true` use `nvim-notify` (if installed) for notifications; otherwise use default notify mechanism.
+`search_timeout` | `5` | number (seconds) | Timeout for individual search commands. If a search takes longer, it will be stopped.
+`debug` | `false` | boolean | Enable debug logging; when true you can use `:VenvSelectLog` to inspect debug output.
+`fd_binary_name` | `M.find_fd_command_name()` | string | The executable name used to run `fd`. Automatically detects `fd` or `fdfind`, override if needed (e.g., on custom systems).
+`require_lsp_activation` | `true` | boolean | If `true`, plugin requires LSP activation before it sets environment variables (ensures workspace detection).
+`shell` | `{ shell = vim.o.shell, shellcmdflag = vim.o.shellcmdflag }` | table | Override the shell and shell flags used when running search commands.
+`on_telescope_result_callback` | `nil` | function or nil | Callback used to transform/format each search result shown in the telescope picker. Receives the raw filename and should return a display string.
+`picker_filter_type` | `"substring"` | string (`"substring"` or `"character"`) | How picker input filters results.
+`selected_venv_marker_color` | `"#00FF00"` | string | Hex color used for the selected venv marker in pickers that support colors.
+`selected_venv_marker_icon` | `"✔"` | string | Icon used to mark the selected venv in pickers.
+`picker_icons` | `{}` | table | Map of icons per venv type, e.g. `{ poetry = "📝", hatch = "🔨", default = "🐍" }`
+`picker_columns` | `{ "marker", "search_icon", "search_name", "search_result" }` | array | Column order in pickers; omit columns to hide them.
+`picker_options` | `{}` | table | Picker-specific options (currently used by snacks and other pickers). Example format differs by picker.
+`picker` | `"auto"` | string | Default picker to use: `"telescope"`, `"fzf-lua"`, `"snacks"`, `"native"`, `"mini-pick"`, or `"auto"`.
+`statusline_func` | `{ nvchad = nil, lualine = nil }` | table | Functions to customize statusline output. Provide `nvchad` and/or `lualine` keys with functions that return a string to display.
+
+---
+
+## Examples
+
+Minimal: change the selected marker and enable debug:
+
+```/dev/null/example.lua#L1-8
+opts = {
+  options = {
+    selected_venv_marker_icon = "🐍",
+    debug = true,
+  }
+}
+```
+
+Using `on_telescope_result_callback` to shorten display names:
+
+```/dev/null/example.lua#L1-20
+local function shorter_name(filename)
+  return filename:gsub(os.getenv("HOME"), "~"):gsub("/bin/python", "")
+end
+
+opts = {
+  options = {
+    on_telescope_result_callback = shorter_name,
+  }
+}
+```
+
+Statusline example (lualine): set a custom lualine function that returns the current venv name:
+
+```/dev/null/example.lua#L1-28
+opts = {
+  options = {
+    statusline_func = {
+      lualine = function()
+        local venv_path = require("venv-selector").venv()
+        if not venv_path or venv_path == "" then return "" end
+        local venv_name = vim.fn.fnamemodify(venv_path, ":t")
+        return "🐍 " .. (venv_name or "") .. " "
+      end,
+    },
+  }
+}
+```
+
+Customizing shell used for searches:
+
+```/dev/null/example.lua#L1-8
+opts = {
+  options = {
+    shell = { shell = "/usr/bin/fish", shellcmdflag = "-c" }
+  }
+}
+```
+
+Disabling a single default search (example: disable `workspace` search) — configure the top-level `search` table:
+
+```/dev/null/example.lua#L1-8
+opts = {
+  search = {
+    workspace = false,
+  }
+}
+```
+
+Disable all built-in searches:
+
+```/dev/null/example.lua#L1-4
+opts = {
+  options = { enable_default_searches = false },
+}
+```
+
+---
+
+## Notes and best practices
+
+- If you rely on conda/anaconda environments, set search entries that return `type = "anaconda"` for the search so the plugin sets `CONDA_PREFIX` and other conda-specific vars correctly.
+- The plugin needs `fd` (or `fdfind`) installed for the default searches. If `fd` is not available, either install it or provide alternate `search` entries that use other commands.
+- Be careful when calling `activate_from_path` with system Python — that function expects a path to a virtual environment and may set environment variables incorrectly for system-wide interpreters.
+- If you need very fast searches, limit the scope of your `fd` queries (avoid searching your entire home directory with `-H` unless necessary). See `docs/SEARCH.md` or the `config.lua` for default search definitions and flags.
+
+---
+
+If you want, I can:
+- move the existing "Global options" block out of `README.md` (remove/de-duplicate) and insert a short link to this file,
+- create `docs/API.md` with the exposed functions and usage examples,
+- create example files under `examples/` for statusline and callbacks.
+
+Tell me which of those you want me to do next.

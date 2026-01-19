@@ -1,5 +1,9 @@
 # 🎉 Python Venv Selector
 
+<p align="center">
+  <img src="venvselect.png" alt="venv-selector screenshot" />
+</p>
+
 A small Neovim plugin to browse and activate Python virtual environments inside Neovim.  
 This repository now keeps the README concise and forwards detailed usage, configuration, and API documentation to the `docs/` folder.
 
@@ -25,7 +29,9 @@ Quick Start (very short)
    - `fd` (or `fdfind`) available in your PATH
    - A picker plugin: one of `telescope`, `fzf-lua`, `snacks`, `mini-pick`, or use the native picker
 2. Install the plugin with your plugin manager (see `docs/USAGE.md` for detailed instructions and examples).
-   - Example `lazy.nvim` entry (see full example in docs): add the plugin to your `lazy` spec and load on `ft = "python"`.
+```lua
+{ "linux-cultist/venv-selector.nvim", ft = "python", keys = { { ",v", "<cmd>VenvSelect<cr>" } } }
+```
 3. Open a Python file, trigger the picker (default keymap often shown in docs, e.g. `,v`), and select a venv to activate.
 
 For complete installation examples, keymaps, picker configuration and per-search examples, open:

@@ -1,6 +1,6 @@
 # Usage — venv-selector.nvim
 
-This document provides actionable installation steps, examples, and troubleshooting for venv-selector.nvim. The top-level README is an index that links to this file and other documentation in `docs/`.
+This document provides actionable installation steps, examples, and troubleshooting for `venv-selector.nvim`. The top-level README is an index that links to this file and other documentation in `docs/`.
 
 ## Table of contents
 
@@ -9,6 +9,8 @@ This document provides actionable installation steps, examples, and troubleshoot
 - [Requirements & optional integrations](#requirements--optional-integrations)
 - [Basic usage](#basic-usage)
 - [Searches: default behavior and custom searches](#searches-default-behavior-and-custom-searches)
+  - [Example: add a custom search](#example-add-a-custom-search)
+  - [Override or disable default searches](#override-or-disable-default-searches)
 - [Special notes (Anaconda/Miniconda, UV PEP-723)](#special-notes-anacondaminiconda-uv-pep-723)
 - [Performance tips](#performance-tips)
 - [Callbacks](#callbacks)
@@ -34,7 +36,7 @@ If you want a guided setup or more examples, see [Install (lazy.nvim)](#install-
 
 A minimal `lazy.nvim` spec — put this in your plugin list. This example uses `telescope`, but any supported picker works.
 
-```venv-selector.nvim/docs/USAGE.md#L1-20
+```lua
 {
   "linux-cultist/venv-selector.nvim",
   dependencies = {
@@ -52,14 +54,17 @@ See `examples/` for additional sample configurations (statusline, callbacks).
 
 ## Requirements & optional integrations
 
-- Required
-  - Neovim >= 0.11
-  - `fd` (or `fdfind`) for default searches (you can provide custom searches that use other commands)
-  - A supported picker: `telescope`, `fzf-lua`, `snacks`, `mini-pick`, or the native `vim.ui.select`
-- Optional
-  - `nvim-dap`, `nvim-dap-python`, and `debugpy` for debugger integration
-  - `nvim-notify` for richer notifications
-  - Nerd font for icons in statuslines/pickers
+### Required
+
+- Neovim >= 0.11
+- `fd` (or `fdfind`) for the default searches (you can provide custom searches that use other commands)
+- A supported picker: `telescope`, `fzf-lua`, `snacks`, `mini-pick`, or the native `vim.ui.select`
+
+### Optional
+
+- `nvim-dap`, `nvim-dap-python`, and `debugpy` for debugger integration
+- `nvim-notify` for richer notifications
+- Nerd font for icons in statuslines/pickers
 
 ---
 
@@ -78,6 +83,7 @@ The plugin runs a set of "searches" to discover Python interpreter binaries. Def
 You can add or override searches in your plugin configuration using the top-level `search` table.
 
 Special search variables available in commands:
+
 - `$CWD` — Neovim current working directory
 - `$WORKSPACE_PATH` — workspace roots reported by LSP
 - `$FILE_DIR` — directory of the current buffer
@@ -87,27 +93,28 @@ Special search variables available in commands:
 
 If your venvs live in `~/Code`, add:
 
-```venv-selector.nvim/docs/USAGE.md#L21-40
+```lua
 {
   search = {
     my_venvs = {
-      command = "fd python$ ~/Code --full-path -a -L",
+      command = "fd '/bin/python$' ~/Code --full-path -a -L",
     },
   },
 }
 ```
 
 Notes:
+
 - Use `python.exe$` on Windows where executables end with `.exe`.
-- Shell quoting rules vary: `fish` often requires quoting regexes (e.g. `'/bin/python$'`).
+- Shell quoting rules vary: `fish` often requires quoting regexes (e.g. `'/bin/python$'`). Test in your environment.
 
 ### Override or disable default searches
 
 - Override: define a `search` entry with the same name to replace the default.
 - Disable a specific default search: set it to `false`.
-- Disable all built-in searches: `options.enable_default_searches = false`.
+- Disable all built-in searches: set `options.enable_default_searches = false`.
 
-```venv-selector.nvim/docs/USAGE.md#L41-60
+```lua
 {
   options = { enable_default_searches = false },
   search = {
@@ -122,9 +129,10 @@ Notes:
 ## Special notes (Anaconda/Miniconda, UV PEP-723)
 
 ### Anaconda / Miniconda
+
 When creating a custom search that finds conda/anaconda interpreters, set `type = "anaconda"` for that search. This ensures the plugin sets `CONDA_PREFIX` and other conda-specific environment variables.
 
-```venv-selector.nvim/docs/USAGE.md#L61-80
+```lua
 {
   search = {
     anaconda_local = {
@@ -136,26 +144,40 @@ When creating a custom search that finds conda/anaconda interpreters, set `type 
 ```
 
 ### UV PEP-723 script support
-- The `uv_script` search runs `uv python find --script '$CURRENT_FILE'` when the current file contains inline PEP-723 metadata and shows the resolved interpreter in the picker.
+
+The `uv_script` search runs `uv python find --script '$CURRENT_FILE'` when the current file contains inline PEP-723 metadata and shows the resolved interpreter in the picker.
+
+Example PEP-723 script header (for reference):
+
+```python
+#!/usr/bin/env python3
+# /// script
+# dependencies = [
+#   "requests",
+#   "rich",
+# ]
+# ///
+```
 
 ---
 
 ## Performance tips
 
-- Search speed depends on `fd` command and flags.
-- To improve performance:
-  - Narrow the search scope (e.g., search `~/Code` instead of `~`).
-  - Avoid `-H` (hidden) unless you need to detect dot-prefixed venvs.
-  - Use `-I` instead of `-HI` if you want to include files ignored by `.gitignore`, etc.
-  - Disable default searches you don't need and add targeted ones.
+Search speed depends on the `fd` command and flags. To improve performance:
+
+- Narrow the search scope (e.g., search `~/Code` instead of `~`).
+- Avoid `-H` (hidden) unless you need to detect dot-prefixed venvs.
+- Use `-I` instead of `-HI` if you want to include files ignored by `.gitignore`, etc.
+- Disable default searches you don't need and add targeted ones.
 
 Example `fd` usage:
 
-```venv-selector.nvim/docs/USAGE.md#L81-100
+```sh
 fd '/bin/python$' $CWD --full-path --color never -E /proc -I -a -L
 ```
 
 Common flags:
+
 - `-I` / `--no-ignore`
 - `-L` / `--follow`
 - `-H` / `--hidden`
@@ -173,7 +195,7 @@ Use this to modify the displayed string for each result in the picker (useful to
 
 Example (shorten display):
 
-```venv-selector.nvim/docs/USAGE.md#L101-120
+```lua
 -- In your opts:
 local function shorter_name(filename)
   return filename:gsub(os.getenv("HOME"), "~"):gsub("/bin/python", "")
@@ -194,7 +216,7 @@ Run custom logic when a venv activates (e.g., instruct `poetry` to use the selec
 
 Example pattern — use the robust helpers in `examples/callbacks.lua` for production use:
 
-```venv-selector.nvim/docs/USAGE.md#L121-160
+```lua
 opts = {
   options = {
     on_venv_activate_callback = function()
@@ -227,7 +249,7 @@ The plugin exposes `options.statusline_func` for integrating with `lualine` and 
 
 Example lualine snippet:
 
-```venv-selector.nvim/examples/statusline.lua#L1-28
+```lua
 options = {
   statusline_func = {
     lualine = function()
@@ -244,16 +266,19 @@ options = {
 
 ## Troubleshooting
 
-- My venvs don't show up
-  - Add a custom search targeting where your venvs live.
-  - Ensure your `fd` regex matches the interpreter name (e.g., `python$` vs `python.exe$`).
-  - If relying on `$WORKSPACE_PATH`, ensure LSP has attached.
+### My venvs don't show up
 
-- VenvSelect is slow
-  - Restrict `fd` scope, avoid unnecessary `-H`, disable unused default searches.
+- Add a custom search targeting where your venvs live.
+- Ensure your `fd` regex matches the interpreter name (e.g., `python$` vs `python.exe$`).
+- If relying on `$WORKSPACE_PATH`, ensure LSP has attached.
 
-- Conda environments behave oddly
-  - Make sure searches returning conda envs include `type = "anaconda"`.
+### VenvSelect is slow
+
+- Restrict `fd` scope, avoid unnecessary `-H`, and disable unused default searches.
+
+### Conda environments behave oddly
+
+- Make sure searches returning conda envs include `type = "anaconda"`.
 
 ---
 
@@ -268,6 +293,7 @@ options = {
 ---
 
 If you'd like, I can:
+
 - Move any remaining inline code examples into additional files under `examples/`.
-- Add a short "one-line" lazy.nvim snippet to the README for a tiny copy-paste.
+- Add a short "one-line" lazy.nvim snippet to the README for quick copy/paste.
 - Add badges to the top of the README (CI, docs, license).

@@ -11,17 +11,16 @@ Badges: (add CI/docs/release badges here)
 
 ---
 
-## Quick links
-
-- Usage / installation / examples: `docs/USAGE.md`  
-- Full configuration reference: `docs/OPTIONS.md`  
-- Public API and helper functions: `docs/API.md`  
-- Long-form examples (statuslines, callbacks): `examples/`  
-- Release notes / recent news: `CHANGELOG.md`
+## 🔗 Quick links
+- [Usage / installation / examples](docs/USAGE.md)
+- [Full configuration reference](docs/OPTIONS.md)
+- [Public API and helper functions](docs/API.md)
+- [Long-form examples (statuslines, callbacks)](examples/)
+- [Release notes / recent news](CHANGELOG.md)
 
 ---
 
-## Table of contents
+## 📚 Table of contents
 
 - [Quick start](#quick-start)
 - [Features](#features)
@@ -34,7 +33,8 @@ Badges: (add CI/docs/release badges here)
 
 ---
 
-## Quick start
+<a name="quick-start"></a>
+## 🚀 Quick start
 
 1. Ensure prerequisites:
    - `fd` (or `fdfind`) available in your PATH
@@ -45,7 +45,8 @@ Badges: (add CI/docs/release badges here)
 
 ---
 
-## Features
+<a name="features"></a>
+## ⚡️ Features
 
 - Switch virtual environments inside Neovim without restarting
 - Browse and activate venvs found on disk (using configurable searches)
@@ -67,7 +68,8 @@ Badges: (add CI/docs/release badges here)
 
 ---
 
-## Requirements
+<a name="requirements"></a>
+## 🧩 Requirements
 
 - Neovim >= 0.11 (LSP improvements are used)
 - `fd` (or `fdfind`) for default searches (you can add custom searches with other tools)
@@ -79,7 +81,8 @@ Badges: (add CI/docs/release badges here)
 
 ---
 
-## Install (quick)
+<a name="install-quick"></a>
+## 🛠️ Install (quick)
 
 One-line `lazy.nvim` example (quick copy/paste):
 
@@ -91,7 +94,8 @@ See `docs/USAGE.md` for a full `lazy.nvim` example with optional dependencies (t
 
 ---
 
-## Configuration & docs
+<a name="configuration--docs"></a>
+## 📝 Configuration & docs
 
 - Full usage, examples and troubleshooting: `docs/USAGE.md`  
 - Full options reference (all `options` keys and examples): `docs/OPTIONS.md`  
@@ -102,7 +106,8 @@ If you prefer a compact README, use the docs above as the canonical source of tr
 
 ---
 
-## Troubleshooting (short)
+<a name="troubleshooting-short"></a>
+## 🛟 Troubleshooting (short)
 
 - My venvs don't show up:
   - Add a custom search that targets the folder where your venvs live.
@@ -119,14 +124,16 @@ For extended troubleshooting and examples, see `docs/USAGE.md`.
 
 ---
 
-## Contributing & license
+<a name="contributing--license"></a>
+## 🤝 Contributing & license
 
 - Read `CONTRIBUTING.md` if present. Small focused PRs with examples are easiest to review.
 - License: see `LICENSE`.
 
 ---
 
-## Changelog
+<a name="changelog"></a>
+## 📰 Changelog
 
 Recent news and release notes are in `CHANGELOG.md`.
 

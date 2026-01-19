@@ -37,6 +37,7 @@ If your venvs live in `~/Code`, add:
 
 ```lua
 {
+  options = {}, -- your options here
   search = {
     my_venvs = {
       command = "fd '/bin/python$' ~/Code --full-path -a -L",
@@ -75,6 +76,7 @@ When creating a custom search that finds conda/anaconda interpreters, set `type 
 
 ```lua
 {
+  options = {}, -- your options here
   search = {
     anaconda_local = {
       command = "fd /python$ /opt/anaconda/bin --full-path --color never -E /proc",
@@ -142,11 +144,9 @@ local function shorter_name(filename)
   return filename:gsub(os.getenv("HOME"), "~"):gsub("/bin/python", "")
 end
 
-opts = {
-  options = {
-    on_telescope_result_callback = shorter_name,
-  },
-}
+options = {
+  on_telescope_result_callback = shorter_name,
+},
 ```
 
 You can also use the helper in `examples/statusline.lua`.
@@ -158,7 +158,6 @@ Run custom logic when a venv activates (e.g., instruct `poetry` to use the selec
 Example pattern — use the robust helpers in `examples/callbacks.lua` for production use:
 
 ```lua
-opts = {
   options = {
     on_venv_activate_callback = function()
       local command_run = false
@@ -179,7 +178,6 @@ opts = {
       })
     end
   }
-}
 ```
 
 ---

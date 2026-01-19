@@ -5,8 +5,9 @@ Place these options in your plugin setup (for example in the `opts` table for `l
 or when calling the plugin setup function) to customize behavior.
 
 Quick links:
-- Default searches and search-related configuration are in `lua/venv-selector/config.lua`.
+- For custom searches, callbacks etc, see `docs/USAGE.md`.
 - For exposed functions and API usage see `docs/API.md`.
+- Default searches and search-related configuration are in `lua/venv-selector/config.lua`.
 - For examples (statusline, callbacks, picker customizations) check `examples/`
 
 ---
@@ -64,7 +65,7 @@ Key | Default | Type | Description
 Minimal: change the selected marker and enable debug:
 
 ```lua
-opts = {
+{
   options = {
     selected_venv_marker_icon = "🐍",
     debug = true,
@@ -72,41 +73,10 @@ opts = {
 }
 ```
 
-Using `on_telescope_result_callback` to shorten display names:
-
-```lua
-local function shorter_name(filename)
-  return filename:gsub(os.getenv("HOME"), "~"):gsub("/bin/python", "")
-end
-
-opts = {
-  options = {
-    on_telescope_result_callback = shorter_name,
-  }
-}
-```
-
-Statusline example (lualine): set a custom lualine function that returns the current venv name:
-
-```lua
-opts = {
-  options = {
-    statusline_func = {
-      lualine = function()
-        local venv_path = require("venv-selector").venv()
-        if not venv_path or venv_path == "" then return "" end
-        local venv_name = vim.fn.fnamemodify(venv_path, ":t")
-        return "🐍 " .. (venv_name or "") .. " "
-      end,
-    },
-  }
-}
-```
-
 Customizing shell used for searches:
 
 ```lua
-opts = {
+{
   options = {
     shell = { shell = "/usr/bin/fish", shellcmdflag = "-c" }
   }
@@ -116,7 +86,8 @@ opts = {
 Disabling a single default search (example: disable `workspace` search) — configure the top-level `search` table:
 
 ```lua
-opts = {
+{
+  options = {},
   search = {
     workspace = false,
   }
@@ -126,8 +97,10 @@ opts = {
 Disable all built-in searches:
 
 ```lua
-opts = {
-  options = { enable_default_searches = false },
+{
+  options = {
+    enable_default_searches = false
+  },
 }
 ```
 

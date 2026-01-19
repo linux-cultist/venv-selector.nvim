@@ -1,10 +1,10 @@
+<p align="center">
 # 🎉 Python Venv Selector
 
-<p align="center">
-  <img src="venvselect.png" alt="venv-selector screenshot" />
-</p>
+<img src="venvselect.png" alt="venv-selector screenshot" />
 
-A small Neovim plugin to browse and activate Python virtual environments inside Neovim.  
+A small Neovim plugin to browse and activate Python virtual environments inside Neovim.
+</p>
 
 ---
 
@@ -46,8 +46,10 @@ A small Neovim plugin to browse and activate Python virtual environments inside 
 <a name="features"></a>
 ## ⚡️ Features
 
-- Switch virtual environments inside Neovim without restarting
-- Browse and activate venvs found on disk (using configurable searches)
+- Switch virtual environments from inside Neovim without restarting
+- Finds virtual environments in default locations automatically (including your workspace and cwd directories)
+- Reactivates virtual environments from cache when you open a python file in the same CWD as before
+- Terminals opened from neovim has the selected venv activated.
 - Built-in support for many venv managers:
   - `python -m venv`, `poetry`, `pipenv`, `anaconda` / `miniconda`, `pyenv` (and plugins), `virtualenvwrapper`, `hatch`, `pipx`
 - PEP-723 / `uv` script support: detect inline script metadata and use `uv`-resolved interpreters
@@ -78,7 +80,10 @@ One-line `lazy.nvim` example (quick copy/paste):
   dependencies = {
     { "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } },
   },
-  opts = {},
+  opts = {
+      options = {}, -- if you need custom searches, they go here
+      search = {} -- any options you want to set goes here
+  },
   ft = "python",           -- lazy-load on Python files
   keys = { { ",v", "<cmd>VenvSelect<cr>" } }, -- example keybind to open the picker
 }
@@ -94,7 +99,6 @@ See `docs/USAGE.md` for a full description of creating your own custom searches.
 - [Detailed usage of the plugin](docs/USAGE.md)
 - [Full configuration reference](docs/OPTIONS.md)
 - [Public API and helper functions](docs/API.md)
-- [Long-form examples (statuslines, callbacks)](examples/)
 - [Release notes / recent news](CHANGELOG.md)
 
 ---

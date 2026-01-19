@@ -1,10 +1,8 @@
-<p align="center">
-# 🎉 Python Venv Selector
-
-<img src="venvselect.png" alt="venv-selector screenshot" />
-
-A small Neovim plugin to browse and activate Python virtual environments inside Neovim.
-</p>
+<div align="center">
+  <h1>🎉 Python Venv Selector</h1>
+  <img src="venvselect.png" alt="venv-selector screenshot" />
+  <p>A small Neovim plugin to browse and activate Python virtual environments inside Neovim.</p>
+</div>
 
 ---
 

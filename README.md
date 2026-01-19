@@ -7,12 +7,10 @@
 A small Neovim plugin to browse and activate Python virtual environments inside Neovim.  
 This repository keeps a short, focused README and moves detailed usage, configuration, and API documentation into the `docs/` folder.
 
-Badges: (add CI/docs/release badges here)
-
 ---
 
 ## 🔗 Quick links
-- [Usage / installation / examples](docs/USAGE.md)
+- [Creating your own searches](docs/SEARCHES.md)
 - [Full configuration reference](docs/OPTIONS.md)
 - [Public API and helper functions](docs/API.md)
 - [Long-form examples (statuslines, callbacks)](examples/)
@@ -36,12 +34,22 @@ Badges: (add CI/docs/release badges here)
 <a name="quick-start"></a>
 ## 🚀 Quick start
 
-1. Ensure prerequisites:
-   - `fd` (or `fdfind`) available in your PATH
-   - A picker plugin: one of `telescope`, `fzf-lua`, `snacks`, `mini-pick` — or use the native `vim.ui.select`
-   - Neovim >= 0.11 (recommended)
-2. Install the plugin with your plugin manager (one-line example below).
+1. Ensure prerequisites (see [Requirements](#requirements) below)
+2. Install the plugin with your plugin manager (see [Install](#install-quick) below)
 3. Open a Python file, trigger the picker (example keymap `,v`), and select a venv to activate.
+
+---
+
+<a name="requirements"></a>
+## 🧩 Requirements
+
+- Neovim >= 0.11
+- `fd` (or `fdfind`) for default searches (you can add custom searches with other tools)
+- A supported picker plugin (default is `telescope` in the quick install instructions)
+- Optional:
+  - `nvim-dap`, `nvim-dap-python`, and `debugpy` for debugger integration
+  - `nvim-notify` for improved notifications
+  - A Nerd Font for icons in statuslines/pickers
 
 ---
 
@@ -66,18 +74,6 @@ Badges: (add CI/docs/release badges here)
   - `telescope`, `fzf-lua`, `snacks`, `mini-pick`, native `vim.ui.select`
 - Options for caching, environment variable handling (`VIRTUAL_ENV` / `CONDA_PREFIX`), notifications, and more
 
----
-
-<a name="requirements"></a>
-## 🧩 Requirements
-
-- Neovim >= 0.11 (LSP improvements are used)
-- `fd` (or `fdfind`) for default searches (you can add custom searches with other tools)
-- A supported picker plugin (or `vim.ui.select`)
-- Optional:
-  - `nvim-dap`, `nvim-dap-python`, and `debugpy` for debugger integration
-  - `nvim-notify` for improved notifications
-  - A Nerd Font for icons in statuslines/pickers
 
 ---
 
@@ -87,22 +83,28 @@ Badges: (add CI/docs/release badges here)
 One-line `lazy.nvim` example (quick copy/paste):
 
 ```lua
-{ "linux-cultist/venv-selector.nvim", ft = "python", keys = { { ",v", "<cmd>VenvSelect<cr>" } } }
+{
+  "linux-cultist/venv-selector.nvim",
+  dependencies = {
+    { "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } },
+  },
+  opts = {},
+  ft = "python",           -- lazy-load on Python files
+  keys = { { ",v", "<cmd>VenvSelect<cr>" } }, -- example keybind to open the picker
+}
 ```
 
-See `docs/USAGE.md` for a full `lazy.nvim` example with optional dependencies (telescope, plenary, etc.) and more installation methods.
+See `docs/SEARCHES.md` for a full description of creating your own custom searches.
 
 ---
 
 <a name="configuration--docs"></a>
 ## 📝 Configuration & docs
 
-- Full usage, examples and troubleshooting: `docs/USAGE.md`  
+- How to create your own searches: `docs/SEARCHES.md`  
 - Full options reference (all `options` keys and examples): `docs/OPTIONS.md`  
 - Public API and helper functions (`python()`, `venv()`, `source()`, `activate_from_path()`, etc): `docs/API.md`  
 - Examples for statusline and callbacks (copy into your config): `examples/statusline.lua`, `examples/callbacks.lua`
-
-If you prefer a compact README, use the docs above as the canonical source of truth and examples.
 
 ---
 
@@ -119,8 +121,6 @@ If you prefer a compact README, use the docs above as the canonical source of tr
   - Disable default searches you don't need and add targeted ones.
 - Conda/anaconda issues:
   - Ensure conda searches set `type = "anaconda"` so `CONDA_PREFIX` and related env vars are set correctly.
-
-For extended troubleshooting and examples, see `docs/USAGE.md`.
 
 ---
 
@@ -139,7 +139,3 @@ Recent news and release notes are in `CHANGELOG.md`.
 
 ---
 
-If you want, I can:
-- Add badges to the README header (CI, docs, release),
-- Move any remaining inline examples from docs to `examples/`,
-- Add a short animated GIF or image to `docs/USAGE.md`.

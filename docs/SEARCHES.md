@@ -4,10 +4,6 @@ This document provides actionable installation steps, examples, and troubleshoot
 
 ## Table of contents
 
-- [Quick start](#quick-start)
-- [Install (lazy.nvim)](#install-lazy-nvim)
-- [Requirements & optional integrations](#requirements--optional-integrations)
-- [Basic usage](#basic-usage)
 - [Searches: default behavior and custom searches](#searches-default-behavior-and-custom-searches)
   - [Example: add a custom search](#example-add-a-custom-search)
   - [Override or disable default searches](#override-or-disable-default-searches)
@@ -19,60 +15,6 @@ This document provides actionable installation steps, examples, and troubleshoot
 - [Statusline integrations](#statusline-integrations)
 - [Troubleshooting](#troubleshooting)
 - [Where to find more examples and reference](#where-to-find-more-examples-and-reference)
-
----
-
-## Quick start
-
-1. Install the plugin (example below).
-2. Ensure `fd` (or a compatible tool) is available on your system.
-3. Open a Python file, trigger the picker (e.g. `,v`), and choose a venv to activate.
-
-If you want a guided setup or more examples, see [Install (lazy.nvim)](#install-lazy-nvim) and the examples in the `examples/` directory.
-
----
-
-## Install (lazy.nvim)
-
-A minimal `lazy.nvim` spec — put this in your plugin list. This example uses `telescope`, but any supported picker works.
-
-```lua
-{
-  "linux-cultist/venv-selector.nvim",
-  dependencies = {
-    "neovim/nvim-lspconfig",
-    { "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } },
-  },
-  ft = "python",           -- lazy-load on Python files
-  keys = { { ",v", "<cmd>VenvSelect<cr>" } }, -- example keybind to open the picker
-}
-```
-
-See `examples/` for additional sample configurations (statusline, callbacks).
-
----
-
-## Requirements & optional integrations
-
-### Required
-
-- Neovim >= 0.11
-- `fd` (or `fdfind`) for the default searches (you can provide custom searches that use other commands)
-- A supported picker: `telescope`, `fzf-lua`, `snacks`, `mini-pick`, or the native `vim.ui.select`
-
-### Optional
-
-- `nvim-dap`, `nvim-dap-python`, and `debugpy` for debugger integration
-- `nvim-notify` for richer notifications
-- Nerd font for icons in statuslines/pickers
-
----
-
-## Basic usage
-
-- Open a Python file.
-- Use your keymap (example: `,v`) to open the picker.
-- Select a result to activate a virtual environment; the plugin will attempt to update LSP and DAP integrations when applicable.
 
 ---
 
@@ -118,7 +60,6 @@ Notes:
 {
   options = { enable_default_searches = false },
   search = {
-    workspace = false,
     custom = { command = "fd /bin/python$ ~/Programming/Python --full-path -a -L" },
   }
 }

@@ -7,7 +7,7 @@ or when calling the plugin setup function) to customize behavior.
 Quick links:
 - Default searches and search-related configuration are in `lua/venv-selector/config.lua`.
 - For exposed functions and API usage see `docs/API.md`.
-- For examples (statusline, callbacks, picker customizations) check `examples/` or `docs/USAGE.md`.
+- For examples (statusline, callbacks, picker customizations) check `examples/`
 
 ---
 
@@ -140,15 +140,3 @@ opts = {
 - Be careful when calling `activate_from_path` with the system Python — that function expects a path to a virtual environment and may set environment variables incorrectly for system-wide interpreters.
 - If you need very fast searches, limit the scope of your `fd` queries (avoid searching your entire home directory with `-H` unless necessary). See `lua/venv-selector/config.lua` for default search definitions and flags.
 
----
-
-## Where to go next
-
-- Usage and actionable install examples: `docs/USAGE.md`
-- Public API and helper functions: `docs/API.md`
-- Example helper scripts (statusline, callbacks): `examples/`
-
-If you want, I can also:
-- Add more small focused examples to `examples/` and reference them here,
-- Convert the options table into a machine-readable JSON/YAML for automated docs generation,
-- Or add inline examples for every option (longer form) in a separate `docs/OPTIONS_FULL.md`.

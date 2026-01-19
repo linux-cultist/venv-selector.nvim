@@ -291,9 +291,3 @@ options = {
 - Default search templates: `lua/venv-selector/config.lua`
 
 ---
-
-If you'd like, I can:
-
-- Move any remaining inline code examples into additional files under `examples/`.
-- Add a short "one-line" lazy.nvim snippet to the README for quick copy/paste.
-- Add badges to the top of the README (CI, docs, license).

@@ -1,68 +1,91 @@
 # Usage — venv-selector.nvim
 
-This document contains actionable instructions and examples to get venv-selector.nvim installed, configured, extended, and debugged. The README was trimmed to be an index; this file contains the usage content that used to be inline in the README.
+This document provides actionable installation steps, examples, and troubleshooting for venv-selector.nvim. The top-level README is an index that links to this file and other documentation in `docs/`.
 
-Table of contents
-- Quick start
-- Install (lazy.nvim example)
-- Requirements & optional integrations
-- Basic usage
-- Searches: default behaviour and custom searches
-- Special notes (Anaconda/Miniconda, UV PEP-723)
-- Performance tips
-- Callbacks: `on_telescope_result_callback` and `on_venv_activate_callback`
-- Statusline integrations
-- Troubleshooting
-- Where to find more examples
+## Table of contents
 
-Quick start
+- [Quick start](#quick-start)
+- [Install (lazy.nvim)](#install-lazy-nvim)
+- [Requirements & optional integrations](#requirements--optional-integrations)
+- [Basic usage](#basic-usage)
+- [Searches: default behavior and custom searches](#searches-default-behavior-and-custom-searches)
+- [Special notes (Anaconda/Miniconda, UV PEP-723)](#special-notes-anacondaminiconda-uv-pep-723)
+- [Performance tips](#performance-tips)
+- [Callbacks](#callbacks)
+  - [on_telescope_result_callback](#on_telescope_result_callback)
+  - [on_venv_activate_callback](#on_venv_activate_callback)
+- [Statusline integrations](#statusline-integrations)
+- [Troubleshooting](#troubleshooting)
+- [Where to find more examples and reference](#where-to-find-more-examples-and-reference)
+
+---
+
+## Quick start
+
 1. Install the plugin (example below).
-2. Ensure `fd` (or compatible binary) is available on your system.
-3. Open a Python file, open the picker (default keymap shown in the example), and select a venv to activate.
+2. Ensure `fd` (or a compatible tool) is available on your system.
+3. Open a Python file, trigger the picker (e.g. `,v`), and choose a venv to activate.
 
-Install (lazy.nvim example)
-If you use `lazy.nvim`, a minimal `lazy` specification to load the plugin when opening Python files:
+If you want a guided setup or more examples, see [Install (lazy.nvim)](#install-lazy-nvim) and the examples in the `examples/` directory.
+
+---
+
+## Install (lazy.nvim)
+
+A minimal `lazy.nvim` spec — put this in your plugin list. This example uses `telescope`, but any supported picker works.
 
 ```venv-selector.nvim/docs/USAGE.md#L1-20
 {
   "linux-cultist/venv-selector.nvim",
   dependencies = {
     "neovim/nvim-lspconfig",
-    { "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } }, -- choose another supported picker if preferred
+    { "nvim-telescope/telescope.nvim", branch = "0.1.x", dependencies = { "nvim-lua/plenary.nvim" } },
   },
-  ft = "python", -- load when a Python file is opened
-  keys = {
-    { ",v", "<cmd>VenvSelect<cr>" }, -- open the picker with ',v' (customize as needed)
-  },
+  ft = "python",           -- lazy-load on Python files
+  keys = { { ",v", "<cmd>VenvSelect<cr>" } }, -- example keybind to open the picker
 }
 ```
 
-Requirements & optional integrations
-- Required:
+See `examples/` for additional sample configurations (statusline, callbacks).
+
+---
+
+## Requirements & optional integrations
+
+- Required
   - Neovim >= 0.11
-  - `fd` (or `fdfind`) for the default searches (you may supply custom searches using any command)
-  - A "picker" implementation: `telescope`, `fzf-lua`, `snacks`, `mini-pick`, or the native `vim.ui.select`
-- Optional:
-  - `nvim-dap` / `nvim-dap-python` / `debugpy` for debugger integration
-  - `nvim-notify` if you want richer notifications
-  - Nerd font for correct icons in some pickers/statuslines
+  - `fd` (or `fdfind`) for default searches (you can provide custom searches that use other commands)
+  - A supported picker: `telescope`, `fzf-lua`, `snacks`, `mini-pick`, or the native `vim.ui.select`
+- Optional
+  - `nvim-dap`, `nvim-dap-python`, and `debugpy` for debugger integration
+  - `nvim-notify` for richer notifications
+  - Nerd font for icons in statuslines/pickers
 
-Basic usage
+---
+
+## Basic usage
+
 - Open a Python file.
-- Trigger the picker (the example keymap above uses `,v`).
-- Select a result; the plugin will attempt to activate the venv and (when relevant) update LSP & DAP integrations.
+- Use your keymap (example: `,v`) to open the picker.
+- Select a result to activate a virtual environment; the plugin will attempt to update LSP and DAP integrations when applicable.
 
-Searches: default behaviour and custom searches
-The plugin runs multiple "searches" to find Python interpreters. Default searches look in the workspace, the current working directory, known manager locations (poetry, pyenv, conda/miniconda, pipx, etc.) and the current file. Defaults are defined in `lua/venv-selector/config.lua`.
+---
 
-Special search template variables you can use in custom `fd` commands:
-- `$CWD` — Neovim current working directory (where you started Neovim)
-- `$WORKSPACE_PATH` — workspace roots reported by LSP (when available)
-- `$FILE_DIR` — directory of the currently opened file
-- `$CURRENT_FILE` — absolute path of the currently opened file
+## Searches: default behavior and custom searches
 
-Create a custom search: example
-If your venvs live in `~/Code`, add a search:
+The plugin runs a set of "searches" to discover Python interpreter binaries. Defaults are provided for common venv managers and locations; the search templates are defined in `lua/venv-selector/config.lua`.
+
+You can add or override searches in your plugin configuration using the top-level `search` table.
+
+Special search variables available in commands:
+- `$CWD` — Neovim current working directory
+- `$WORKSPACE_PATH` — workspace roots reported by LSP
+- `$FILE_DIR` — directory of the current buffer
+- `$CURRENT_FILE` — absolute path to the current buffer file
+
+### Example: add a custom search
+
+If your venvs live in `~/Code`, add:
 
 ```venv-selector.nvim/docs/USAGE.md#L21-40
 {
@@ -75,13 +98,14 @@ If your venvs live in `~/Code`, add a search:
 ```
 
 Notes:
-- Use `python.exe$` on Windows if the interpreter has `.exe`.
-- On `fish`, quote patterns like `'/bin/python$'`. On `bash`/`zsh` quotes are often optional. Powershell quoting behaves differently — test in your environment.
+- Use `python.exe$` on Windows where executables end with `.exe`.
+- Shell quoting rules vary: `fish` often requires quoting regexes (e.g. `'/bin/python$'`).
 
-Override or disable default searches
-- Override: define a search with the same name (e.g., `workspace`) to replace the default.
+### Override or disable default searches
+
+- Override: define a `search` entry with the same name to replace the default.
 - Disable a specific default search: set it to `false`.
-- Disable all built-in searches: set `options.enable_default_searches = false`.
+- Disable all built-in searches: `options.enable_default_searches = false`.
 
 ```venv-selector.nvim/docs/USAGE.md#L41-60
 {
@@ -93,10 +117,12 @@ Override or disable default searches
 }
 ```
 
-Special notes
+---
 
-Anaconda / Miniconda
-- If you create a search for conda/anaconda environments, set `type = "anaconda"` for that search result. The plugin uses the type to determine whether to set `CONDA_PREFIX` and other conda-specific environment variables.
+## Special notes (Anaconda/Miniconda, UV PEP-723)
+
+### Anaconda / Miniconda
+When creating a custom search that finds conda/anaconda interpreters, set `type = "anaconda"` for that search. This ensures the plugin sets `CONDA_PREFIX` and other conda-specific environment variables.
 
 ```venv-selector.nvim/docs/USAGE.md#L61-80
 {
@@ -109,33 +135,45 @@ Anaconda / Miniconda
 }
 ```
 
-UV PEP-723 script support
-- The plugin includes `uv` script support. When a script contains PEP-723 inline metadata, the `uv_script` search uses `uv python find --script '$CURRENT_FILE'` to find the appropriate interpreter and will show it in the picker.
+### UV PEP-723 script support
+- The `uv_script` search runs `uv python find --script '$CURRENT_FILE'` when the current file contains inline PEP-723 metadata and shows the resolved interpreter in the picker.
 
-Performance tips
-- Search speed is determined by your `fd` command and flags.
-- If searches are slow, narrow the scope:
-  - Avoid `-H` (hidden) unless you're searching `.venv`-style folders that start with a dot.
-  - Use path restrictions (search your `~/Code` instead of `~`).
-  - Disable default `cwd` search and add a specialized one if you know venv locations.
-- Example: `fd '/bin/python$' $CWD --full-path --color never -E /proc -I -a -L` (note: `-I` disables ignore files; `-a` shows hidden results if needed).
+---
 
-Common useful `fd` flags
-- `-I` / `--no-ignore` — include things in `.gitignore` / `.fdignore`
-- `-L` / `--follow` — follow symlinks
-- `-H` / `--hidden` — include dotfiles & hidden dirs
-- `-E` / `--exclude` — exclude patterns
+## Performance tips
 
-Callbacks
+- Search speed depends on `fd` command and flags.
+- To improve performance:
+  - Narrow the search scope (e.g., search `~/Code` instead of `~`).
+  - Avoid `-H` (hidden) unless you need to detect dot-prefixed venvs.
+  - Use `-I` instead of `-HI` if you want to include files ignored by `.gitignore`, etc.
+  - Disable default searches you don't need and add targeted ones.
 
-1) `on_telescope_result_callback`
-- Use this callback to modify how each result is displayed in the telescope/snacks picker.
-- Useful to shorten full interpreter paths to a cleaner display string.
-
-Example: shorten path shown in picker (replace home with `~` and drop `/bin/python`)
-Use the example helper in `examples/statusline.lua` or write your own. Short example:
+Example `fd` usage:
 
 ```venv-selector.nvim/docs/USAGE.md#L81-100
+fd '/bin/python$' $CWD --full-path --color never -E /proc -I -a -L
+```
+
+Common flags:
+- `-I` / `--no-ignore`
+- `-L` / `--follow`
+- `-H` / `--hidden`
+- `-E` / `--exclude`
+
+---
+
+## Callbacks
+
+The plugin supports callbacks to customize displayed results and to run code on activation.
+
+### on_telescope_result_callback
+
+Use this to modify the displayed string for each result in the picker (useful to shorten long interpreter paths).
+
+Example (shorten display):
+
+```venv-selector.nvim/docs/USAGE.md#L101-120
 -- In your opts:
 local function shorter_name(filename)
   return filename:gsub(os.getenv("HOME"), "~"):gsub("/bin/python", "")
@@ -148,13 +186,15 @@ opts = {
 }
 ```
 
-2) `on_venv_activate_callback`
-- Run arbitrary code when a venv activates. Useful for running manager-specific commands (e.g., `poetry env use <python>` in a terminal) or setting up terminal autocommands.
+You can also use the helper in `examples/statusline.lua`.
 
-Example pattern (see `examples/callbacks.lua` for robust helpers)
-- The typical pattern: create an autocommand group and create a `TermEnter` autocmd that will run once and feed the desired command into the terminal.
+### on_venv_activate_callback
 
-```venv-selector.nvim/docs/USAGE.md#L101-125
+Run custom logic when a venv activates (e.g., instruct `poetry` to use the selected Python in a newly opened terminal).
+
+Example pattern — use the robust helpers in `examples/callbacks.lua` for production use:
+
+```venv-selector.nvim/docs/USAGE.md#L121-160
 opts = {
   options = {
     on_venv_activate_callback = function()
@@ -163,8 +203,8 @@ opts = {
         local source = require("venv-selector").source()
         local python = require("venv-selector").python()
         if source == "poetry" and not command_run then
-          local cmd = "poetry env use " .. python
-          vim.api.nvim_feedkeys(cmd .. "\n", "n", false)
+          local cmd = "poetry env use " .. vim.fn.shellescape(python) .. "\n"
+          vim.api.nvim_feedkeys(cmd, "n", false)
           command_run = true
         end
       end
@@ -179,10 +219,13 @@ opts = {
 }
 ```
 
-Statusline integrations
-- The plugin supports custom statusline functions. Use the `options.statusline_func` table and supply `lualine` and/or `nvchad` functions.
+---
 
-Example for `lualine` (short function returning `🐍 <venv_name>`):
+## Statusline integrations
+
+The plugin exposes `options.statusline_func` for integrating with `lualine` and `nvchad`. See `examples/statusline.lua` for ready-to-use functions.
+
+Example lualine snippet:
 
 ```venv-selector.nvim/examples/statusline.lua#L1-28
 options = {
@@ -197,33 +240,34 @@ options = {
 }
 ```
 
-We provide ready-to-use files under `examples/`:
-- `examples/statusline.lua` — lualine and nvchad snippets plus `shorter_name`.
-- `examples/callbacks.lua` — safe callback helpers and notification utilities.
+---
 
-Troubleshooting
+## Troubleshooting
 
-- "My venvs don't show up"
-  - Add a custom search that targets the folder where your venvs live.
-  - Ensure your `fd` regex matches interpreter names (`python$` vs `python.exe$`).
-  - If using workspace-based searches, make sure LSP has been attached so `$WORKSPACE_PATH` is populated.
+- My venvs don't show up
+  - Add a custom search targeting where your venvs live.
+  - Ensure your `fd` regex matches the interpreter name (e.g., `python$` vs `python.exe$`).
+  - If relying on `$WORKSPACE_PATH`, ensure LSP has attached.
 
-- "VenvSelect is slow"
-  - Narrow your `fd` search scope or disable hidden files (`-I` instead of `-HI`) if you don't need them.
-  - Remove unnecessary `-H` if you don't look for dot-prefixed venv folders.
-  - Disable any default searches you don't need.
+- VenvSelect is slow
+  - Restrict `fd` scope, avoid unnecessary `-H`, disable unused default searches.
 
-- "Conda environments behave oddly"
-  - Ensure searches that discover conda environments set `type = "anaconda"` so the plugin can set `CONDA_PREFIX` and related variables.
+- Conda environments behave oddly
+  - Make sure searches returning conda envs include `type = "anaconda"`.
 
-Where to find more examples and reference
+---
+
+## Where to find more examples and reference
+
 - Configuration reference: `docs/OPTIONS.md`
 - Public API: `docs/API.md`
-- Examples directory: `examples/` (statusline + callbacks)
-- Changelog & recent news: `CHANGELOG.md`
-- The default search definitions live in `lua/venv-selector/config.lua` if you need to inspect or copy the default patterns.
+- Examples: `examples/` (`statusline.lua`, `callbacks.lua`)
+- Changelog & releases: `CHANGELOG.md`
+- Default search templates: `lua/venv-selector/config.lua`
 
-If you want, I can:
-- move any remaining inline examples into additional `examples/` files,
-- add a small sample `USAGE` image or animated GIF for the README,
-- or add more language-specific sample `fd` patterns for different shells/OSes.
+---
+
+If you'd like, I can:
+- Move any remaining inline code examples into additional files under `examples/`.
+- Add a short "one-line" lazy.nvim snippet to the README for a tiny copy-paste.
+- Add badges to the top of the README (CI, docs, license).

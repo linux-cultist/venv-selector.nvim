@@ -2,7 +2,9 @@
 
 All notable changes to this project will be documented in this file.
 
-## [Unreleased]
+### 2026-01-19
+
+- New README to help make it quicker to understand the plugin.
 
 ### 2025-09-30
 - Minimum Neovim requirement raised to **0.11** due to adoption of the new

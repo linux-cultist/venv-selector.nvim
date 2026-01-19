@@ -1,6 +1,6 @@
 # Usage — venv-selector.nvim
 
-How to use different features of the plugin
+How to use different features of the plugin.
 
 ## Table of contents
 

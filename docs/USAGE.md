@@ -1,6 +1,6 @@
 # Usage — venv-selector.nvim
 
-This document provides actionable installation steps, examples, and troubleshooting for `venv-selector.nvim`. The top-level README is an index that links to this file and other documentation in `docs/`.
+How to use different features of the plugin
 
 ## Table of contents
 

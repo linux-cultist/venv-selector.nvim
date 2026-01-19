@@ -5,7 +5,6 @@
 </p>
 
 A small Neovim plugin to browse and activate Python virtual environments inside Neovim.  
-This repository keeps a short, focused README and moves detailed usage, configuration, and API documentation into the `docs/` folder.
 
 ---
 
@@ -85,14 +84,14 @@ One-line `lazy.nvim` example (quick copy/paste):
 }
 ```
 
-See `docs/SEARCHES.md` for a full description of creating your own custom searches.
+See `docs/USAGE.md` for a full description of creating your own custom searches.
 
 ---
 
 <a name="configuration--docs"></a>
 ## 📝 Configuration & docs
 
-- [Creating your own searches](docs/SEARCHES.md)
+- [Detailed usage of the plugin](docs/USAGE.md)
 - [Full configuration reference](docs/OPTIONS.md)
 - [Public API and helper functions](docs/API.md)
 - [Long-form examples (statuslines, callbacks)](examples/)

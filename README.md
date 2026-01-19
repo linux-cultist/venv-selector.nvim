@@ -9,15 +9,6 @@ This repository keeps a short, focused README and moves detailed usage, configur
 
 ---
 
-## 🔗 Quick links
-- [Creating your own searches](docs/SEARCHES.md)
-- [Full configuration reference](docs/OPTIONS.md)
-- [Public API and helper functions](docs/API.md)
-- [Long-form examples (statuslines, callbacks)](examples/)
-- [Release notes / recent news](CHANGELOG.md)
-
----
-
 ## 📚 Table of contents
 
 - [Quick start](#quick-start)
@@ -101,10 +92,11 @@ See `docs/SEARCHES.md` for a full description of creating your own custom search
 <a name="configuration--docs"></a>
 ## 📝 Configuration & docs
 
-- How to create your own searches: `docs/SEARCHES.md`  
-- Full options reference (all `options` keys and examples): `docs/OPTIONS.md`  
-- Public API and helper functions (`python()`, `venv()`, `source()`, `activate_from_path()`, etc): `docs/API.md`  
-- Examples for statusline and callbacks (copy into your config): `examples/statusline.lua`, `examples/callbacks.lua`
+- [Creating your own searches](docs/SEARCHES.md)
+- [Full configuration reference](docs/OPTIONS.md)
+- [Public API and helper functions](docs/API.md)
+- [Long-form examples (statuslines, callbacks)](examples/)
+- [Release notes / recent news](CHANGELOG.md)
 
 ---
 

@@ -19,29 +19,6 @@
 
 ---
 
-<details>
-<summary>Tab-like: Panel 1</summary>
-
-Content for panel 1 goes here. You can include text, lists, and fenced code blocks.
-
-```js
-// code preserved inside fenced block
-console.log('panel 1');
-```
-
-</details>
-
-<details>
-<summary>Tab-like: Panel 2</summary>
-
-Content for panel 2.
-
-```py
-# python example
-print("panel 2")
-```
-
-</details>
 
 
 <a name="quick-start"></a>

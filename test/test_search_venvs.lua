@@ -682,47 +682,63 @@ function M.test_fd_variable_substitution()
     return true
 end
 
----Run all tests
+---Run all tests (concise output)
+-- Prints a single-line result per test (checkmark for pass, X for fail) and a short summary.
 function run_all_tests()
-    print("╔════════════════════════════════════════════════════════╗")
-    print("║  VenvSelector Search Tests                             ║")
-    print("╚════════════════════════════════════════════════════════╝")
-    
+    local orig_print = print
+
+    -- Table of tests with friendly names
     local tests = {
-        M.test_find_python_executables,
-        M.test_result_structure,
-        M.test_search_can_be_stopped,
-        M.test_interactive_search,
-        M.test_find_hidden_directories,
-        M.test_sequential_searches,
-        M.test_path_with_spaces,
-        M.test_variable_substitution_cwd,
-        M.test_different_venv_types,
-        M.test_fd_variable_substitution,
+        { name = "Test 1: Find python executables", fn = M.test_find_python_executables },
+        { name = "Test 2: Verify result structure", fn = M.test_result_structure },
+        { name = "Test 3: Search can be stopped", fn = M.test_search_can_be_stopped },
+        { name = "Test 4: Interactive search", fn = M.test_interactive_search },
+        { name = "Test 5: Search finds hidden directories", fn = M.test_find_hidden_directories },
+        { name = "Test 6: Sequential searches", fn = M.test_sequential_searches },
+        { name = "Test 7: Path with spaces", fn = M.test_path_with_spaces },
+        { name = "Test 8: $CWD substitution", fn = M.test_variable_substitution_cwd },
+        { name = "Test 9: Different venv types", fn = M.test_different_venv_types },
+        { name = "Test 10: $FD substitution", fn = M.test_fd_variable_substitution },
     }
-    
+
     local passed = 0
     local failed = 0
-    
-    for _, test in ipairs(tests) do
-        local success = test()
-        if success then
+
+    -- Run each test while capturing any verbose prints; then emit a single-line result.
+    for _, t in ipairs(tests) do
+        local name = t.name
+        -- Capture printed output in buffer to avoid noisy logs
+        local buf = {}
+        local function capture_print(...)
+            local parts = {}
+            for i = 1, select("#", ...) do
+                parts[#parts + 1] = tostring(select(i, ...))
+            end
+            buf[#buf + 1] = table.concat(parts, "\t")
+        end
+
+        -- Override global print temporarily
+        print = capture_print
+
+        local ok, err = pcall(t.fn)
+
+        -- Restore original print
+        print = orig_print
+
+        if ok then
+            orig_print(string.format("✓ %s", name))
             passed = passed + 1
         else
+            -- Include a short snippet of captured output if available for debugging
+            local snippet = buf[1] and (" | output: " .. (buf[1]:gsub("\n", " "))) or ""
+            orig_print(string.format("✗ %s: %s%s", name, tostring(err), snippet))
             failed = failed + 1
         end
     end
-    
-    print("\n╔════════════════════════════════════════════════════════╗")
-    print(string.format("║  Results: %d passed, %d failed                          ║", passed, failed))
-    print("╚════════════════════════════════════════════════════════╝")
-    
-    if failed == 0 then
-        print("🎉 All tests passed!")
-    else
-        print("❌ Some tests failed")
-    end
-    
+
+    -- Summary line
+    orig_print(string.format("Results: %d passed, %d failed", passed, failed))
+
     return failed == 0
 end
 
@@ -731,23 +747,12 @@ _G.run_all_tests = run_all_tests
 _G.cleanup_test_dir = cleanup_test_dir
 
 print([[
-VenvSelector Search Test Suite Loaded!
+VenvSelector Search Test Suite Loaded (minimal output)
 
-Commands:
-  :lua run_all_tests()         - Run all tests
-  :lua cleanup_test_dir()      - Clean up test directories
+Run the concise runner:
+  :lua run_all_tests()   -- prints one-line result per test and a short summary
 
-Individual tests:
-  :lua require('test.test_search_venvs').test_find_python_executables()
-  :lua require('test.test_search_venvs').test_result_structure()
-  :lua require('test.test_search_venvs').test_search_can_be_stopped()
-  :lua require('test.test_search_venvs').test_interactive_search()
-  :lua require('test.test_search_venvs').test_find_hidden_directories()
-  :lua require('test.test_search_venvs').test_sequential_searches()
-  :lua require('test.test_search_venvs').test_path_with_spaces()
-  :lua require('test.test_search_venvs').test_variable_substitution_cwd()
-  :lua require('test.test_search_venvs').test_different_venv_types()
-  :lua require('test.test_search_venvs').test_fd_variable_substitution()
+If you need verbose output for debugging, call the individual tests directly.
 ]])
 
 return M

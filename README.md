@@ -19,6 +19,31 @@
 
 ---
 
+<details>
+<summary>Tab-like: Panel 1</summary>
+
+Content for panel 1 goes here. You can include text, lists, and fenced code blocks.
+
+```js
+// code preserved inside fenced block
+console.log('panel 1');
+```
+
+</details>
+
+<details>
+<summary>Tab-like: Panel 2</summary>
+
+Content for panel 2.
+
+```py
+# python example
+print("panel 2")
+```
+
+</details>
+
+
 <a name="quick-start"></a>
 ## 🚀 Quick start
 
@@ -47,22 +72,21 @@
 - Switch virtual environments from inside Neovim without restarting
 - Finds virtual environments in default locations automatically (including your workspace and cwd directories)
 - Reactivates virtual environments from cache when you open a python file in the same CWD as before
-- Terminals opened from neovim has the selected venv activated.
+- Terminals opened from neovim has the selected venv activated (setting `VIRTUAL_ENV` or `CONDA_PREFIX`)
 - Built-in support for many venv managers:
-  - `python -m venv`, `poetry`, `pipenv`, `anaconda` / `miniconda`, `pyenv` (and plugins), `virtualenvwrapper`, `hatch`, `pipx`
-- PEP-723 / `uv` script support: detect inline script metadata and use `uv`-resolved interpreters
-- Configurable searches (use `fd`, `find`, `ls`, or any command that lists interpreters)
-- Use regular expressions to discover interpreters and custom search templates using these placeholders:
+  - `python -m venv`, `poetry`, `pipenv`, `anaconda` / `miniconda`, `pyenv`, `virtualenvwrapper`, `hatch`, `pipx`
+- PEP-723 metadata script support with `uv`: The plugin will detect the metadata and pick or create the correct virtual environment
+- Add your own searches (use `fd`, `find`, `ls`, or any command that lists interpreters)
+- Use regular expressions to discover virtual environments along with template variables:
   - `$CWD`, `$WORKSPACE_PATH`, `$FILE_DIR`, `$CURRENT_FILE`
 - Callbacks:
-  - `on_telescope_result_callback` to format picker results
+  - `on_telescope_result_callback` to format picker results in telescope
   - `on_venv_activate_callback` to run custom code on activation
 - Integrations:
   - Statusline support (Lualine, NvChad)
   - Optional DAP support via `nvim-dap` / `nvim-dap-python` and `debugpy`
 - Picker support:
   - `telescope`, `fzf-lua`, `snacks`, `mini-pick`, native `vim.ui.select`
-- Options for caching, environment variable handling (`VIRTUAL_ENV` / `CONDA_PREFIX`), notifications, and more
 
 
 ---

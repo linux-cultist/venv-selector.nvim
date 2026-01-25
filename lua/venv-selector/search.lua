@@ -158,6 +158,18 @@ local function create_job_event_handler(picker, options)
     end
 end
 
+local function expand_env(s)
+    -- expand leading ~ (only when it’s a path prefix)
+    s = s:gsub("^~", vim.fn.expand("~"))
+
+    -- $VAR (avoid $$)
+    s = s:gsub("%$([%w_]+)", function(k)
+        return vim.env[k] or ""
+    end)
+
+    return s
+end
+
 ---Start a single search job
 ---@param search_name string Name of the search
 ---@param search_config SearchConfig Search configuration
@@ -175,20 +187,25 @@ local function start_search_job(search_name, search_config, job_event_handler, s
     ---@cast job string
     local options = require("venv-selector.config").get_user_options()
 
+    -- log.debug("Executing search '" ..
+    --     search_name .. "' (using " .. options.shell.shell .. " " .. options.shell.shellcmdflag .. "): '" .. job .. "'")
+
+    -- local sysname = vim.uv.os_uname().sysname or "Linux"
+    -- if sysname == "Windows_NT" then
+    --     cmd = utils.split_cmd_for_windows(job)
+    --     if not cmd or #cmd == 0 then
+    --         log.error("Failed to split command for Windows. Original: " .. search_config.execute_command)
+    --         return
+    --     end
+    -- else
+    --     cmd = { options.shell.shell, options.shell.shellcmdflag, job } -- We use a shell on linux and mac but not windows at the moment.
+    -- end
+    local expanded_job = expand_env(job)                              -- expands $VAR and ~
+    
     log.debug("Executing search '" ..
-        search_name .. "' (using " .. options.shell.shell .. " " .. options.shell.shellcmdflag .. "): '" .. job .. "'")
-
-    local sysname = vim.uv.os_uname().sysname or "Linux"
-    if sysname == "Windows_NT" then
-        cmd = utils.split_cmd_for_windows(job)
-        if not cmd or #cmd == 0 then
-            log.error("Failed to split command for Windows. Original: " .. search_config.execute_command)
-            return
-        end
-    else
-        cmd = { options.shell.shell, options.shell.shellcmdflag, job }
-    end
-
+        search_name .. "' (using " .. options.shell.shell .. " " .. options.shell.shellcmdflag .. "): '" .. expanded_job .. "'")
+    
+    cmd = { options.shell.shell, options.shell.shellcmdflag, expanded_job } -- We use a shell on linux and mac but not windows at the moment.
     local job_id = vim.fn.jobstart(cmd, {
         stdout_buffered = true,
         stderr_buffered = true,
@@ -244,9 +261,6 @@ local function process_search(search_name, search_config, job_event_handler, opt
             ws_search.execute_command = cmd:gsub("$WORKSPACE_PATH", workspace_path)
             start_search_job(search_name, ws_search, job_event_handler, options.search_timeout)
         end
-    elseif cmd:find("$HOME") then
-        search_config.execute_command = cmd:gsub("%$HOME", vim.fn.expand("~"))
-        start_search_job(search_name, search_config, job_event_handler, options.search_timeout)
     elseif cmd:find("$CWD") then
         search_config.execute_command = cmd:gsub("$CWD", vim.fn.getcwd())
         start_search_job(search_name, search_config, job_event_handler, options.search_timeout)

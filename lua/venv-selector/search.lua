@@ -244,6 +244,9 @@ local function process_search(search_name, search_config, job_event_handler, opt
             ws_search.execute_command = cmd:gsub("$WORKSPACE_PATH", workspace_path)
             start_search_job(search_name, ws_search, job_event_handler, options.search_timeout)
         end
+    elseif cmd:find("$HOME") then
+        search_config.execute_command = cmd:gsub("$HOME", vim.env.home)
+        start_search_job(search_name, search_config, job_event_handler, options.search_timeout)
     elseif cmd:find("$CWD") then
         search_config.execute_command = cmd:gsub("$CWD", vim.fn.getcwd())
         start_search_job(search_name, search_config, job_event_handler, options.search_timeout)

@@ -111,7 +111,7 @@ function M.get_default_searches()
                 type = "anaconda",
             },
             miniconda_envs = {
-                command = "$FD python.exe$ $HOME\\miniconda3\\\\envs --no-ignore-vcs --full-path -a -E Lib",
+                command = "$FD python.exe$ $HOME\\miniconda3\\envs --no-ignore-vcs --full-path -a -E Lib",
                 type = "anaconda",
             },
             miniconda_base = {

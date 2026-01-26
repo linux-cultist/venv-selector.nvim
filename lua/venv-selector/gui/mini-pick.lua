@@ -21,45 +21,6 @@ function M.new()
     return self
 end
 
-local function match_substring(stritems, inds, query)
-    local needle = table.concat(query)
-    if needle == "" then return inds end
-
-    -- plain substring; keep stable ordering, but you can sort by earliest match if desired
-    local out = {}
-    for _, i in ipairs(inds) do
-        if stritems[i]:find(needle, 1, true) then
-            out[#out + 1] = i
-        end
-    end
-    return out
-end
-
-local function show_substring(buf_id, items_arr, query)
-    local lines = vim.tbl_map(function(it) return it.text end, items_arr)
-    vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
-
-    pcall(vim.api.nvim_buf_clear_namespace, buf_id, H.ns_id, 0, -1)
-
-    local needle = table.concat(query)
-    if needle ~= "" then
-        for row, it in ipairs(items_arr) do
-            local s = it.text
-            local from = s:find(needle, 1, true)
-            if from then
-                local start_col = from - 1
-                local end_col = start_col + #needle
-                pcall(vim.api.nvim_buf_set_extmark, buf_id, H.ns_id, row - 1, start_col, {
-                    end_col = end_col,
-                    hl_group = "MiniPickMatchRanges",
-                })
-            end
-        end
-    end
-
-    -- add your marker highlighting extmarks after this (as you already do)
-end
-
 
 local function item_to_text(item)
     local columns = gui_utils.get_picker_columns()
@@ -107,11 +68,6 @@ end
 function M:search_done()
     self.results = gui_utils.remove_dups(self.results)
     gui_utils.sort_results(self.results) -- marker sorting handled here
-
-    -- ensure text exists (safety)
-    for _, r in ipairs(self.results) do
-        r.text = r.text or item_to_text(r)
-    end
 
     local mini_pick = require("mini.pick")
     if mini_pick.is_picker_active() then

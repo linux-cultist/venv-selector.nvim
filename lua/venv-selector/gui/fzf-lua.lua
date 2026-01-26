@@ -7,13 +7,11 @@ local function get_dynamic_winopts()
     local columns = vim.o.columns
     local lines = vim.o.lines
 
-    -- Calculate dynamic width (80-95% of terminal width, with min/max constraints)
     local width_ratio = 0.9
     local min_width = 60
     local max_width = 120
     local dynamic_width = math.max(min_width, math.min(max_width, math.floor(columns * width_ratio)))
 
-    -- Calculate dynamic height (30-50% of terminal height, with min/max constraints)
     local height_ratio = 0.4
     local min_height = 0.3
     local max_height = 0.6
@@ -35,26 +33,26 @@ function M.new(search_opts)
 
     local config = require("venv-selector.config")
     local filter_type = config.user_settings.options.picker_filter_type
-    local algo = filter_type == "substring" and "v2" or "v1"
+
+    -- fzf matching behavior:
+    -- - "character": fuzzy matching (default fzf behavior) + smart-case
+    -- - "substring": literal substring matching + smart-case
+    local algo = (filter_type == "substring") and "v2" or "v1"
 
     local fzf_lua = require("fzf-lua")
 
-    -- Set up autocmd to detect when fzf-lua window closes
     local augroup = vim.api.nvim_create_augroup("VenvSelectFzfLua", { clear = true })
     vim.api.nvim_create_autocmd("WinClosed", {
         group = augroup,
         callback = function(ev)
-            -- Check if this is an fzf-lua window by checking buffer name
             local winid = tonumber(ev.match)
             if winid then
                 local ok, bufnr = pcall(vim.api.nvim_win_get_buf, winid)
                 if ok then
                     local bufname = vim.api.nvim_buf_get_name(bufnr)
-                    -- fzf-lua buffers typically have 'fzf' in their name
                     if bufname:match("fzf") or vim.bo[bufnr].filetype == "fzf" then
-                        -- Mark picker as closed and stop any active search jobs
                         self.is_closed = true
-                        self.fzf_cb = nil -- Clear callback to prevent reopening
+                        self.fzf_cb = nil
                         require("venv-selector.search").stop_search()
                         vim.api.nvim_del_augroup_by_id(augroup)
                     end
@@ -63,24 +61,32 @@ function M.new(search_opts)
         end,
     })
 
+    local fzf_opts = {
+        ["--tabstop"] = "1",
+        ["--algo"] = algo,
+        ["--smart-case"] = true,
+        ["--ansi"] = true,
+        ["--no-sort"] = true,
+        ["--no-multi"] = true,
+    }
+
+    if filter_type == "substring" then
+        fzf_opts["--no-extended"] = true -- spaces are literal (no term-splitting)
+        fzf_opts["--exact"] = true     -- disable fuzzy; require contiguous substring
+        fzf_opts["--literal"] = true   -- treat query literally (no regex-like chars)
+    else
+        fzf_opts["--no-extended"] = nil
+        fzf_opts["--exact"] = nil
+        fzf_opts["--literal"] = nil
+    end
     fzf_lua.fzf_exec(function(fzf_cb)
         self.fzf_cb = fzf_cb
-        -- do NOT call consume_queue() here; wait for streaming inserts
     end, {
         prompt = "Virtual environments > ",
         winopts = vim.tbl_extend("force", get_dynamic_winopts(), {
             on_create = function() vim.cmd("startinsert") end,
         }),
-        fzf_opts = {
-            ["--tabstop"] = "1",
-            ["--algo"] = algo,
-            ["--smart-case"] = true,
-            ["--ansi"] = true,
-            ["--no-sort"] = true, -- required to preserve emission order
-            ["--no-multi"] = true,
-            ["--exact"] = (filter_type == "substring") and true or nil,
-            ["--literal"] = (filter_type == "substring") and true or nil,
-        },
+        fzf_opts = fzf_opts,
         actions = {
             ["default"] = function(selected, _)
                 if selected and #selected > 0 then
@@ -109,8 +115,6 @@ local function schedule_flush(self)
     end, self._flush_ms or 25)
 end
 
-
-
 function M:consume_queue()
     if self.is_closed or not self.fzf_cb then
         return
@@ -118,29 +122,17 @@ function M:consume_queue()
 
     if #self.queue == 0 then
         if self.is_done then
-            self.fzf_cb(nil)
+            self.fzf_cb()
         end
         return
     end
 
-    -- Dedup (keep active if duplicates) and keep queue stable
     self.queue = gui_utils.remove_dups(self.queue)
 
-    -- Gate until we have an active item (unless done)
-    if not self.is_done then
-        local has_active = false
-        for _, r in ipairs(self.queue) do
-            if gui_utils.hl_active_venv(r) ~= nil then
-                has_active = true
-                break
-            end
-        end
-        if not has_active then
-            return
-        end
-    end
+    -- NOTE: gating removed previously to improve smooth result count.
+    -- If you still want it, keep it; it will delay initial stream.
+    -- (Leaving it out tends to feel better for fzf.)
 
-    -- Partition: active first, then rest (rest sorted)
     local active, rest = {}, {}
     for _, r in ipairs(self.queue) do
         if gui_utils.hl_active_venv(r) ~= nil then
@@ -157,11 +149,10 @@ function M:consume_queue()
     local columns = gui_utils.get_picker_columns()
     local batch_size = self._batch_size or 50
 
-    -- Emit only a batch
     local emitted = 0
     local remaining = {}
 
-    for i, result in ipairs(emit) do
+    for _, result in ipairs(emit) do
         if emitted < batch_size then
             local hl = gui_utils.hl_active_venv(result)
             local type_icon = gui_utils.draw_icons_for_types(result.source)
@@ -204,16 +195,13 @@ function M:consume_queue()
         end
     end
 
-    -- Keep remaining queued for next flush
     self.queue = remaining
 
-    -- If done and nothing left, close the stream
     if self.is_done and #self.queue == 0 then
-        self.fzf_cb(nil)
+        self.fzf_cb()
         return
     end
 
-    -- If there is more, schedule next flush
     if #self.queue > 0 then
         vim.defer_fn(function()
             if not self.is_closed and self.fzf_cb then
@@ -227,7 +215,6 @@ function M:insert_result(result)
     if self.is_closed then
         return
     end
-
     self.queue[#self.queue + 1] = result
     schedule_flush(self)
 end

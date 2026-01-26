@@ -14,8 +14,7 @@ function M.remove_dups(results)
 
     local SOURCE_PRIO = {
         workspace = 30,
-        file = 20,
-        cwd = 10,
+        file = 20
     }
 
     local function key(r)
@@ -61,6 +60,22 @@ end
 ---Sort results (in-place)
 ---@param results SearchResult[]
 function M.sort_results(results)
+    local order = {
+        "workspace", "file",
+        "pixi", "poetry", "pipenv", "virtualenvs",
+        "pyenv", "hatch",
+        "anaconda_envs", "anaconda_base",
+        "miniconda_envs", "miniconda_base",
+        "pipx","cwd"
+    }
+    local SOURCE_PRIO = {}
+    local n = #order
+    for i, name in ipairs(order) do
+        SOURCE_PRIO[name] = n - i + 1
+    end
+
+    local function src_prio(r) return SOURCE_PRIO[r.source] or 0 end
+
     local selected_python = path.current_python_path
     local current_file_dir = vim.fn.expand("%:p:h")
 
@@ -83,7 +98,7 @@ function M.sort_results(results)
     end
 
     table.sort(results, function(a, b)
-        -- 0) Active/marked venv first (same predicate used by UI)
+        -- 0) Active marker first
         local a_active = M.hl_active_venv(a) ~= nil
         local b_active = M.hl_active_venv(b) ~= nil
         if a_active ~= b_active then
@@ -97,14 +112,20 @@ function M.sort_results(results)
             return a_is_selected
         end
 
-        -- 2) Then path similarity
+        -- 2) Source priority (higher first)
+        local pa, pb = src_prio(a), src_prio(b)
+        if pa ~= pb then
+            return pa > pb
+        end
+
+        -- 3) Then path similarity
         local sim_a = path_similarity(a.path, current_file_dir)
         local sim_b = path_similarity(b.path, current_file_dir)
         if sim_a ~= sim_b then
             return sim_a > sim_b
         end
 
-        -- 3) Fallback alphabetical (ascending)
+        -- 4) Fallback alphabetical (ascending)
         return (a.name or "") < (b.name or "")
     end)
 end

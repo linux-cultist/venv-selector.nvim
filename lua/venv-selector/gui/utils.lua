@@ -9,35 +9,53 @@ local M = {}
 ---@param results SearchResult[]
 ---@return SearchResult[]
 function M.remove_dups(results)
-    -- If a venv is found both by another search AND (cwd or file) search, then keep the one found by another search.
     local seen = {}
-    local filtered_results = {}
+    local out = {}
 
-    for _, v in ipairs(results) do
-        if not seen[v.name] then
-            seen[v.name] = v
+    local SOURCE_PRIO = {
+        workspace = 30,
+        file = 20,
+        cwd = 10,
+    }
+
+    local function key(r)
+        return r.path or r.name
+    end
+
+    local function prio(r)
+        return SOURCE_PRIO[r.source] or 0
+    end
+
+    local function is_active(r)
+        return M.hl_active_venv(r) ~= nil
+    end
+
+    for _, r in ipairs(results) do
+        local k = key(r)
+        local prev_i = seen[k]
+
+        if not prev_i then
+            out[#out + 1] = r
+            seen[k] = #out
         else
-            local prev_entry = seen[v.name]
-            if
-                (v.source == "file" or v.source == "cwd")
-                and (prev_entry.source ~= "file" and prev_entry.source ~= "cwd")
-            then
-                -- Current item has less priority, do not add it
-            elseif
-                (prev_entry.source == "file" or prev_entry.source == "cwd")
-                and (v.source ~= "file" and v.source ~= "cwd")
-            then
-                -- Previous item has less priority, replace it
-                seen[v.name] = v
+            local prev = out[prev_i]
+
+            local prev_active, r_active = is_active(prev), is_active(r)
+            if prev_active ~= r_active then
+                if r_active then
+                    out[prev_i] = r
+                end
+            else
+                -- both active or both not active: prefer higher source priority
+                local pp, rp = prio(prev), prio(r)
+                if rp > pp then
+                    out[prev_i] = r
+                end
             end
         end
     end
 
-    for _, entry in pairs(seen) do
-        table.insert(filtered_results, entry)
-    end
-
-    return filtered_results
+    return out
 end
 
 ---Sort results (in-place)
@@ -46,18 +64,8 @@ function M.sort_results(results)
     local selected_python = path.current_python_path
     local current_file_dir = vim.fn.expand("%:p:h")
 
-    log.debug("Calculating path similarity based on: '" .. current_file_dir .. "'")
-    ---Normalize path by converting all separators to a common one (e.g., '/')
-    ---@param p string
-    ---@return string
-    local function normalize_path(p)
-        return (p:gsub("\\", "/"))
-    end
+    local function normalize_path(p) return (p:gsub("\\", "/")) end
 
-    ---Calculate the path similarity
-    ---@param path1 string
-    ---@param path2 string
-    ---@return integer
     local function path_similarity(path1, path2)
         path1 = normalize_path(path1)
         path2 = normalize_path(path2)
@@ -74,26 +82,30 @@ function M.sort_results(results)
         return count
     end
 
-    log.debug("Sorting telescope results on path similarity.")
     table.sort(results, function(a, b)
-        -- Check for 'selected_python' match
-        local a_is_selected = a.path == selected_python
-        local b_is_selected = b.path == selected_python
-        if a_is_selected and not b_is_selected then
-            return true
-        elseif not a_is_selected and b_is_selected then
-            return false
+        -- 0) Active/marked venv first (same predicate used by UI)
+        local a_active = M.hl_active_venv(a) ~= nil
+        local b_active = M.hl_active_venv(b) ~= nil
+        if a_active ~= b_active then
+            return a_active
         end
 
-        -- Compare based on path similarity
+        -- 1) Then selected_python match
+        local a_is_selected = a.path == selected_python
+        local b_is_selected = b.path == selected_python
+        if a_is_selected ~= b_is_selected then
+            return a_is_selected
+        end
+
+        -- 2) Then path similarity
         local sim_a = path_similarity(a.path, current_file_dir)
         local sim_b = path_similarity(b.path, current_file_dir)
         if sim_a ~= sim_b then
             return sim_a > sim_b
         end
 
-        -- Fallback to alphabetical sort
-        return a.name > b.name
+        -- 3) Fallback alphabetical (ascending)
+        return (a.name or "") < (b.name or "")
     end)
 end
 

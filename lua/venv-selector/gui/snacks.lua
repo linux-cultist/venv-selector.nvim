@@ -18,8 +18,7 @@ function M:pick()
         config.user_settings.options.telescope_active_venv_color
     vim.api.nvim_set_hl(0, "VenvSelectMarker", { fg = marker_color })
 
-    local filter_type = config.user_settings.options.picker_filter_type or
-        config.user_settings.options.telescope_filter_type or "substring"
+    local filter_type = config.user_settings.options.picker_filter_type
 
     return Snacks.picker.pick({
         title = "Virtual environments",

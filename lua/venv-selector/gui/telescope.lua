@@ -7,6 +7,75 @@ M.__index = M
 -- Track active telescope instance for auto-refresh on resize
 local active_telescope_instance = nil
 
+local function split_prefix(line)
+    line = tostring(line or "")
+    local pfx = line:sub(1, 2) -- "0 " or "1 "
+    if pfx == "0 " then return 0, line:sub(3) end
+    if pfx == "1 " then return 1, line:sub(3) end
+    return 1, line
+end
+
+local function smartcase_prepare(prompt, line)
+    line = tostring(line or "")
+    if prompt:match("%u") then
+        return prompt, line
+    end
+    return prompt:lower(), line:lower()
+end
+
+local function make_smartcase_substring_sorter()
+    local sorters = require("telescope.sorters")
+    return sorters.new {
+        scoring_function = function(_, prompt, line)
+            local rank, raw = split_prefix(line)
+
+            if not prompt or prompt == "" then
+                return rank -- active (0) before others (1)
+            end
+
+            local p, l = smartcase_prepare(prompt, raw)
+            local start = l:find(p, 1, true)
+            if not start then return -1 end
+
+            -- active bias: subtract a large constant so it stays on top
+            return (rank * 1000000) + start
+        end,
+        highlighter = function() return {} end,
+    }
+end
+
+local function make_smartcase_subsequence_sorter()
+    local sorters = require("telescope.sorters")
+    return sorters.new {
+        scoring_function = function(_, prompt, line)
+            local rank, raw = split_prefix(line)
+
+            if not prompt or prompt == "" then
+                return rank
+            end
+
+            local p, l = smartcase_prepare(prompt, raw)
+
+            local pos, first = 1, nil
+            for i = 1, #p do
+                local ch = p:sub(i, i)
+                local found = l:find(ch, pos, true)
+                if not found then return -1 end
+                first = first or found
+                pos = found + 1
+            end
+
+            local last = pos - 1
+            local span = last - (first or 1)
+
+            return (rank * 1000000) + (first or 1) + (span * 0.01)
+        end,
+        highlighter = function() return {} end,
+    }
+end
+
+
+
 local function get_dynamic_layout_config()
     local columns = vim.o.columns
     local lines = vim.o.lines
@@ -85,14 +154,15 @@ local function get_dynamic_display_config()
 end
 
 local function get_sorter()
-    local filter_type = config.user_settings.options.picker_filter_type or
-        config.user_settings.options.telescope_filter_type or "substring"
+    local filter_type = config.get_user_options().picker_filter_type
+
+    require("venv-selector.logger").debug(filter_type)
 
     if filter_type == "character" then
-        return require("telescope.config").values.file_sorter()
-    elseif filter_type == "substring" then
-        return require("telescope.sorters").get_substr_matcher()
+        return make_smartcase_subsequence_sorter()
     end
+
+    return make_smartcase_substring_sorter()
 end
 
 function M.new(search_opts)
@@ -103,7 +173,7 @@ function M.new(search_opts)
 
     -- Setup highlight groups for marker color
     local marker_color = config.user_settings.options.selected_venv_marker_color or
-    config.user_settings.options.telescope_active_venv_color
+        config.user_settings.options.telescope_active_venv_color
 
     -- Create marker highlight group
     vim.api.nvim_set_hl(0, "VenvSelectMarker", { fg = marker_color })
@@ -143,7 +213,7 @@ function M.new(search_opts)
 
     -- Create the picker
     local picker = require("telescope.pickers").new({}, opts)
-    
+
     -- Set up autocmd to stop search when telescope window closes
     local augroup = vim.api.nvim_create_augroup("VenvSelectTelescope", { clear = true })
     vim.api.nvim_create_autocmd("WinClosed", {
@@ -161,7 +231,7 @@ function M.new(search_opts)
             end
         end,
     })
-    
+
     picker:find()
 
     -- Set up autocmd for window resize
@@ -174,17 +244,26 @@ function M:make_finder()
     local display_config = get_dynamic_display_config()
     local displayer = require("telescope.pickers.entry_display").create(display_config)
 
+
     local entry_maker = function(entry)
         local icon = entry.icon
         entry.value = entry.name
-        entry.ordinal = entry.name .. " " .. entry.source .. " " .. entry.path
+        local is_active = gui_utils.hl_active_venv(entry) ~= nil
+        local prefix = is_active and "0 " or "1 "
+
+        entry.ordinal = prefix .. table.concat({
+            tostring(entry.name or ""),
+            tostring(entry.source or ""),
+            tostring(entry.path or ""),
+        }, " ")
+
         entry.display = function(e)
             local picker_columns = gui_utils.get_picker_columns()
 
             -- Prepare column data
             local hl = gui_utils.hl_active_venv(entry)
             local marker_icon = config.user_settings.options.selected_venv_marker_icon or
-            config.user_settings.options.icon or "●"
+                config.user_settings.options.icon or "●"
 
             -- Use pre-created highlight groups
             local marker_hl = hl and "VenvSelectMarker" or nil
@@ -237,7 +316,20 @@ end
 
 function M:insert_result(result)
     table.insert(self.results, result)
-    self:update_results()
+
+    if self._refresh_scheduled then
+        return
+    end
+    self._refresh_scheduled = true
+
+    vim.defer_fn(function()
+        self._refresh_scheduled = false
+
+        self.results = gui_utils.remove_dups(self.results)
+        gui_utils.sort_results(self.results)
+
+        self:update_results()
+    end, 30) -- 20–50ms is usually fine
 end
 
 function M:search_done()

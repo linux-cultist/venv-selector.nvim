@@ -207,8 +207,8 @@ local function start_search_job(search_name, search_config, job_event_handler, s
     
     cmd = { options.shell.shell, options.shell.shellcmdflag, expanded_job } -- We use a shell on linux and mac but not windows at the moment.
     local job_id = vim.fn.jobstart(cmd, {
-        stdout_buffered = true,
-        stderr_buffered = true,
+        stdout_buffered = false,
+        stderr_buffered = false,
         on_stdout = job_event_handler,
         on_stderr = job_event_handler,
         on_exit = job_event_handler,

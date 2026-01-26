@@ -21,145 +21,156 @@ function M.new()
     return self
 end
 
+local function match_substring(stritems, inds, query)
+    local needle = table.concat(query)
+    if needle == "" then return inds end
+
+    -- plain substring; keep stable ordering, but you can sort by earliest match if desired
+    local out = {}
+    for _, i in ipairs(inds) do
+        if stritems[i]:find(needle, 1, true) then
+            out[#out + 1] = i
+        end
+    end
+    return out
+end
+
+local function show_substring(buf_id, items_arr, query)
+    local lines = vim.tbl_map(function(it) return it.text end, items_arr)
+    vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
+
+    pcall(vim.api.nvim_buf_clear_namespace, buf_id, H.ns_id, 0, -1)
+
+    local needle = table.concat(query)
+    if needle ~= "" then
+        for row, it in ipairs(items_arr) do
+            local s = it.text
+            local from = s:find(needle, 1, true)
+            if from then
+                local start_col = from - 1
+                local end_col = start_col + #needle
+                pcall(vim.api.nvim_buf_set_extmark, buf_id, H.ns_id, row - 1, start_col, {
+                    end_col = end_col,
+                    hl_group = "MiniPickMatchRanges",
+                })
+            end
+        end
+    end
+
+    -- add your marker highlighting extmarks after this (as you already do)
+end
+
+
+local function item_to_text(item)
+    local columns = gui_utils.get_picker_columns()
+    local marker_icon = config.user_settings.options.selected_venv_marker_icon
+        or config.user_settings.options.icon or "✔"
+
+    local hl = gui_utils.hl_active_venv(item)
+    local column_data = {
+        marker = hl and marker_icon or " ",
+        search_icon = gui_utils.draw_icons_for_types(item.source),
+        search_name = string.format("%-15s", item.source),
+        search_result = item.name,
+    }
+
+    local parts = {}
+    for _, col in ipairs(columns) do
+        if column_data[col] then table.insert(parts, column_data[col]) end
+    end
+    return table.concat(parts, "  ")
+end
+
 function M:insert_result(result)
+    result.text = result.text or item_to_text(result)
     table.insert(self.results, result)
-    
-    -- Start picker on first result
+
+    local mini_pick = require("mini.pick")
+
     if not self.picker_started then
         self.picker_started = true
+        -- optional: sort even before first start (cheap)
+        self.results = gui_utils.remove_dups(self.results)
+        gui_utils.sort_results(self.results)
         self:start_picker()
-    else
-        -- Update picker with new items
-        local mini_pick = require("mini.pick")
-        if mini_pick.is_picker_active() then
-            mini_pick.set_picker_items(self.results)
-        end
+        return
+    end
+
+    if mini_pick.is_picker_active() then
+        -- keep active/selected at top while results stream in
+        self.results = gui_utils.remove_dups(self.results)
+        gui_utils.sort_results(self.results)
+        mini_pick.set_picker_items(self.results)
     end
 end
 
 function M:search_done()
-    -- Deduplicate and sort final results
     self.results = gui_utils.remove_dups(self.results)
-    gui_utils.sort_results(self.results)
-    
-    -- Update picker with final sorted results
+    gui_utils.sort_results(self.results) -- marker sorting handled here
+
+    -- ensure text exists (safety)
+    for _, r in ipairs(self.results) do
+        r.text = r.text or item_to_text(r)
+    end
+
     local mini_pick = require("mini.pick")
     if mini_pick.is_picker_active() then
         mini_pick.set_picker_items(self.results)
     elseif not self.picker_started then
-        -- If no results came in, start picker with empty results
         self:start_picker()
     end
 end
 
+local function apply_marker_hl(buf_id, items_arr)
+    pcall(vim.api.nvim_buf_clear_namespace, buf_id, H.ns_id, 0, -1)
+
+    local columns = gui_utils.get_picker_columns()
+    local marker_icon = config.user_settings.options.selected_venv_marker_icon
+        or config.user_settings.options.icon or "✔"
+
+    for i, item in ipairs(items_arr) do
+        if gui_utils.hl_active_venv(item) then
+            local column_data = {
+                marker = marker_icon,
+                search_icon = gui_utils.draw_icons_for_types(item.source),
+                search_name = string.format("%-15s", item.source),
+                search_result = item.name,
+            }
+
+            local marker_col = 0
+            for _, col in ipairs(columns) do
+                if col == "marker" then break end
+                if column_data[col] then
+                    marker_col = marker_col + vim.fn.strwidth(column_data[col]) + 2
+                end
+            end
+
+            pcall(vim.api.nvim_buf_set_extmark, buf_id, H.ns_id, i - 1, marker_col, {
+                end_col = marker_col + vim.fn.strwidth(marker_icon),
+                hl_group = "VenvSelectMarker",
+            })
+        end
+    end
+end
+
+
 function M:start_picker()
     local mini_pick = require("mini.pick")
-    
-    -- Set up autocmd to stop search when picker closes
-    local augroup = vim.api.nvim_create_augroup("VenvSelectMiniPick", { clear = true })
-    vim.api.nvim_create_autocmd("User", {
-        pattern = "MiniPickStop",
-        group = augroup,
-        once = true,
-        callback = function()
-            require("venv-selector.search").stop_search()
-            vim.api.nvim_del_augroup_by_id(augroup)
-        end,
-    })
-    
+
     mini_pick.start({
         source = {
-            -- Name of the source, used for display purposes
             name = "Virtual environments",
-            -- List of virtual environments
             items = self.results,
-            -- Function to preview venvs
-            preview = function(buf_id, item)
-                local lines = {
-                    "Source: " .. item.source,
-                    "Name: " .. item.name,
-                }
-                -- Get pyvenv.cfg file if it exists
-                -- To add more information to the preview
-                local pyenv_file = vim.fs.normalize(vim.fs.joinpath(item.path, "../../pyvenv.cfg"))
-                if vim.fn.filereadable(pyenv_file) == 1 then
-                    local content = vim.fn.readfile(pyenv_file)
-                    for _, line in ipairs(content) do
-                        table.insert(lines, line)
-                    end
-                end
-                -- Update the buffer with the preview content
-                vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
-            end,
-            -- Function for rendering list of venvs
+
+            -- matching behavior
+            match = mini_pick.default_match,
+
+            -- keep fuzzy highlighting, add marker highlighting
             show = function(buf_id, items_arr, query)
-                local lines = {}
-                local columns = gui_utils.get_picker_columns()
-
-                -- Format each item as a string based on configured columns
-                for _, item in ipairs(items_arr) do
-                    local hl = gui_utils.hl_active_venv(item)
-                    local marker_icon = config.user_settings.options.selected_venv_marker_icon or
-                        config.user_settings.options.icon or "✔"
-
-                    -- Prepare column data
-                    local column_data = {
-                        marker = hl and marker_icon or " ",
-                        search_icon = gui_utils.draw_icons_for_types(item.source),
-                        search_name = string.format("%-15s", item.source),
-                        search_result = item.name
-                    }
-
-                    -- Build line based on configured column order
-                    local parts = {}
-                    for _, col in ipairs(columns) do
-                        if column_data[col] then
-                            table.insert(parts, column_data[col])
-                        end
-                    end
-                    table.insert(lines, table.concat(parts, "  "))
-                end
-
-                -- Set the buffer lines to the formatted items
-                vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
-                -- Remove previous highlight extmarks
-                pcall(vim.api.nvim_buf_clear_namespace, buf_id, H.ns_id, 0, -1)
-
-                -- Add new extmarks for marker highlighting
-                for i, item in ipairs(items_arr) do
-                    local hl = gui_utils.hl_active_venv(item)
-                    if hl ~= nil then
-                        -- Recreate column data for this item
-                        local marker_icon = config.user_settings.options.selected_venv_marker_icon or
-                            config.user_settings.options.icon or "✔"
-
-                        local column_data = {
-                            marker = hl and marker_icon or " ",
-                            search_icon = gui_utils.draw_icons_for_types(item.source),
-                            search_name = string.format("%-15s", item.source),
-                            search_result = item.name
-                        }
-
-                        -- Find marker position in the configured columns
-                        local marker_col = 0
-                        for j, col in ipairs(columns) do
-                            if col == "marker" then
-                                break
-                            elseif column_data[col] then
-                                -- Add length of previous column + 2 spaces
-                                marker_col = marker_col + vim.fn.strwidth(column_data[col]) + 2
-                            end
-                        end
-
-                        -- Highlight the marker
-                        pcall(vim.api.nvim_buf_set_extmark, buf_id, H.ns_id, i - 1, marker_col, {
-                            end_col = marker_col + vim.fn.strwidth(marker_icon),
-                            hl_group = "VenvSelectMarker",
-                        })
-                    end
-                end
+                mini_pick.default_show(buf_id, items_arr, query)
+                apply_marker_hl(buf_id, items_arr)
             end,
-            -- Function to handle selection of a venv
+
             choose = function(item)
                 gui_utils.select(item)
             end,

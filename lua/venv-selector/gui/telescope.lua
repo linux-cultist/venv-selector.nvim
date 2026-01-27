@@ -325,8 +325,8 @@ function M:insert_result(result)
     vim.defer_fn(function()
         self._refresh_scheduled = false
 
-        self.results = gui_utils.remove_dups(self.results)
-        gui_utils.sort_results(self.results)
+        -- self.results = gui_utils.remove_dups(self.results)
+        -- gui_utils.sort_results(self.results)
 
         self:update_results()
     end, 30) -- 20–50ms is usually fine

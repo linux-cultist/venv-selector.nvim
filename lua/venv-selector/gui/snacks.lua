@@ -8,54 +8,67 @@ local M = {}
 M.__index = M
 
 function M.new()
-    local self = setmetatable({ results = {}, picker = nil }, M)
-    return self
+    return setmetatable({
+        results = {},
+        picker = nil,
+        _refresh_scheduled = false,
+        _closed = false,
+    }, M)
+end
+
+function M:_schedule_refresh()
+    if self._closed or self._refresh_scheduled or not self.picker then
+        return
+    end
+    self._refresh_scheduled = true
+    vim.defer_fn(function()
+        self._refresh_scheduled = false
+        if self._closed or not self.picker then
+            return
+        end
+        self.picker:find()
+    end, 80)
 end
 
 function M:pick()
-    -- Setup highlight groups for marker color
-    local marker_color = config.user_settings.options.selected_venv_marker_color or
-        config.user_settings.options.telescope_active_venv_color
+    local marker_color = config.user_settings.options.selected_venv_marker_color
+        or config.user_settings.options.telescope_active_venv_color
     vim.api.nvim_set_hl(0, "VenvSelectMarker", { fg = marker_color })
 
     local filter_type = config.user_settings.options.picker_filter_type
+    self._closed = false
 
     return Snacks.picker.pick({
         title = "Virtual environments",
-        matcher = {
-            fuzzy = filter_type == "character",
-        },
-        finder = function(opts, ctx)
+        matcher = { fuzzy = filter_type == "substring" },
+        finder = function()
             return self.results
         end,
         layout = config.user_settings.options.picker_options.snacks.layout,
-        format = function(item, picker)
+        format = function(item, _)
             local columns = gui_utils.get_picker_columns()
             local hl = gui_utils.hl_active_venv(item)
-            local marker_icon = config.user_settings.options.selected_venv_marker_icon or
-                config.user_settings.options.icon or "✔"
+            local marker_icon = config.user_settings.options.selected_venv_marker_icon
+                or config.user_settings.options.icon
+                or "✔"
 
-            -- Prepare column data
             local column_data = {
                 marker = hl and { marker_icon, "VenvSelectMarker" } or { " " },
                 search_icon = { gui_utils.draw_icons_for_types(item.source) },
                 search_name = { string.format("%-15s", item.source) },
-                search_result = { item.name }
+                search_result = { item.name },
             }
 
-            -- Build format based on configured column order
-            local format_parts = {}
+            local parts = {}
             for i, col in ipairs(columns) do
                 if column_data[col] then
-                    table.insert(format_parts, column_data[col])
-                    -- Add spacing between columns (except after last column)
+                    table.insert(parts, column_data[col])
                     if i < #columns then
-                        table.insert(format_parts, { "  " })
+                        table.insert(parts, { "  " })
                     end
                 end
             end
-
-            return format_parts
+            return parts
         end,
         confirm = function(picker, item)
             if item then
@@ -64,8 +77,9 @@ function M:pick()
             picker:close()
         end,
         on_close = function()
-            -- Stop any active search jobs when picker closes
+            self._closed = true
             require("venv-selector.search").stop_search()
+            self.picker = nil
         end,
     })
 end
@@ -73,11 +87,13 @@ end
 function M:insert_result(result)
     result.text = result.source .. " " .. result.name
     table.insert(self.results, result)
-    if self.picker then
-        self.picker:find()
-    else
+
+    if not self.picker then
         self.picker = self:pick()
+        return
     end
+
+    self:_schedule_refresh()
 end
 
 function M:search_done()

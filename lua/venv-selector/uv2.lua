@@ -59,13 +59,19 @@ end
 ---@param bufnr integer
 ---@param done? fun(ok: boolean)
 local function run_uv_sync_for_buffer(bufnr, done)
-    local current_file = vim.api.nvim_buf_get_name(bufnr)
-    if current_file == "" or has_uv == false then
+    if has_uv == false then
+        require("venv-selector.logger").debug("uv not found.")
         if done then done(false) end
         return
     end
-
-    vim.system({ "uv", "sync", "--script", current_file }, {
+    local current_file = vim.api.nvim_buf_get_name(bufnr)
+    if current_file == "" then
+        if done then done(false) end
+        return
+    end
+    local cmd = { "uv", "sync", "--script", current_file }
+    require("venv-selector.logger").debug("Running uv command: " .. table.concat(cmd, " "))
+    vim.system(cmd, {
         text = true,
         cwd = vim.fn.fnamemodify(current_file, ":h"),
     }, function(res)
@@ -86,13 +92,19 @@ end
 ---@param bufnr integer
 ---@param done? fun(ok: boolean, python_path?: string)
 local function run_uv_python_find_and_activate(bufnr, done)
+    if has_uv == false then
+        require("venv-selector.logger").debug("uv not found.")
+        if done then done(false) end
+        return
+    end
     local current_file = vim.api.nvim_buf_get_name(bufnr)
     if current_file == "" or has_uv == false then
         if done then done(false) end
         return
     end
-
-    vim.system({ "uv", "python", "find", "--script", current_file }, {
+    local cmd = { "uv", "python", "find", "--script", current_file }
+    require("venv-selector.logger").debug("Running uv command: " .. table.concat(cmd, " "))
+    vim.system(cmd, {
         text = true,
         cwd = vim.fn.fnamemodify(current_file, ":h"),
     }, function(res)

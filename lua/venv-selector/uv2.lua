@@ -152,7 +152,8 @@ end
 
 ---Check if buffer content changed and run uv flow if needed
 ---@param bufnr integer
-local function run_uv_flow_if_needed(bufnr)
+function M.run_uv_flow_if_needed(bufnr)
+    require("venv-selector.logger").debug("run_uv_flow_if_needed")
     if not vim.api.nvim_buf_is_valid(bufnr) then return end
     if not M.is_uv_buffer(bufnr) then return end
 
@@ -169,7 +170,8 @@ end
 
 ---Ensure the correct venv is activated for a uv buffer
 ---@param bufnr integer
-local function ensure_uv_buffer_activated(bufnr)
+function M.ensure_uv_buffer_activated(bufnr)
+    require("venv-selector.logger").debug("ensure_uv_buffer_activated")
     if not vim.api.nvim_buf_is_valid(bufnr) then return end
     if not M.is_uv_buffer(bufnr) then return end
 
@@ -182,27 +184,10 @@ local function ensure_uv_buffer_activated(bufnr)
     end
 
     -- No cached python for this buffer yet -> must run uv
-    run_uv_flow_if_needed(bufnr)
+    M.run_uv_flow_if_needed(bufnr)
 end
 
 
-vim.api.nvim_create_autocmd("BufEnter", {
-    group = group,
-    callback = function(args)
-        vim.schedule(function()
-            ensure_uv_buffer_activated(args.buf)
-        end)
-    end,
-})
-
-vim.api.nvim_create_autocmd("BufWritePost", {
-    group = group,
-    callback = function(args)
-        vim.schedule(function()
-            run_uv_flow_if_needed(args.buf)
-        end)
-    end,
-})
 
 
 return M

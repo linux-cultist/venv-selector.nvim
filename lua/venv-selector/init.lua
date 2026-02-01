@@ -1,5 +1,26 @@
 local M = {}
 
+vim.api.nvim_create_autocmd("BufEnter", {
+    group = group,
+    callback = function(args)
+        vim.schedule(function()
+            local uv = require("venv-selector.uv2")
+            uv.ensure_uv_buffer_activated(args.buf)
+        end)
+    end,
+})
+
+vim.api.nvim_create_autocmd("BufWritePost", {
+    group = group,
+    callback = function(args)
+        vim.schedule(function()
+            local uv = require("venv-selector.uv2")
+            uv.run_uv_flow_if_needed(args.buf)
+        end)
+    end,
+})
+
+
 function M.python()
     return require("venv-selector.path").current_python_path
 end

@@ -35,8 +35,8 @@ local M = {}
 -- Module-level state for tracking active search jobs
 ---@type table<integer, SearchConfig>
 M.active_jobs = M.active_jobs or {} -- [jid] = { name = "cwd" }
----@type integer
-M.active_job_count = 0
+-- @type integer
+-- M.active_job_count = 0
 ---@type boolean?
 M.search_in_progress = M.search_in_progress or false
 
@@ -60,7 +60,7 @@ function M.stop_search()
     -- ))
 
     if not M.search_in_progress then
-        log.debug("STOP_SEARCH ignored: search_in_progress=false")
+        -- log.debug("STOP_SEARCH ignored: search_in_progress=false")
         return
     end
     M.search_in_progress = false
@@ -161,19 +161,22 @@ local function create_job_event_handler(picker, options)
                 log.debug("Search job '" .. search_config.name .. "' completed successfully")
             end
 
-            M.active_job_count = M.active_job_count - 1
-            if M.active_job_count == 0 then
+            -- Determine if this is the last running/tracked job.
+            -- At this moment, M.active_jobs still contains this job_id (it is removed in on_exit_wrapper after this).
+            local n = active_job_count()
+            local last = (n == 1) and (M.active_jobs[job_id] ~= nil)
+
+            if last then
                 log.info("Searching finished.")
 
-                -- Support both picker object and callback table
                 if picker then
                     local p = picker
                     if type(p.search_done) == "function" then
                         ---@cast p Picker
-                        p:search_done()
+                        vim.schedule(function() p:search_done() end)
                     elseif type(p.on_complete) == "function" then
                         ---@cast p SearchCallbacks
-                        p.on_complete()
+                        vim.schedule(function() p.on_complete() end)
                     end
                 end
 
@@ -367,7 +370,6 @@ end
 ---@param picker Picker|SearchCallbacks|nil Either a picker object with insert_result() and search_done() methods, or a table with on_result(result) and on_complete() callbacks, or nil
 ---@param opts SearchOpts|nil Command options for interactive search
 function M.run_search(picker, opts)
-    -- Stop any previous search before starting a new one
     if M.search_in_progress then
         log.info("Stopping previous search before starting new one.")
         M.stop_search()
@@ -406,7 +408,7 @@ function M.run_search(picker, opts)
 
     -- Reset module-level state and create event handler
     M.active_jobs = {}
-    M.active_job_count = 0
+    -- M.active_job_count = 0
     local job_event_handler = create_job_event_handler(picker, options)
 
     -- Process all searches

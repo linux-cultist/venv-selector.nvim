@@ -40,11 +40,13 @@ function M:pick()
     vim.api.nvim_set_hl(0, "VenvSelectMarker", { fg = marker_color })
 
     local filter_type = config.user_settings.options.picker_filter_type
+    local fuzzy = (filter_type == "character")
+
     self._closed = false
 
     return Snacks.picker.pick({
         title = "Virtual environments",
-        matcher = { fuzzy = filter_type },
+        matcher = { fuzzy = fuzzy },
         finder = function()
             return self.results
         end,

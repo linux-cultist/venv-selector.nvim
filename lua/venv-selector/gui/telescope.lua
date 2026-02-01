@@ -172,8 +172,7 @@ function M.new(search_opts)
     active_telescope_instance = self
 
     -- Setup highlight groups for marker color
-    local marker_color = config.user_settings.options.selected_venv_marker_color or
-        config.user_settings.options.telescope_active_venv_color
+    local marker_color = config.user_settings.options.selected_venv_marker_color
 
     -- Create marker highlight group
     vim.api.nvim_set_hl(0, "VenvSelectMarker", { fg = marker_color })
@@ -314,7 +313,7 @@ function M:update_results()
     end
 end
 
-function M:insert_result(result)
+function M:insert_result(result) -- result is a table with name, path, icon, source, venv.
     table.insert(self.results, result)
 
     if self._refresh_scheduled then

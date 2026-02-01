@@ -34,31 +34,56 @@ local M = {}
 
 -- Module-level state for tracking active search jobs
 ---@type table<integer, SearchConfig>
-M.active_jobs = {}
+M.active_jobs = M.active_jobs or {} -- [jid] = { name = "cwd" }
 ---@type integer
 M.active_job_count = 0
 ---@type boolean?
-M.search_in_progress = nil
+M.search_in_progress = M.search_in_progress or false
 
----Stop all active search jobs
+local function active_job_count()
+    local n = 0
+    for _ in pairs(M.active_jobs) do n = n + 1 end
+    return n
+end
+
+
+local function job_is_running(jid)
+    -- jobwait returns -1 if still running after timeout
+    local r = vim.fn.jobwait({ jid }, 0)[1]
+    return r == -1
+end
+
 function M.stop_search()
-    log.debug("stop_search() called, active jobs: " .. M.active_job_count)
+    -- log.debug(string.format(
+    --     "STOP_SEARCH called active_now=%d",
+    --     vim.tbl_count(M.active_jobs or {})
+    -- ))
 
-    if M.active_job_count == 0 then
+    if not M.search_in_progress then
+        log.debug("STOP_SEARCH ignored: search_in_progress=false")
         return
     end
+    M.search_in_progress = false
 
-    log.debug("Stopping " .. M.active_job_count .. " active search jobs")
+    for jid, cfg in pairs(M.active_jobs or {}) do
+        -- log.debug(string.format(
+        --     "STOP_SEARCH jobstop jid=%d name=%s",
+        --     jid,
+        --     tostring(cfg and cfg.name)
+        -- ))
+        pcall(vim.fn.jobstop, jid)
 
-    for job_id, _ in pairs(M.active_jobs) do
-        if vim.fn.jobwait({ job_id }, 0)[1] == -1 then
-            vim.fn.jobstop(job_id)
-        end
+        -- optional immediate verification (0ms): -1 means still running
+        local r = vim.fn.jobwait({ jid }, 0)[1]
+        -- log.debug(string.format(
+        --     "STOP_SEARCH jobwait jid=%d result=%s",
+        --     jid,
+        --     tostring(r)
+        -- ))
     end
 
     M.active_jobs = {}
-    M.active_job_count = 0
-    M.search_in_progress = false
+    log.debug("stop_search() cleared active_jobs (active_now=0)")
 end
 
 ---Get current file path with fallback to alternate buffer
@@ -170,6 +195,10 @@ local function expand_env(s)
     return s
 end
 
+
+
+
+
 ---Start a single search job
 ---@param search_name string Name of the search
 ---@param search_config SearchConfig Search configuration
@@ -200,18 +229,52 @@ local function start_search_job(search_name, search_config, job_event_handler, s
     -- else
     --     cmd = { options.shell.shell, options.shell.shellcmdflag, job } -- We use a shell on linux and mac but not windows at the moment.
     -- end
-    local expanded_job = expand_env(job)                              -- expands $VAR and ~
-    
+    local expanded_job = expand_env(job) -- expands $VAR and ~
+
     log.debug("Executing search '" ..
-        search_name .. "' (using " .. options.shell.shell .. " " .. options.shell.shellcmdflag .. "): '" .. expanded_job .. "'")
-    
+        search_name ..
+        "' (using " .. options.shell.shell .. " " .. options.shell.shellcmdflag .. "): '" .. expanded_job .. "'")
+
     cmd = { options.shell.shell, options.shell.shellcmdflag, expanded_job } -- We use a shell on linux and mac but not windows at the moment.
+
+
+    local function on_exit_wrapper(jid, data, event)
+        -- log.debug(string.format(
+        --     "JOB EXIT name=%s jid=%d event=%s active_before=%d still_tracked=%s",
+        --     search_name,
+        --     jid,
+        --     tostring(event),
+        --     vim.tbl_count(M.active_jobs or {}),
+        --     tostring(M.active_jobs and M.active_jobs[jid] ~= nil)
+        -- ))
+
+        job_event_handler(jid, data, event)
+
+        if M.active_jobs and M.active_jobs[jid] then
+            M.active_jobs[jid] = nil
+            -- log.debug(string.format(
+            --     "JOB UNTRACK name=%s jid=%d active_now=%d",
+            --     search_name,
+            --     jid,
+            --     vim.tbl_count(M.active_jobs)
+            -- ))
+        else
+            -- log.debug(string.format(
+            --     "JOB UNTRACK SKIP name=%s jid=%d (already cleared) active_now=%d",
+            --     search_name,
+            --     jid,
+            --     vim.tbl_count(M.active_jobs or {})
+            -- ))
+        end
+    end
+
     local job_id = vim.fn.jobstart(cmd, {
         stdout_buffered = false,
         stderr_buffered = false,
         on_stdout = job_event_handler,
         on_stderr = job_event_handler,
-        on_exit = job_event_handler,
+        -- on_exit = job_event_handler,
+        on_exit = on_exit_wrapper,
     })
 
     if job_id <= 0 then
@@ -220,9 +283,25 @@ local function start_search_job(search_name, search_config, job_event_handler, s
         return
     end
 
+    -- log.debug(string.format(
+    --     "JOB START name=%s jid=%d active_before=%d cmd=%s",
+    --     search_name,
+    --     job_id,
+    --     vim.tbl_count(M.active_jobs or {}),
+    --     vim.inspect(cmd)
+    -- ))
+
     search_config.name = search_name
+    -- M.active_jobs[job_id] = search_config
+    -- M.active_job_count = M.active_job_count + 1
+
     M.active_jobs[job_id] = search_config
-    M.active_job_count = M.active_job_count + 1
+    -- log.debug(string.format(
+    --     "JOB TRACK name=%s jid=%d active_now=%d",
+    --     search_name,
+    --     job_id,
+    --     vim.tbl_count(M.active_jobs)
+    -- ))
 
     -- Set up timeout handler
     local timer = vim.uv.new_timer()

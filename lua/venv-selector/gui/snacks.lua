@@ -26,13 +26,17 @@ function M:_schedule_refresh()
         if self._closed or not self.picker then
             return
         end
+
+        -- keep selected/active at top while streaming
+        self.results = gui_utils.remove_dups(self.results)
+        gui_utils.sort_results(self.results)
+
         self.picker:find()
     end, 80)
 end
 
 function M:pick()
     local marker_color = config.user_settings.options.selected_venv_marker_color
-        or config.user_settings.options.telescope_active_venv_color
     vim.api.nvim_set_hl(0, "VenvSelectMarker", { fg = marker_color })
 
     local filter_type = config.user_settings.options.picker_filter_type
@@ -40,7 +44,7 @@ function M:pick()
 
     return Snacks.picker.pick({
         title = "Virtual environments",
-        matcher = { fuzzy = filter_type == "substring" },
+        matcher = { fuzzy = filter_type },
         finder = function()
             return self.results
         end,

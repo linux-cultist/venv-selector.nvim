@@ -26,7 +26,9 @@ end
 
 function M.new(search_opts)
     local self = setmetatable({ is_done = false, queue = {}, entries = {}, is_closed = false, picker_started = false }, M)
-
+    self._started_emitting = false
+    self._grace_ms = 120 -- enough for fast sources to deliver active item
+    self._t0 = vim.uv.now()
     self._flush_scheduled = false
     self._flush_ms = 15
     self._batch_size = 25
@@ -72,8 +74,8 @@ function M.new(search_opts)
 
     if filter_type == "substring" then
         fzf_opts["--no-extended"] = true -- spaces are literal (no term-splitting)
-        fzf_opts["--exact"] = true     -- disable fuzzy; require contiguous substring
-        fzf_opts["--literal"] = true   -- treat query literally (no regex-like chars)
+        fzf_opts["--exact"] = true       -- disable fuzzy; require contiguous substring
+        fzf_opts["--literal"] = true     -- treat query literally (no regex-like chars)
     else
         fzf_opts["--no-extended"] = nil
         fzf_opts["--exact"] = nil
@@ -115,9 +117,28 @@ local function schedule_flush(self)
     end, self._flush_ms or 25)
 end
 
+local function has_active(list)
+    for _, r in ipairs(list) do
+        if gui_utils.hl_active_venv(r) ~= nil then
+            return true
+        end
+    end
+    return false
+end
+
 function M:consume_queue()
     if self.is_closed or not self.fzf_cb then
         return
+    end
+
+    -- Gate first emission so active can be placed first.
+    if not self._started_emitting then
+        local elapsed = vim.uv.now() - (self._t0 or 0)
+        if not has_active(self.queue) and not self.is_done and elapsed < (self._grace_ms or 120) then
+            schedule_flush(self)
+            return
+        end
+        self._started_emitting = true
     end
 
     if #self.queue == 0 then

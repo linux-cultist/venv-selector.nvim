@@ -18,8 +18,8 @@ local function item_to_text(item)
     return table.concat({ marker, src_icon, src_name, item.name }, "  ")
 end
 
-
-local function show_with_marker_hl(buf_id, items, query)
+-- Character/fuzzy mode (uses MiniPick.default_match + MiniPick.default_show)
+local function show_with_marker_hl_default(buf_id, items, query)
     local mini_pick = require("mini.pick")
     mini_pick.default_show(buf_id, items, query)
 
@@ -28,15 +28,67 @@ local function show_with_marker_hl(buf_id, items, query)
     local icon = marker_icon()
     local icon_bytes = #icon
 
-    -- each rendered line corresponds to items[i]
     for i, item in ipairs(items) do
         if gui_utils.hl_active_venv(item) then
-            -- highlight marker at start of line
             vim.api.nvim_buf_add_highlight(buf_id, NS, "VenvSelectMarker", i - 1, 0, icon_bytes)
         end
     end
 end
 
+-- Substring mode: exact contiguous substring filter + highlighting
+local function match_substring(stritems, inds, query)
+    local q = table.concat(query)
+    if q == "" then return inds end
+
+    local out = {}
+    for _, i in ipairs(inds) do
+        -- stritems/query are already case-adjusted by mini.pick (ignorecase/smartcase)
+        if stritems[i]:find(q, 1, true) ~= nil then
+            out[#out + 1] = i
+        end
+    end
+    return out
+end
+
+local function show_with_marker_hl_substring(buf_id, items, query)
+    -- render lines from item.text (or fallback)
+    local lines = vim.tbl_map(function(item)
+        item.text = item.text or item_to_text(item)
+        return item.text
+    end, items)
+
+    vim.api.nvim_buf_set_lines(buf_id, 0, -1, false, lines)
+    vim.api.nvim_buf_clear_namespace(buf_id, NS, 0, -1)
+
+    local icon = marker_icon()
+    local icon_bytes = #icon
+    local q = table.concat(query)
+
+    -- do a best-effort case behavior mirroring ignorecase/smartcase
+    local ignorecase = vim.o.ignorecase
+    local smartcase = vim.o.smartcase
+    local case_insensitive = ignorecase and (not smartcase or q:lower() == q)
+    local q_cmp = case_insensitive and q:lower() or q
+
+    for i, item in ipairs(items) do
+        local line = lines[i]
+
+        -- marker highlight
+        if gui_utils.hl_active_venv(item) then
+            vim.api.nvim_buf_add_highlight(buf_id, NS, "VenvSelectMarker", i - 1, 0, icon_bytes)
+        end
+
+        -- substring highlight
+        if q_cmp ~= "" then
+            local line_cmp = case_insensitive and line:lower() or line
+            local s, e = line_cmp:find(q_cmp, 1, true)
+            if s then
+                -- MiniPick uses this group for matched ranges
+                vim.api.nvim_buf_add_highlight(buf_id, NS, "MiniPickMatchRanges", i - 1, s - 1, e)
+            end
+        end
+    end
+end
 
 function M.new(opts)
     local self = setmetatable({}, M)
@@ -54,7 +106,6 @@ end
 local function push_to_picker(results)
     local mini_pick = require("mini.pick")
     if not mini_pick.is_picker_active() then return end
-
     mini_pick.set_picker_items(results)
     mini_pick.refresh()
 end
@@ -72,8 +123,7 @@ function M:_schedule_push()
 end
 
 function M:insert_result(result)
-    result.text = item_to_text(result)
-    result.path = result.path
+    result.text = result.text or item_to_text(result)
     self.results[#self.results + 1] = result
 
     if not self.picker_started then
@@ -93,6 +143,7 @@ end
 
 function M:start_picker()
     local mini_pick = require("mini.pick")
+
     local marker_color = config.user_settings.options.selected_venv_marker_color
     vim.api.nvim_set_hl(0, "VenvSelectMarker", { fg = marker_color })
 
@@ -104,11 +155,15 @@ function M:start_picker()
         end,
     })
 
+    local filter_type = config.user_settings.options.picker_filter_type -- "substring"|"character"
+    local use_substring = (filter_type == "substring")
+
     mini_pick.start({
         source = {
-            name = "Virtual environments",
-            items = self.results,
-            show = show_with_marker_hl,
+            name   = "Virtual environments",
+            items  = self.results,
+            match  = use_substring and match_substring or nil, -- nil => MiniPick.default_match()
+            show   = use_substring and show_with_marker_hl_substring or show_with_marker_hl_default,
             choose = function(item)
                 gui_utils.select(item)
             end,

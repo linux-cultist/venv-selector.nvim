@@ -1,4 +1,5 @@
 local log = require("venv-selector.logger")
+local gate = require("venv-selector.lsp_gate")
 
 local M = {}
 
@@ -91,6 +92,12 @@ end
 ---@param env_type string|nil The type of the virtual environment
 ---@return boolean success, string? error Whether any clients were found and restart was attempted
 local function restart_all_python_lsps(venv_python, env_type)
+    for _, c in ipairs(vim.lsp.get_clients()) do
+        local fts = (c.config and c.config.filetypes) and table.concat(c.config.filetypes, ",") or ""
+        local root = (c.config and c.config.root_dir) or ""
+        log.debug(("lsp seen id=%d name=%s root=%s fts=[%s]"):format(c.id, c.name, root, fts))
+    end
+
     local function contains(list, item)
         return list and vim.tbl_contains(list, item)
     end
@@ -104,82 +111,101 @@ local function restart_all_python_lsps(venv_python, env_type)
         return false
     end
 
-    local function is_generic_text_server(client)
-        local fts = client.config and client.config.filetypes or nil
-        if not fts then return false end
-        -- Heuristic: skip servers that also target general prose editing
-        return contains(fts, "markdown") or contains(fts, "text") or contains(fts, "gitcommit")
+    local function is_generic_or_multi(client)
+      local fts = client.config and client.config.filetypes or nil
+      if not fts then return false end
+      if vim.tbl_contains(fts, "markdown") or vim.tbl_contains(fts, "text") or vim.tbl_contains(fts, "gitcommit") then
+        return true
+      end
+      -- very broad servers (like harper_ls) should not be restarted by venv changes
+      return #fts > 8
+    end
+
+    local function loaded_python_bufs()
+        local bufs = {} ---@type table<number,true>
+        for _, b in ipairs(vim.api.nvim_list_bufs()) do
+            if vim.api.nvim_buf_is_loaded(b)
+                and vim.api.nvim_buf_is_valid(b)
+                and vim.bo[b].buftype == ""
+                and vim.bo[b].filetype == "python"
+            then
+                bufs[b] = true
+            end
+        end
+        return bufs
     end
 
     local function is_python_lsp(client)
         local fts = client.config and client.config.filetypes or nil
-        return contains(fts, "python")
-            and has_python_attachment(client)
-            and not is_generic_text_server(client)
+        return contains(fts, "python") and not is_generic_or_multi(client)
     end
 
-    -- Collect python LSP clients grouped by name + buffers
+    local pybufs = {}
+    for _, b in ipairs(vim.api.nvim_list_bufs()) do
+        if vim.api.nvim_buf_is_valid(b)
+            and vim.api.nvim_buf_is_loaded(b)
+            and vim.bo[b].buftype == ""
+            and vim.bo[b].filetype == "python"
+        then
+            pybufs[#pybufs + 1] = b
+            log.debug(("pybuf b=%d file=%s"):format(b, vim.api.nvim_buf_get_name(b)))
+        end
+    end
+    log.debug(("pybuf count=%d"):format(#pybufs))
+
     local by_name = {} ---@type table<string, {client:any, bufs:table<number,true>}>
+    local pybufs = loaded_python_bufs()
+
     for _, c in ipairs(vim.lsp.get_clients()) do
         if is_python_lsp(c) then
             local entry = by_name[c.name]
             if not entry then
-                entry = { client = c, bufs = {} }
+                entry = { client = c, bufs = pybufs } -- use global python bufs
                 by_name[c.name] = entry
             end
-            for b, _ in pairs(c.attached_buffers or {}) do
-                entry.bufs[b] = true
-            end
-        end
-    end
-    if next(by_name) == nil then return false, "no python LSP clients selected" end
-
-    -- Stop all instances for these names (0.11-safe; no deprecated stop_client signature)
-    for name, _ in pairs(by_name) do
-        for _, c in ipairs(vim.lsp.get_clients({ name = name })) do
-            pcall(function() c:stop() end)
         end
     end
 
+    local names = 0
+    for name, entry in pairs(by_name) do
+        names = names + 1
+        local nbuf = 0
+        for _ in pairs(entry.bufs or {}) do nbuf = nbuf + 1 end
+        log.debug(("group name=%s bufs=%d"):format(name, nbuf))
+    end
+    log.debug(("group total=%d"):format(names))
+
+    if next(by_name) == nil then
+        log.debug("restart_all_python_lsps: no python LSP clients selected")
+        return false, "no python LSP clients selected"
+    end
+
+    if venv_python == nil then
+        log.debug("restart_all_python_lsps: venv_python=nil, nothing to restart")
+        return true
+    end
+
+    if next(by_name) == nil then
+        return false, "no python LSP clients selected"
+    end
     if venv_python == nil then return true end
 
-    -- Restart each server with your merged settings
-    vim.defer_fn(function()
-        if venv_python == nil then return end
-        for name, entry in pairs(by_name) do
-            local old_cfg    = entry.client.config or {}
-            local cfg        = vim.deepcopy(old_cfg)
+    for name, entry in pairs(by_name) do
+        local old_cfg    = entry.client.config or {}
+        local cfg        = vim.deepcopy(old_cfg)
 
-            local gen        = default_lsp_settings(name, venv_python, env_type)
-            cfg.settings     = gen.settings
-            cfg.cmd_env      = gen.cmd_env
+        local gen        = default_lsp_settings(name, venv_python, env_type)
+        cfg.settings     = gen.settings
+        cfg.cmd_env      = gen.cmd_env
 
-            cfg.capabilities = old_cfg.capabilities
-            cfg.handlers     = old_cfg.handlers
-            cfg.on_attach    = old_cfg.on_attach
-            cfg.init_options = old_cfg.init_options
+        -- preserve these explicitly (deepcopy may already include them, but keep as you had)
+        cfg.capabilities = old_cfg.capabilities
+        cfg.handlers     = old_cfg.handlers
+        cfg.on_attach    = old_cfg.on_attach
+        cfg.init_options = old_cfg.init_options
 
-            local first_buf
-            for b, _ in pairs(entry.bufs) do
-                if vim.api.nvim_buf_is_valid(b) then
-                    first_buf = b; break
-                end
-            end
-            if first_buf then
-                local new_id = vim.lsp.start(cfg, {
-                    bufnr = first_buf,
-                    reuse_client = function() return false end,
-                })
-                if new_id then
-                    for b, _ in pairs(entry.bufs) do
-                        if b ~= first_buf and vim.api.nvim_buf_is_valid(b) then
-                            vim.lsp.buf_attach_client(b, new_id)
-                        end
-                    end
-                end
-            end
-        end
-    end, 250)
+        gate.request(name, cfg, entry.bufs)
+    end
 
     return true
 end
@@ -192,8 +218,9 @@ end
 ---@param env_type string|nil The type of the virtual environment
 ---@return integer count The number of hooks that were processed
 function M.dynamic_python_lsp_hook(venv_python, env_type)
-    local rc = restart_all_python_lsps(venv_python, env_type)
-    if rc == true then return 1 else return 0 end
+    log.debug(("hook dynamic_python_lsp_hook venv=%s type=%s"):format(tostring(venv_python), tostring(env_type)))
+    local ok = restart_all_python_lsps(venv_python, env_type)
+    return ok == true and 1 or 0
 end
 
 ---Send a notification to the user, throttled to once per second for unique messages

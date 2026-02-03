@@ -18,48 +18,63 @@ function M.set_source(source)
     path.current_source = source
 end
 
---- Activate a virtual environment.
----
---- This function will update the paths and environment variables to the selected virtual environment,
---- and inform the lsp servers about the change.
----@param python_path string The path to the python executable in the virtual environment.
----@param type string The type of the virtual environment. This is used to determine which environment variable to set (e.g. conda or venv)
----@param check_lsp boolean Whether to check if lsp servers are running before activating the virtual environment.
----@return boolean activated Whether the virtual environment was activated successfully.
-function M.activate(python_path, type, check_lsp)
-    if python_path == nil then
+-- Internal: apply UI/global state + call hooks + cache/save + update env/PATH.
+-- This is the single activation implementation.
+---@param python_path string
+---@param env_type string
+---@param bufnr? integer
+---@param check_lsp? boolean
+---@return boolean activated
+local function do_activate(python_path, env_type, bufnr, check_lsp)
+    if not python_path or python_path == "" then
         return false
     end
 
     if vim.fn.filereadable(python_path) ~= 1 then
-        log.debug("Venv `" .. python_path .. "` doesnt exist so cant activate it.")
+        log.debug("Venv `" .. tostring(python_path) .. "` doesnt exist so cant activate it.")
         return false
     end
 
-    -- Set the below two variables as quick as possible since its used in sorting results in telescope
+    env_type = env_type or "venv"
+
+    -- If already active, skip (prevents pointless LSP restarts on buffer enter / cache restore)
+    if path.current_python_path == python_path and path.current_type == env_type then
+        log.debug(("Activation skipped (already active): py=%s type=%s"):format(python_path, env_type))
+        vim.g.venv_selector_activated = true
+        return true
+    end
+
+    -- Update global state used by UI/sorting
     path.current_python_path = python_path
     path.current_venv_path = path.get_base(python_path)
-    path.current_type = type
+    path.current_type = env_type
 
-    -- Inform lsp servers
+    -- Inform LSP servers via hooks (hooks should use restart gate)
     local count = 0
     local hooks = require("venv-selector.config").user_settings.hooks
     for _, hook in pairs(hooks) do
-        count = count + hook(python_path, type)
+        count = count + hook(python_path, env_type)
     end
 
-    if check_lsp and count == 0 and config.user_settings.options.require_lsp_activation == true then
-        local message =
-        "No python lsp servers are running. Please open a python file and then select a venv to activate."
-        vim.notify(message, vim.log.levels.INFO, { title = "VenvSelect" })
-        log.info(message)
-        return false
-    end
+    -- -- Optional behavior: keep the old API shape (currently you disabled this check in activate()).
+    -- -- If you ever want it back, it should live here, not duplicated.
+    -- if check_lsp and count == 0 and config.user_settings.options.require_lsp_activation == true then
+    --     local message =
+    --     "No python LSP servers are running. Please open a python file and then select a venv to activate."
+    --     vim.notify(message, vim.log.levels.INFO, { title = "VenvSelect" })
+    --     log.info(message)
+    --     return false
+    -- end
 
+    -- Save to cache (skip uv inside cached_venv.save)
+    -- Pass bufnr so cache can be per-root/per-workspace.
     local cache = require("venv-selector.cached_venv")
-    cache.save(python_path, type)
+    if type(cache.save) == "function" then
+        cache.save(python_path, env_type, bufnr)
+    end
 
-    M.update_paths(python_path, type)
+    -- Update PATH/env/dap/etc
+    M.update_paths(python_path, env_type)
 
     local on_venv_activate_callback = config.user_settings.options.on_venv_activate_callback
     if on_venv_activate_callback ~= nil then
@@ -71,26 +86,45 @@ function M.activate(python_path, type, check_lsp)
     return true
 end
 
-function M.update_paths(venv_path, type)
+-- Buffer-aware activation entrypoint (use this everywhere new: uv, cache restore, buffer enter restore)
+---@param python_path string
+---@param env_type string
+---@param bufnr? integer
+---@return boolean activated
+function M.activate_for_buffer(python_path, env_type, bufnr, opts)
+  opts = opts or {}
+  if bufnr ~= nil and not vim.api.nvim_buf_is_valid(bufnr) then bufnr = nil end
+  return do_activate(python_path, env_type, bufnr, opts)
+end
+
+--- Backwards-compatible API used by picker, etc.
+---@param python_path string
+---@param env_type string
+---@param check_lsp boolean
+---@return boolean activated
+function M.activate(python_path, env_type, check_lsp)
+    local bufnr = vim.api.nvim_get_current_buf()
+    return M.activate_for_buffer(python_path, env_type, bufnr, { save_cache = true, check_lsp = check_lsp })
+end
+
+function M.update_paths(venv_path, env_type)
     path.add(path.get_base(venv_path))
     path.update_python_dap(venv_path)
     path.save_selected_python(venv_path)
 
     -- Handle environment variables based on venv type
-    if type == "uv" then
-        -- Don't set VIRTUAL_ENV for UV environments as they are managed by UV
+    if env_type == "uv" then
+        -- Your current behavior: do not set VIRTUAL_ENV for UV envs
         M.unset_env("VIRTUAL_ENV")
         M.unset_env("CONDA_PREFIX")
-    elseif type == "anaconda" then
+    elseif env_type == "anaconda" then
         M.unset_env("VIRTUAL_ENV")
         local base_path
-
         if vim.fn.has("Win32") == 1 then
             base_path = path.get_base(venv_path)
         else
             base_path = path.get_base(path.get_base(venv_path))
         end
-
         M.set_env(base_path, "CONDA_PREFIX")
     else
         local base_path = path.get_base(path.get_base(venv_path))

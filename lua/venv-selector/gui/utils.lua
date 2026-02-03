@@ -66,7 +66,7 @@ function M.sort_results(results)
         "pyenv", "hatch",
         "anaconda_envs", "anaconda_base",
         "miniconda_envs", "miniconda_base",
-        "pipx","cwd"
+        "pipx", "cwd"
     }
     local SOURCE_PRIO = {}
     local n = #order
@@ -208,12 +208,20 @@ end
 
 ---@param entry SearchResult|nil
 function M.select(entry)
-    if entry == nil then
-        return
-    end
+    if entry == nil then return end
+
     local venv = require("venv-selector.venv")
     venv.set_source(entry.source)
-    venv.activate(entry.path, entry.type, true)
+
+    local bufnr = vim.api.nvim_get_current_buf()
+
+    -- Prefer buffer-aware activation (still goes through hooks → gate)
+    if type(venv.activate_for_buffer) == "function" then
+        venv.activate_for_buffer(entry.path, entry.type, bufnr, { save_cache = true })
+    else
+        -- Fallback
+        venv.activate(entry.path, entry.type, true)
+    end
 end
 
 return M

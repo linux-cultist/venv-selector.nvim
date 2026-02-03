@@ -1,5 +1,21 @@
 local M = {}
 
+local uv = vim.uv or vim.loop
+local timers = {} -- bufnr -> timer
+
+local function debounce(bufnr, ms, fn)
+    local t = timers[bufnr]
+    if t then
+        t:stop(); t:close()
+    end
+    t = uv.new_timer()
+    timers[bufnr] = t
+    t:start(ms, 0, vim.schedule_wrap(function()
+        timers[bufnr] = nil
+        fn()
+    end))
+end
+
 
 local path_mod = require("venv-selector.path")
 
@@ -128,7 +144,7 @@ local function run_uv_python_find_and_activate(bufnr, done)
 
             -- Activate immediately for first-time resolution (or if it differs)
             if path_mod.current_python_path ~= python_path then
-                require("venv-selector.venv").activate(python_path, "uv", false)
+                require("venv-selector.venv").activate_for_buffer(python_path, "uv")
             end
 
             if done then done(true, python_path) end
@@ -149,45 +165,78 @@ local function run_uv_flow(bufnr)
     end)
 end
 
-
----Check if buffer content changed and run uv flow if needed
----@param bufnr integer
 function M.run_uv_flow_if_needed(bufnr)
-    require("venv-selector.logger").debug("run_uv_flow_if_needed")
-    if not vim.api.nvim_buf_is_valid(bufnr) then return end
-    if not M.is_uv_buffer(bufnr) then return end
+    debounce(bufnr, 120, function()
+        require("venv-selector.logger").debug("run_uv_flow_if_needed")
+        if not vim.api.nvim_buf_is_valid(bufnr) then return end
+        if not M.is_uv_buffer(bufnr) then return end
+        local tick = vim.b[bufnr].changedtick or 0
+        if vim.b[bufnr].venv_selector_uv_last_tick == tick then
+            return -- content unchanged -> don't rerun uv commands
+        end
 
-    local tick = vim.b[bufnr].changedtick or 0
-    if vim.b[bufnr].venv_selector_uv_last_tick == tick then
-        return -- content unchanged -> don't rerun uv commands
-    end
+        if vim.b[bufnr].venv_selector_uv_running then return end
+        vim.b[bufnr].venv_selector_uv_running = true
 
-    if vim.b[bufnr].venv_selector_uv_running then return end
-    vim.b[bufnr].venv_selector_uv_running = true
+        run_uv_flow(bufnr)
+    end)
+end
 
-    run_uv_flow(bufnr)
+-- ---Check if buffer content changed and run uv flow if needed
+-- ---@param bufnr integer
+-- function M.run_uv_flow_if_needed(bufnr)
+--     require("venv-selector.logger").debug("run_uv_flow_if_needed")
+--     if not vim.api.nvim_buf_is_valid(bufnr) then return end
+--     if not M.is_uv_buffer(bufnr) then return end
+
+--     local tick = vim.b[bufnr].changedtick or 0
+--     if vim.b[bufnr].venv_selector_uv_last_tick == tick then
+--         return -- content unchanged -> don't rerun uv commands
+--     end
+
+--     if vim.b[bufnr].venv_selector_uv_running then return end
+--     vim.b[bufnr].venv_selector_uv_running = true
+
+--     run_uv_flow(bufnr)
+-- end
+
+function M.ensure_uv_buffer_activated(bufnr)
+    debounce(bufnr, 80, function()
+        require("venv-selector.logger").debug("ensure_uv_buffer_activated")
+        if not vim.api.nvim_buf_is_valid(bufnr) then return end
+        if not M.is_uv_buffer(bufnr) then return end
+
+        -- rest unchanged except activate_for_buffer calls
+        local last_python = vim.b[bufnr].venv_selector_uv_last_python
+        if last_python and last_python ~= "" then
+            if path_mod.current_python_path ~= last_python then
+                require("venv-selector.venv").activate_for_buffer(last_python, "uv")
+            end
+            return
+        end
+
+        -- No cached python for this buffer yet -> must run uv
+        M.run_uv_flow_if_needed(bufnr)
+    end)
 end
 
 ---Ensure the correct venv is activated for a uv buffer
----@param bufnr integer
-function M.ensure_uv_buffer_activated(bufnr)
-    require("venv-selector.logger").debug("ensure_uv_buffer_activated")
-    if not vim.api.nvim_buf_is_valid(bufnr) then return end
-    if not M.is_uv_buffer(bufnr) then return end
+-- ---@param bufnr integer
+-- function M.ensure_uv_buffer_activated(bufnr)
+--     require("venv-selector.logger").debug("ensure_uv_buffer_activated")
+--     if not vim.api.nvim_buf_is_valid(bufnr) then return end
+--     if not M.is_uv_buffer(bufnr) then return end
 
-    local last_python = vim.b[bufnr].venv_selector_uv_last_python
-    if last_python and last_python ~= "" then
-        if path_mod.current_python_path ~= last_python then
-            require("venv-selector.venv").activate(last_python, "uv", false)
-        end
-        return
-    end
+--     local last_python = vim.b[bufnr].venv_selector_uv_last_python
+--     if last_python and last_python ~= "" then
+--         if path_mod.current_python_path ~= last_python then
+--             require("venv-selector.venv").activate_for_buffer(last_python, "uv")
+--         end
+--         return
+--     end
 
-    -- No cached python for this buffer yet -> must run uv
-    M.run_uv_flow_if_needed(bufnr)
-end
-
-
-
+--     -- No cached python for this buffer yet -> must run uv
+--     M.run_uv_flow_if_needed(bufnr)
+-- end
 
 return M

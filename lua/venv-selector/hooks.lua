@@ -5,6 +5,8 @@ local M = {}
 
 M.notifications_memory = {}
 
+vim.g.venv_selector_pending_lsp_apply = true
+
 
 ---Create environment variables for the LSP client command
 ---@param client_name string The name of the LSP client

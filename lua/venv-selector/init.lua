@@ -63,18 +63,13 @@ vim.api.nvim_create_autocmd({ "BufReadPost", "FileType" }, {
         if vim.bo[args.buf].filetype ~= "python" then return end
         if require("venv-selector.uv2").is_uv_buffer(args.buf) then return end
 
-        local cache = require("venv-selector.cached_venv")
-        local python, env_type, source = cache.get_for_buf(args.buf)
-        if not python then return end
-
-        if source then
-            require("venv-selector.venv").set_source(source)
-        end
-
-        local path_mod = require("venv-selector.path")
-        if path_mod.current_python_path ~= python then
-            require("venv-selector.venv").activate_for_buffer(python, env_type or "venv", args.buf)
-        end
+        -- Old cached venv behavior: cwd-keyed, activates via venv.activate()
+        -- Delay to allow lspconfig autostart to attach at least one python client.
+        -- Use vim.defer_fn (milliseconds).
+        vim.defer_fn(function()
+            -- buffer might have changed; still apply globally as before
+            require("venv-selector.cached_venv").retrieve()
+        end, 1000)
     end,
 })
 

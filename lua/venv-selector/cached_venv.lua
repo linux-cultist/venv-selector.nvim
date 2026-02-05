@@ -112,7 +112,7 @@ end
 ---@param done? fun(activated: boolean) Callback called when retrieval/activation finishes
 function M.retrieve(done)
     local function finish(activated)
-        cache_retrieval_done = true
+        -- cache_retrieval_done = true
         if done then done(activated == true) end
     end
 

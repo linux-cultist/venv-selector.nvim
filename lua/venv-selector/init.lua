@@ -56,22 +56,48 @@ vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter", "WinEnter" }, {
     end,
 })
 
-vim.api.nvim_create_autocmd({ "BufReadPost", "FileType" }, {
-    group = group,
-    callback = function(args)
-        if vim.bo[args.buf].buftype ~= "" then return end
-        if vim.bo[args.buf].filetype ~= "python" then return end
-        if require("venv-selector.uv2").is_uv_buffer(args.buf) then return end
+local group_cache = vim.api.nvim_create_augroup("VenvSelectorCachedVenv", { clear = true })
 
-        -- Old cached venv behavior: cwd-keyed, activates via venv.activate()
-        -- Delay to allow lspconfig autostart to attach at least one python client.
-        -- Use vim.defer_fn (milliseconds).
-        vim.defer_fn(function()
-            -- buffer might have changed; still apply globally as before
-            require("venv-selector.cached_venv").retrieve()
-        end, 1000)
-    end,
+vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter", "FileType" }, {
+  group = group_cache,
+  callback = function(args)
+    local bufnr = args.buf
+    if not vim.api.nvim_buf_is_valid(bufnr) then return end
+    if vim.bo[bufnr].buftype ~= "" then return end
+    if vim.bo[bufnr].filetype ~= "python" then return end
+
+    local uv2 = require("venv-selector.uv2")
+    if uv2.is_uv_buffer(bufnr) then
+      return -- UV handler owns these
+    end
+
+    require("venv-selector.logger").debug(
+      ("cache-autocmd %s b=%d file=%s"):format(vim.v.event.event or "event", bufnr, vim.api.nvim_buf_get_name(bufnr))
+    )
+
+    -- your chosen approach: delay the retrieval itself
+    vim.defer_fn(function()
+      require("venv-selector.cached_venv").retrieve()
+    end, 1000)
+  end,
 })
+
+-- vim.api.nvim_create_autocmd({ "BufReadPost", "FileType" }, {
+--     group = group,
+--     callback = function(args)
+--         if vim.bo[args.buf].buftype ~= "" then return end
+--         if vim.bo[args.buf].filetype ~= "python" then return end
+--         if require("venv-selector.uv2").is_uv_buffer(args.buf) then return end
+
+--         -- Old cached venv behavior: cwd-keyed, activates via venv.activate()
+--         -- Delay to allow lspconfig autostart to attach at least one python client.
+--         -- Use vim.defer_fn (milliseconds).
+--         vim.defer_fn(function()
+--             -- buffer might have changed; still apply globally as before
+--             require("venv-selector.cached_venv").retrieve()
+--         end, 1000)
+--     end,
+-- })
 
 -- 1) When a python buffer is first read or created
 vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile" }, {

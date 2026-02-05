@@ -2,9 +2,9 @@ local log              = require("venv-selector.logger")
 
 -- Global timings (same for all servers)
 local POLL_INTERVAL_MS  = 60
-local MAX_TRIES         = 50
+local MAX_TRIES         = 3
 local START_GRACE_MS    = 250
-local FORCE_EXTRA_TRIES = 80 -- ~4.8s extra after force stop
+local FORCE_EXTRA_TRIES = 30
 
 local M                = {}
 

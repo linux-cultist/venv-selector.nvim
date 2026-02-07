@@ -206,6 +206,30 @@ function M.get_picker_columns()
     return config.user_settings.options.picker_columns or { "marker", "search_icon", "search_name", "search_result" }
 end
 
+local function pick_target_python_buf()
+    -- 1) Prefer alternate buffer (often the file buffer you came from)
+    local alt = vim.fn.bufnr("#")
+    if alt > 0 and vim.api.nvim_buf_is_valid(alt) then
+        if vim.bo[alt].buftype == "" and vim.bo[alt].filetype == "python" then
+            return alt
+        end
+    end
+
+    -- 2) Prefer any loaded python file buffer
+    for _, b in ipairs(vim.api.nvim_list_bufs()) do
+        if vim.api.nvim_buf_is_valid(b)
+            and vim.bo[b].buftype == ""
+            and vim.bo[b].filetype == "python"
+            and vim.api.nvim_buf_get_name(b) ~= "" then
+            return b
+        end
+    end
+
+    -- 3) Fallback: current buffer (may be picker buffer; activation should handle nil root safely)
+    return vim.api.nvim_get_current_buf()
+end
+
+
 ---@param entry SearchResult|nil
 function M.select(entry)
     if entry == nil then return end
@@ -213,13 +237,11 @@ function M.select(entry)
     local venv = require("venv-selector.venv")
     venv.set_source(entry.source)
 
-    local bufnr = vim.api.nvim_get_current_buf()
+    local bufnr = pick_target_python_buf()
 
-    -- Prefer buffer-aware activation (still goes through hooks → gate)
     if type(venv.activate_for_buffer) == "function" then
         venv.activate_for_buffer(entry.path, entry.type, bufnr, { save_cache = true })
     else
-        -- Fallback
         venv.activate(entry.path, entry.type, true)
     end
 end

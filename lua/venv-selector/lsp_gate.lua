@@ -1,4 +1,4 @@
-local log              = require("venv-selector.logger")
+local log               = require("venv-selector.logger")
 
 -- Global timings (same for all servers)
 local POLL_INTERVAL_MS  = 60
@@ -6,40 +6,53 @@ local MAX_TRIES         = 3
 local START_GRACE_MS    = 250
 local FORCE_EXTRA_TRIES = 30
 
-local M                = {}
+local M                 = {}
 
-local uv               = vim.uv or vim.loop
+local uv                = vim.uv or vim.loop
+
+local function split_key(key)
+    if type(key) ~= "string" or key == "" then
+        return nil, nil
+    end
+    local name, root = key:match("^(.-)::(.*)$")
+    if not name then
+        -- allow old "name" keys; treat as no-root
+        return key, ""
+    end
+    return name, root
+end
+
+local function clients_for_key(key)
+    local name, root = split_key(key)
+    if not name then return {} end
+    local out = {}
+    for _, c in ipairs(vim.lsp.get_clients({ name = name })) do
+        if root == "" then
+            out[#out + 1] = c
+        else
+            local r = (c.config and c.config.root_dir) or ""
+            if r == root then
+                out[#out + 1] = c
+            end
+        end
+    end
+    return out
+end
 
 -- Per server-name gate (pyright, pylsp, etc.)
-local st               = {
+local st = {
     gen = {},      -- name -> int
     inflight = {}, -- name -> bool
     pending = {},  -- name -> { cfg=table, bufs=table<number,true> }
     timer = {},    -- name -> uv_timer
 }
 
-local function bump(name)
-    st.gen[name] = (st.gen[name] or 0) + 1
-    return st.gen[name]
+local function bump(key)
+    st.gen[key] = (st.gen[key] or 0) + 1
+    return st.gen[key]
 end
 
-local function stop_all_by_name(name)
-    for _, c in ipairs(vim.lsp.get_clients({ name = name })) do
-        pcall(function() c:stop() end)
-    end
-end
 
-local function any_alive(name)
-    return #vim.lsp.get_clients({ name = name }) > 0
-end
-
-local function attach_all(bufs, new_id)
-    for b, _ in pairs(bufs) do
-        if vim.api.nvim_buf_is_valid(b) then
-            pcall(vim.lsp.buf_attach_client, b, new_id)
-        end
-    end
-end
 
 local function first_valid_buf(bufs)
     for b, _ in pairs(bufs) do
@@ -47,37 +60,37 @@ local function first_valid_buf(bufs)
     end
 end
 
-local function close_timer(name)
-    local t = st.timer[name]
+local function close_timer(key)
+    local t = st.timer[key]
     if t then
         t:stop()
         t:close()
-        st.timer[name] = nil
+        st.timer[key] = nil
     end
+end
+
+local function stop_all_by_key(key, force)
+    for _, c in ipairs(clients_for_key(key)) do
+        pcall(function() c:stop(force) end)
+    end
+end
+
+local function alive_count(key)
+    return #clients_for_key(key)
 end
 
 -- inside lua/venv-selector/lsp_restart_gate.lua
 
-local function schedule_poll(name, my_gen)
-    close_timer(name)
-
-
-    local function alive_count()
-        return #vim.lsp.get_clients({ name = name })
+local function schedule_poll(key, my_gen)
+    if type(key) ~= "string" or key == "" then
+        log.debug("gate.schedule_poll: nil/empty key; abort")
+        return
     end
 
-    local function stop_all(force)
-        for _, c in ipairs(vim.lsp.get_clients({ name = name })) do
-            pcall(function()
-                -- Neovim 0.11: client:stop() supports a force boolean in practice across releases;
-                -- pcall makes this safe even if the signature differs.
-                c:stop(force)
-            end)
-        end
-    end
+    close_timer(key)
 
     local t = uv.new_timer()
-    st.timer[name] = t
+    st.timer[key] = t
 
     local tries = 0
     local forced = false
@@ -85,69 +98,66 @@ local function schedule_poll(name, my_gen)
     t:start(POLL_INTERVAL_MS, POLL_INTERVAL_MS, vim.schedule_wrap(function()
         tries = tries + 1
 
-        local alive = alive_count()
-        log.debug(("gate.poll name=%s gen=%d tries=%d alive=%d forced=%s"):format(
-            name, my_gen, tries, alive, tostring(forced)
+        -- FIX: pass key
+        local alive = alive_count(key)
+        log.debug(("gate.poll key=%s gen=%d tries=%d alive=%d forced=%s"):format(
+            key, my_gen, tries, alive, tostring(forced)
         ))
 
-        -- Stale request: a newer generation replaced this one
-        if st.gen[name] ~= my_gen then
-            close_timer(name)
-            st.inflight[name] = false
+        if st.gen[key] ~= my_gen then
+            close_timer(key)
+            st.inflight[key] = false
             return
         end
 
-        -- Normal wait: let old client(s) exit gracefully
         if alive > 0 and tries < MAX_TRIES then
             return
         end
 
-        -- Timeout reached and still alive: force-stop once, then keep waiting
         if alive > 0 and not forced then
-            log.debug(("gate.force_stop name=%s gen=%d alive=%d"):format(name, my_gen, alive))
+            log.debug(("gate.force_stop key=%s gen=%d alive=%d"):format(key, my_gen, alive))
             forced = true
             tries = 0
-            stop_all(true)
+            -- FIX: correct function
+            stop_all_by_key(key, true)
             return
         end
 
-        -- After force-stop window, if still alive: abort to avoid duplicate servers
         if alive > 0 and forced and tries < FORCE_EXTRA_TRIES then
             return
         end
         if alive > 0 and forced then
-            log.debug(("gate.abort name=%s gen=%d reason=still_alive_after_force alive=%d"):format(
-                name, my_gen, alive
+            log.debug(("gate.abort key=%s gen=%d reason=still_alive_after_force alive=%d"):format(
+                key, my_gen, alive
             ))
-            close_timer(name)
-            st.pending[name] = nil
-            st.inflight[name] = false
+            close_timer(key)
+            st.pending[key] = nil
+            st.inflight[key] = false
             return
         end
 
-        -- Now alive == 0 -> proceed to start
-        close_timer(name)
+        close_timer(key)
 
-        local job = st.pending[name]
-        st.pending[name] = nil
+        local job = st.pending[key]
+        st.pending[key] = nil
         if not job or not job.cfg or not job.bufs then
-            log.debug(("gate.start aborted name=%s gen=%d reason=no_job"):format(name, my_gen))
-            st.inflight[name] = false
+            log.debug(("gate.start aborted key=%s gen=%d reason=no_job"):format(key, my_gen))
+            st.inflight[key] = false
             return
         end
 
         local first_buf = first_valid_buf(job.bufs)
-        log.debug(("gate.start name=%s gen=%d first_buf=%s"):format(name, my_gen, tostring(first_buf)))
+        log.debug(("gate.start key=%s gen=%d first_buf=%s"):format(key, my_gen, tostring(first_buf)))
         if not first_buf then
-            log.debug(("gate.start aborted name=%s gen=%d reason=no_valid_buf"):format(name, my_gen))
-            st.inflight[name] = false
+            log.debug(("gate.start aborted key=%s gen=%d reason=no_valid_buf"):format(key, my_gen))
+            st.inflight[key] = false
             return
         end
         log.debug(("gate.start bufname=%s"):format(vim.api.nvim_buf_get_name(first_buf)))
 
         local function do_start()
-            if st.gen[name] ~= my_gen then
-                st.inflight[name] = false
+            if st.gen[key] ~= my_gen then
+                st.inflight[key] = false
                 return
             end
 
@@ -156,7 +166,7 @@ local function schedule_poll(name, my_gen)
                 reuse_client = function() return false end,
             })
 
-            log.debug(("gate.started name=%s gen=%d new_id=%s"):format(name, my_gen, tostring(new_id)))
+            log.debug(("gate.started key=%s gen=%d new_id=%s"):format(key, my_gen, tostring(new_id)))
 
             if new_id then
                 for b, _ in pairs(job.bufs) do
@@ -164,30 +174,12 @@ local function schedule_poll(name, my_gen)
                         pcall(vim.lsp.buf_attach_client, b, new_id)
                     end
                 end
-
-                vim.defer_fn(function()
-                    local c = vim.lsp.get_client_by_id(new_id)
-                    if not c then
-                        log.debug(("gate.verify name=%s gen=%d new_id=%d missing_after_start"):format(name, my_gen,
-                            new_id))
-                        return
-                    end
-                    local attached = false
-                    for b, _ in pairs(c.attached_buffers or {}) do
-                        if b == first_buf then
-                            attached = true; break
-                        end
-                    end
-                    log.debug(("gate.verify name=%s gen=%d new_id=%d attached_to_first_buf=%s"):format(
-                        name, my_gen, new_id, tostring(attached)
-                    ))
-                end, 600)
             end
 
-            st.inflight[name] = false
+            st.inflight[key] = false
 
-            if st.pending[name] then
-                M.request(name, st.pending[name].cfg, st.pending[name].bufs)
+            if st.pending[key] then
+                M.request(key, st.pending[key].cfg, st.pending[key].bufs)
             end
         end
 
@@ -201,25 +193,21 @@ end
 
 --- Request restart for a server name with a fully-built cfg and buffer set.
 --- Coalesces multiple requests; guarantees a new client is started.
-function M.request(name, cfg, bufs)
-    local my_gen = bump(name)
-
-    local nbuf = 0
-    for _ in pairs(bufs or {}) do nbuf = nbuf + 1 end
-    log.debug(("gate.request name=%s gen=%d inflight=%s bufs=%d"):format(
-        name, my_gen, tostring(st.inflight[name] == true), nbuf
-    ))
-
-
-    st.pending[name] = { cfg = cfg, bufs = bufs }
-
-    if st.inflight[name] then
+function M.request(key, cfg, bufs)
+    if type(key) ~= "string" or key == "" then
+        log.debug("gate.request: nil/empty key; ignoring")
         return
     end
-    st.inflight[name] = true
 
-    stop_all_by_name(name)
-    schedule_poll(name, my_gen)
+    local my_gen = bump(key)
+
+    st.pending[key] = { cfg = cfg, bufs = bufs }
+
+    if st.inflight[key] then return end
+    st.inflight[key] = true
+
+    stop_all_by_key(key, false)
+    schedule_poll(key, my_gen)
 end
 
 return M

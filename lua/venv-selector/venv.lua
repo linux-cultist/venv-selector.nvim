@@ -3,13 +3,18 @@ local config = require("venv-selector.config")
 local log = require("venv-selector.logger")
 
 local M = {}
+local active_project_root = nil
+
+function M.active_project_root()
+    return active_project_root
+end
 
 path.current_source = nil -- contains the name of the search, like anaconda, pipx etc.
 
 function M.stop_lsp_servers()
     local hooks = require("venv-selector.config").user_settings.hooks
     for _, hook in pairs(hooks) do
-        hook(nil, nil)
+        hook(nil, nil, nil)
     end
 end
 
@@ -25,7 +30,7 @@ end
 ---@param bufnr? integer
 ---@param check_lsp? boolean
 ---@return boolean activated
-local function do_activate(python_path, env_type, bufnr, check_lsp)
+local function do_activate(python_path, env_type, bufnr, opts)
     if not python_path or python_path == "" then
         return false
     end
@@ -41,6 +46,7 @@ local function do_activate(python_path, env_type, bufnr, check_lsp)
     if path.current_python_path == python_path and path.current_type == env_type then
         log.debug(("Activation skipped (already active): py=%s type=%s"):format(python_path, env_type))
         vim.g.venv_selector_activated = true
+        active_project_root = require("venv-selector.project_root").key_for_buf(bufnr)
         return true
     end
 
@@ -49,11 +55,15 @@ local function do_activate(python_path, env_type, bufnr, check_lsp)
     path.current_venv_path = path.get_base(python_path)
     path.current_type = env_type
 
+
+    local pr = require("venv-selector.project_root").key_for_buf(bufnr)
+    active_project_root = pr
+
     -- Inform LSP servers via hooks (hooks should use restart gate)
     local count = 0
     local hooks = require("venv-selector.config").user_settings.hooks
     for _, hook in pairs(hooks) do
-        count = count + hook(python_path, env_type)
+        count = count + hook(python_path, env_type, bufnr)
     end
 
     -- -- Optional behavior: keep the old API shape (currently you disabled this check in activate()).
@@ -69,8 +79,13 @@ local function do_activate(python_path, env_type, bufnr, check_lsp)
     -- Save to cache (skip uv inside cached_venv.save)
     -- Pass bufnr so cache can be per-root/per-workspace.
     local cache = require("venv-selector.cached_venv")
-    if type(cache.save) == "function" then
+    -- if type(cache.save) == "function" then
+    --     cache.save(python_path, env_type, bufnr)
+    -- end
+    if opts.save_cache ~= false then
         cache.save(python_path, env_type, bufnr)
+    else
+        log.debug("Skipping cache save (activation initiated from cache)")
     end
 
     -- Update PATH/env/dap/etc
@@ -92,9 +107,13 @@ end
 ---@param bufnr? integer
 ---@return boolean activated
 function M.activate_for_buffer(python_path, env_type, bufnr, opts)
-  opts = opts or {}
-  if bufnr ~= nil and not vim.api.nvim_buf_is_valid(bufnr) then bufnr = nil end
-  return do_activate(python_path, env_type, bufnr, opts)
+    opts = opts or {}
+    if bufnr ~= nil then
+        if (not vim.api.nvim_buf_is_valid(bufnr)) or vim.bo[bufnr].buftype ~= "" then
+            bufnr = nil
+        end
+    end
+    return do_activate(python_path, env_type, bufnr, opts)
 end
 
 --- Backwards-compatible API used by picker, etc.

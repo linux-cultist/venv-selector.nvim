@@ -243,7 +243,7 @@ end
 ---@type venv-selector.Settings
 local default_settings = {
     cache = {
-        file = "~/.cache/venv-selector/venvs2.json",
+        file = "~/.cache/venv-selector/venvs3.json",
     },
     hooks = {
         hooks.dynamic_python_lsp_hook,

@@ -1,38 +1,47 @@
 local M = {}
 
 local uv = vim.uv or vim.loop
-local timers = {} -- bufnr -> timer
+local log = require("venv-selector.logger")
+local path_mod = require("venv-selector.path")
 
-local function debounce(bufnr, ms, fn)
-    local t = timers[bufnr]
+local has_uv = vim.fn.executable("uv") == 1
+
+-- (bufnr, tag) -> timer
+local timers = {}
+
+local function debounce(bufnr, tag, ms, fn)
+    local key = ("%d:%s"):format(bufnr, tag)
+    local t = timers[key]
     if t then
         t:stop(); t:close()
+        timers[key] = nil
     end
     t = uv.new_timer()
-    timers[bufnr] = t
+    timers[key] = t
     t:start(ms, 0, vim.schedule_wrap(function()
-        timers[bufnr] = nil
+        timers[key] = nil
         fn()
     end))
 end
 
+local function valid_py_buf(bufnr)
+    return vim.api.nvim_buf_is_valid(bufnr)
+        and vim.bo[bufnr].buftype == ""
+        and vim.bo[bufnr].filetype == "python"
+end
 
-local path_mod = require("venv-selector.path")
+-- cache uv detection per changedtick
+local function is_uv_buffer_cached(bufnr)
+    if not valid_py_buf(bufnr) then return false end
+    local tick = vim.b[bufnr].changedtick or 0
+    local cache_tick = vim.b[bufnr].venv_selector_uv_detect_tick
+    if cache_tick == tick and vim.b[bufnr].venv_selector_uv_detect_val ~= nil then
+        return vim.b[bufnr].venv_selector_uv_detect_val
+    end
 
-local has_uv = vim.fn.executable("uv") == 1
-local group = vim.api.nvim_create_augroup("VenvSelectorUvDetect", { clear = true })
-
----Check if a buffer contains PEP-723 script metadata
----@param bufnr integer The buffer number
----@return boolean true if PEP-723 metadata is found
-function M.is_uv_buffer(bufnr)
-    if vim.bo[bufnr].buftype ~= "" then return false end
-    if vim.bo[bufnr].filetype ~= "python" then return false end
-
-    -- PEP 723 block starts with "# /// script" and ends with "# ///"
+    local ok = false
     local lines = vim.api.nvim_buf_get_lines(bufnr, 0, 200, false)
     local seen_start = false
-
     for _, line in ipairs(lines) do
         if not seen_start then
             if line:match("^%s*#%s*///%s*script%s*$") then
@@ -40,97 +49,67 @@ function M.is_uv_buffer(bufnr)
             end
         else
             if line:match("^%s*#%s*///%s*$") then
-                return true
+                ok = true
+                break
             end
         end
     end
 
-    return false
+    vim.b[bufnr].venv_selector_uv_detect_tick = tick
+    vim.b[bufnr].venv_selector_uv_detect_val = ok
+    return ok
 end
 
----@param bufnr integer
----@param event string
-local function log_uv_detection(bufnr, event)
-    if not vim.api.nvim_buf_is_valid(bufnr) then return end
-
-    local name = vim.api.nvim_buf_get_name(bufnr)
-    local uv = M.is_uv_buffer(bufnr)
-
-    require("venv-selector.logger").debug(
-        ("uv-detect %s bufnr=%d uv=%s file=%s"):format(event, bufnr, tostring(uv), name)
-    )
+function M.is_uv_buffer(bufnr)
+    return is_uv_buffer_cached(bufnr)
 end
 
----@param prefix string
----@param text string|nil
 local function log_multiline(prefix, text)
     if not text or text == "" then return end
-    local log = require("venv-selector.logger")
     for line in text:gmatch("[^\r\n]+") do
         log.debug(prefix .. line)
     end
 end
 
----Run 'uv sync' for a buffer's script
----@param bufnr integer
----@param done? fun(ok: boolean)
 local function run_uv_sync_for_buffer(bufnr, done)
-    if has_uv == false then
-        require("venv-selector.logger").debug("uv not found.")
-        if done then done(false) end
-        return
+    if not has_uv then
+        log.debug("uv not found.")
+        return done(false)
     end
-    local current_file = vim.api.nvim_buf_get_name(bufnr)
-    if current_file == "" then
-        if done then done(false) end
-        return
-    end
-    local cmd = { "uv", "sync", "--script", current_file }
-    require("venv-selector.logger").debug("Running uv command: " .. table.concat(cmd, " "))
-    vim.system(cmd, {
-        text = true,
-        cwd = vim.fn.fnamemodify(current_file, ":h"),
-    }, function(res)
+    local file = vim.api.nvim_buf_get_name(bufnr)
+    if file == "" then return done(false) end
+
+    local cmd = { "uv", "sync", "--script", file }
+    log.debug("Running uv command: " .. table.concat(cmd, " "))
+    vim.system(cmd, { text = true, cwd = vim.fn.fnamemodify(file, ":h") }, function(res)
         vim.schedule(function()
             local out = (res.stderr and res.stderr ~= "") and res.stderr or res.stdout
             log_multiline("uv sync: ", out)
             if res.code ~= 0 then
                 vim.notify(out or "uv sync failed", vim.log.levels.ERROR, { title = "VenvSelector" })
-                if done then done(false) end
-                return
+                return done(false)
             end
-            if done then done(true) end
+            done(true)
         end)
     end)
 end
 
----Run 'uv python find' and activate the result
----@param bufnr integer
----@param done? fun(ok: boolean, python_path?: string)
-local function run_uv_python_find_and_activate(bufnr, done)
-    if has_uv == false then
-        require("venv-selector.logger").debug("uv not found.")
-        if done then done(false) end
-        return
+local function run_uv_python_find(bufnr, done)
+    if not has_uv then
+        log.debug("uv not found.")
+        return done(false)
     end
-    local current_file = vim.api.nvim_buf_get_name(bufnr)
-    if current_file == "" or has_uv == false then
-        if done then done(false) end
-        return
-    end
-    local cmd = { "uv", "python", "find", "--script", current_file }
-    require("venv-selector.logger").debug("Running uv command: " .. table.concat(cmd, " "))
-    vim.system(cmd, {
-        text = true,
-        cwd = vim.fn.fnamemodify(current_file, ":h"),
-    }, function(res)
+    local file = vim.api.nvim_buf_get_name(bufnr)
+    if file == "" then return done(false) end
+
+    local cmd = { "uv", "python", "find", "--script", file }
+    log.debug("Running uv command: " .. table.concat(cmd, " "))
+    vim.system(cmd, { text = true, cwd = vim.fn.fnamemodify(file, ":h") }, function(res)
         vim.schedule(function()
             local out = (res.stderr and res.stderr ~= "") and res.stderr or res.stdout
             if res.code ~= 0 or not out or out == "" then
-                if done then done(false) end
-                return
+                return done(false)
             end
-
             local python_path
             for line in out:gmatch("[^\r\n]+") do
                 if line and line ~= "" then
@@ -138,105 +117,87 @@ local function run_uv_python_find_and_activate(bufnr, done)
                 end
             end
             if not python_path or python_path == "" then
-                if done then done(false) end
-                return
+                return done(false)
             end
-
-            -- Activate immediately for first-time resolution (or if it differs)
-            if path_mod.current_python_path ~= python_path then
-                require("venv-selector.venv").activate_for_buffer(python_path, "uv")
-            end
-
-            if done then done(true, python_path) end
+            done(true, python_path)
         end)
     end)
 end
 
----@param bufnr integer
-local function run_uv_flow(bufnr)
-    run_uv_sync_for_buffer(bufnr, function(_sync_ok)
-        run_uv_python_find_and_activate(bufnr, function(ok, python_path)
-            vim.b[bufnr].venv_selector_uv_running = false
-            if not ok or not python_path or python_path == "" then return end
+local function apply_uv_python(bufnr, python_path)
+    if not python_path or python_path == "" then return end
+    if path_mod.current_python_path == python_path then return end
+    require("venv-selector.venv").activate_for_buffer(python_path, "uv", bufnr, { save_cache = false })
+end
 
-            vim.b[bufnr].venv_selector_uv_last_tick = vim.b[bufnr].changedtick or 0
-            vim.b[bufnr].venv_selector_uv_last_python = python_path
+local function run_uv_flow(bufnr)
+    run_uv_sync_for_buffer(bufnr, function(sync_ok)
+        if not sync_ok then
+            vim.b[bufnr].venv_selector_uv_running = false
+            return
+        end
+        run_uv_python_find(bufnr, function(ok, python_path)
+            vim.b[bufnr].venv_selector_uv_running = false
+
+            if ok and python_path and python_path ~= "" then
+                vim.b[bufnr].venv_selector_uv_last_tick = vim.b[bufnr].changedtick or 0
+                vim.b[bufnr].venv_selector_uv_last_python = python_path
+                apply_uv_python(bufnr, python_path)
+            end
+
+            -- if metadata changed while running, rerun once
+            if vim.b[bufnr].venv_selector_uv_pending then
+                vim.b[bufnr].venv_selector_uv_pending = false
+                M.run_uv_flow_if_needed(bufnr)
+            end
         end)
     end)
 end
 
 function M.run_uv_flow_if_needed(bufnr)
-    debounce(bufnr, 120, function()
-        require("venv-selector.logger").debug("run_uv_flow_if_needed")
-        if not vim.api.nvim_buf_is_valid(bufnr) then return end
-        if not M.is_uv_buffer(bufnr) then return end
+    bufnr = bufnr or vim.api.nvim_get_current_buf()
+    if not valid_py_buf(bufnr) then return end
+    if not is_uv_buffer_cached(bufnr) then return end
+
+    debounce(bufnr, "uvflow", 120, function()
+        if not valid_py_buf(bufnr) then return end
+        if not is_uv_buffer_cached(bufnr) then return end
+
         local tick = vim.b[bufnr].changedtick or 0
         if vim.b[bufnr].venv_selector_uv_last_tick == tick then
-            return -- content unchanged -> don't rerun uv commands
+            return
         end
 
-        if vim.b[bufnr].venv_selector_uv_running then return end
-        vim.b[bufnr].venv_selector_uv_running = true
+        if vim.b[bufnr].venv_selector_uv_running then
+            vim.b[bufnr].venv_selector_uv_pending = true
+            return
+        end
 
+        vim.b[bufnr].venv_selector_uv_running = true
+        log.debug("run_uv_flow_if_needed")
         run_uv_flow(bufnr)
     end)
 end
 
--- ---Check if buffer content changed and run uv flow if needed
--- ---@param bufnr integer
--- function M.run_uv_flow_if_needed(bufnr)
---     require("venv-selector.logger").debug("run_uv_flow_if_needed")
---     if not vim.api.nvim_buf_is_valid(bufnr) then return end
---     if not M.is_uv_buffer(bufnr) then return end
-
---     local tick = vim.b[bufnr].changedtick or 0
---     if vim.b[bufnr].venv_selector_uv_last_tick == tick then
---         return -- content unchanged -> don't rerun uv commands
---     end
-
---     if vim.b[bufnr].venv_selector_uv_running then return end
---     vim.b[bufnr].venv_selector_uv_running = true
-
---     run_uv_flow(bufnr)
--- end
-
 function M.ensure_uv_buffer_activated(bufnr)
-    debounce(bufnr, 80, function()
-        require("venv-selector.logger").debug("ensure_uv_buffer_activated")
-        if not vim.api.nvim_buf_is_valid(bufnr) then return end
-        if not M.is_uv_buffer(bufnr) then return end
+    bufnr = bufnr or vim.api.nvim_get_current_buf()
+    if not valid_py_buf(bufnr) then return end
+    if not is_uv_buffer_cached(bufnr) then return end
 
-        -- rest unchanged except activate_for_buffer calls
+    debounce(bufnr, "uviens", 80, function()
+        if not valid_py_buf(bufnr) then return end
+        if not is_uv_buffer_cached(bufnr) then return end
+
+        log.debug("ensure_uv_buffer_activated")
+
         local last_python = vim.b[bufnr].venv_selector_uv_last_python
         if last_python and last_python ~= "" then
-            if path_mod.current_python_path ~= last_python then
-                require("venv-selector.venv").activate_for_buffer(last_python, "uv")
-            end
+            apply_uv_python(bufnr, last_python)
             return
         end
 
-        -- No cached python for this buffer yet -> must run uv
         M.run_uv_flow_if_needed(bufnr)
     end)
 end
-
----Ensure the correct venv is activated for a uv buffer
--- ---@param bufnr integer
--- function M.ensure_uv_buffer_activated(bufnr)
---     require("venv-selector.logger").debug("ensure_uv_buffer_activated")
---     if not vim.api.nvim_buf_is_valid(bufnr) then return end
---     if not M.is_uv_buffer(bufnr) then return end
-
---     local last_python = vim.b[bufnr].venv_selector_uv_last_python
---     if last_python and last_python ~= "" then
---         if path_mod.current_python_path ~= last_python then
---             require("venv-selector.venv").activate_for_buffer(last_python, "uv")
---         end
---         return
---     end
-
---     -- No cached python for this buffer yet -> must run uv
---     M.run_uv_flow_if_needed(bufnr)
--- end
 
 return M

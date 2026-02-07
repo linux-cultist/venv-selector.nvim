@@ -1,60 +1,6 @@
 local M = {}
 
--- vim.api.nvim_create_autocmd("BufEnter", {
---     group = group,
---     callback = function(args)
---         vim.schedule(function()
---             local uv = require("venv-selector.uv2")
---             uv.ensure_uv_buffer_activated(args.buf)
---         end)
---     end,
--- })
 
--- vim.api.nvim_create_autocmd("BufWritePost", {
---     group = group,
---     callback = function(args)
---         vim.schedule(function()
---             local uv = require("venv-selector.uv2")
---             uv.run_uv_flow_if_needed(args.buf)
---         end)
---     end,
--- })
-
-local group = vim.api.nvim_create_augroup("VenvSelectorUvDetect", { clear = true })
-
-local dbg_group = vim.api.nvim_create_augroup("VenvSelectorBufDebugLog", { clear = true })
-
-local function log_buf(event, bufnr)
-    local ok, log = pcall(require, "venv-selector.logger")
-    if not ok then return end
-
-    local ok2, path_mod = pcall(require, "venv-selector.path")
-    if not ok2 then return end
-
-    if not vim.api.nvim_buf_is_valid(bufnr) then return end
-    if vim.bo[bufnr].buftype ~= "" then return end
-
-    local file = vim.api.nvim_buf_get_name(bufnr)
-    local ft = vim.bo[bufnr].filetype
-    local global_py = path_mod.current_python_path or "nil"
-    local uv_cached = vim.b[bufnr].venv_selector_uv_last_python or "nil"
-
-    log.debug(("%s b=%d ft=%s file=%s"):format(event, bufnr, tostring(ft), file))
-    log.debug(("  global interpreter=%s"):format(global_py))
-    log.debug(("  uv cached interpreter=%s"):format(uv_cached))
-end
-
--- vim.api.nvim_create_autocmd({ "BufEnter", "BufWinEnter", "WinEnter" }, {
---     group = dbg_group,
---     callback = function(args)
---         local ok, err = pcall(log_buf, args.event, args.buf)
---         if not ok then
---             pcall(function()
---                 require("venv-selector.logger").debug("buf debug autocmd error: " .. tostring(err))
---             end)
---         end
---     end,
--- })
 
 local group_cache = vim.api.nvim_create_augroup("VenvSelectorCachedVenv", { clear = true })
 
@@ -99,87 +45,50 @@ vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile", "FileType" }, {
     end,
 })
 
--- vim.api.nvim_create_autocmd({ "BufReadPost", "FileType" }, {
---     group = group,
---     callback = function(args)
---         if vim.bo[args.buf].buftype ~= "" then return end
---         if vim.bo[args.buf].filetype ~= "python" then return end
---         if require("venv-selector.uv2").is_uv_buffer(args.buf) then return end
+local uv_group = vim.api.nvim_create_augroup("VenvSelectorUvDetect", { clear = true })
 
---         -- Old cached venv behavior: cwd-keyed, activates via venv.activate()
---         -- Delay to allow lspconfig autostart to attach at least one python client.
---         -- Use vim.defer_fn (milliseconds).
---         vim.defer_fn(function()
---             -- buffer might have changed; still apply globally as before
---             require("venv-selector.cached_venv").retrieve()
---         end, 1000)
---     end,
--- })
+local function uv_maybe_activate(bufnr, reason)
+    if not vim.api.nvim_buf_is_valid(bufnr) then return end
+    if vim.bo[bufnr].buftype ~= "" then return end
+    if vim.bo[bufnr].filetype ~= "python" then return end
 
--- 1) When a python buffer is first read or created
+    local log = require("venv-selector.logger")
+    log.debug(("uv-autocmd %s b=%d file=%s"):format(reason, bufnr, vim.api.nvim_buf_get_name(bufnr)))
+
+    require("venv-selector.uv2").ensure_uv_buffer_activated(bufnr)
+end
+
 vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile" }, {
-    group = group,
+    group = uv_group,
     callback = function(args)
-        if vim.bo[args.buf].filetype ~= "python" then return end
-        require("venv-selector.uv2").ensure_uv_buffer_activated(args.buf)
+        uv_maybe_activate(args.buf, "read")
     end,
 })
 
--- 2) In case filetype is set later by another plugin
 vim.api.nvim_create_autocmd("FileType", {
-    group = group,
+    group = uv_group,
     pattern = "python",
     callback = function(args)
-        require("venv-selector.uv2").ensure_uv_buffer_activated(args.buf)
+        uv_maybe_activate(args.buf, "filetype")
     end,
 })
 
--- 3) When user edits PEP-723 metadata
-vim.api.nvim_create_autocmd("BufWritePost", {
-    group = group,
+-- Critical: catches session restore, already-loaded buffers, and window switches
+vim.api.nvim_create_autocmd({ "BufEnter"}, {
+    group = uv_group,
     callback = function(args)
-        if vim.bo[args.buf].filetype ~= "python" then return end
+        uv_maybe_activate(args.buf, "enter")
+    end,
+})
+
+-- When user edits metadata, re-run uv flow
+vim.api.nvim_create_autocmd("BufWritePost", {
+    group = uv_group,
+    callback = function(args)
+        if vim.bo[args.buf].filetype ~= "python" or vim.bo[args.buf].buftype ~= "" then return end
         require("venv-selector.uv2").run_uv_flow_if_needed(args.buf)
     end,
 })
-
--- vim.api.nvim_create_autocmd("BufEnter", {
---     group = vim.api.nvim_create_augroup("VenvSelectorUvBufEnter", { clear = true }),
---     callback = function(args)
---         if vim.bo[args.buf].filetype ~= "python" then return end
---         require("venv-selector.uv2").ensure_uv_buffer_activated(args.buf)
---     end,
--- })
-
--- vim.api.nvim_create_autocmd("LspAttach", {
---   group = group,
---   callback = function(args)
---     require("venv-selector.lsp_gate").on_lsp_attach(args)
---   end,
--- })
-
--- vim.api.nvim_create_autocmd("LspDetach", {
---   group = group,
---   callback = function(args)
---     require("venv-selector.lsp_gate").on_lsp_detach(args)
---   end,
--- })
-
--- vim.api.nvim_create_autocmd({ "BufReadPost", "BufNewFile", "FileType" }, {
---   group = group,
---   callback = function(args)
---     if vim.bo[args.buf].filetype ~= "python" then return end
---     require("venv-selector.uv2").ensure_uv_buffer_activated(args.buf)
---   end,
--- })
-
--- vim.api.nvim_create_autocmd("BufWritePost", {
---   group = group,
---   callback = function(args)
---     if vim.bo[args.buf].filetype ~= "python" then return end
---     require("venv-selector.uv2").run_uv_flow_if_needed(args.buf)
---   end,
--- })
 
 
 

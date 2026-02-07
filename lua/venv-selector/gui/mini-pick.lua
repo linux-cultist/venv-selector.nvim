@@ -12,6 +12,7 @@ end
 
 local function item_to_text(item)
     local columns = gui_utils.get_picker_columns()
+    local icon = marker_icon()
 
     local column_data = {
         marker = gui_utils.hl_active_venv(item) and icon or " ",

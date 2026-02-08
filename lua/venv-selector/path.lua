@@ -1,25 +1,56 @@
-local utils = require("venv-selector.utils")
+-- lua/venv-selector/path.lua
+--
+-- Path + environment state for venv-selector.nvim.
+--
+-- Responsibilities:
+-- - Track currently selected python interpreter and derived venv path.
+-- - Mutate the process environment PATH to prioritize the active env (optional).
+-- - Provide small path utilities (expand, dirname extraction).
+-- - Integrate with dap-python by overriding its python resolution.
+--
+-- Notes:
+-- - This module is intentionally "global" (one active environment at a time).
+-- - Per-buffer correctness is handled by venv.lua + cached_venv.lua; this module
+--   only applies the global PATH/env mutations and stores global pointers.
+-- - PATH mutation is done by prepending the env's bin/Scripts directory and
+--   removing the previously prepended directory to avoid stacking.
+
 local log = require("venv-selector.logger")
 
 local M = {}
 
----@type string|nil
-M.current_python_path = nil
----@type string|nil
-M.current_venv_path = nil
----@type string|nil
-M.current_source = nil
----@type string|nil
-M.current_type = nil
+-- ============================================================================
+-- Global plugin state (used by public API + picker highlighting)
+-- ============================================================================
 
 ---@type string|nil
-local previous_dir = nil
+M.current_python_path = nil -- Full path to python executable currently selected.
 
+---@type string|nil
+M.current_venv_path = nil -- Derived venv root (typically parent of bin/Scripts).
+
+---@type string|nil
+M.current_source = nil -- Optional tag: where the selection came from (cwd/workspace/pipx/etc).
+
+---@type string|nil
+M.current_type = nil -- Environment type ("venv", "conda", "uv", etc. depending on caller).
+
+---@type string|nil
+local previous_dir = nil -- Last prepended PATH directory (bin/Scripts). Used to remove before adding a new one.
+
+-- OS detection for PATH separator behavior.
 local IS_WIN = (package.config:sub(1, 1) == "\\")
 local PATH_SEP = IS_WIN and ";" or ":"
 
+-- ============================================================================
+-- Internal helpers
+-- ============================================================================
+
+---Return true if "activate venv in terminal" behavior is enabled.
+---This is a lazy require to avoid config cycles during startup.
+---
+---@return boolean enabled
 local function activate_in_terminal_enabled()
-    -- Lazy require avoids config require-cycle during startup.
     local ok, cfg = pcall(require, "venv-selector.config")
     if not ok or not cfg or not cfg.user_settings or not cfg.user_settings.options then
         return false
@@ -27,40 +58,10 @@ local function activate_in_terminal_enabled()
     return cfg.user_settings.options.activate_venv_in_terminal == true
 end
 
----@param p string
----@return string
-function M.remove_trailing_slash(p)
-    if not p or p == "" then return p end
-    if (p:sub(-1) == "/" or p:sub(-1) == "\\") and #p > 1 then
-        return p:sub(1, -2)
-    end
-    return p
-end
-
----@param p string|nil
----@return string|nil
-function M.get_base(p)
-    if not p or p == "" then return nil end
-    p = M.remove_trailing_slash(p)
-
-    local base = p:match("(.*[/\\])")
-    if not base then
-        return nil
-    end
-
-    -- remove trailing slash
-    return base:sub(1, -2)
-end
-
----@param python_path string
-function M.save_selected_python(python_path)
-    M.current_python_path = python_path
-    -- python_path: .../venv/bin/python -> venv path: .../venv
-    M.current_venv_path = M.get_base(M.get_base(python_path))
-    log.debug('Setting require("venv-selector").python() to \'' .. tostring(M.current_python_path) .. "'")
-    log.debug('Setting require("venv-selector").venv() to \'' .. tostring(M.current_venv_path) .. "'")
-end
-
+---Split a PATH string into a list of entries.
+---
+---@param path_str string|nil
+---@return string[] parts
 local function split_path(path_str)
     local out = {}
     if not path_str or path_str == "" then
@@ -72,17 +73,24 @@ local function split_path(path_str)
     return out
 end
 
+---Join PATH entries back into a PATH string.
+---
+---@param parts string[]
+---@return string path_str
 local function join_path(parts)
     return table.concat(parts, PATH_SEP)
 end
 
----@param dir string
+---Prepend a directory to $PATH and remove duplicates of the same directory.
+---Does not touch `previous_dir` (caller manages that state).
+---
+---@param dir string Directory to prepend (typically .../bin or .../Scripts)
 local function prepend_to_path(dir)
     local clean = M.remove_trailing_slash(dir)
     local current = vim.fn.getenv("PATH") or ""
     local parts = split_path(current)
 
-    -- avoid duplicates: remove existing occurrence
+    -- Avoid duplicates by filtering out existing occurrences.
     local filtered = {}
     for _, p in ipairs(parts) do
         if p ~= clean then
@@ -96,7 +104,10 @@ local function prepend_to_path(dir)
     log.debug("Setting new terminal path to: " .. updated)
 end
 
----@param dir string
+---Remove a directory from $PATH.
+---Does not touch `previous_dir` (caller manages that state).
+---
+---@param dir string Directory to remove
 local function remove_from_path(dir)
     local clean = M.remove_trailing_slash(dir)
     local current = vim.fn.getenv("PATH") or ""
@@ -115,7 +126,75 @@ local function remove_from_path(dir)
     log.debug("Terminal path after venv removal: " .. updated)
 end
 
----@param newDir string|nil
+-- ============================================================================
+-- Public path helpers
+-- ============================================================================
+
+---Remove a trailing slash/backslash from a path (unless path is root).
+---
+---@param p string
+---@return string cleaned
+function M.remove_trailing_slash(p)
+    if not p or p == "" then
+        return p
+    end
+    if (p:sub(-1) == "/" or p:sub(-1) == "\\") and #p > 1 then
+        return p:sub(1, -2)
+    end
+    return p
+end
+
+---Get the directory name (parent path) of a path.
+---Example:
+---  "/a/b/c" -> "/a/b"
+---  "/a/b/c/" -> "/a/b"
+---
+---@param p string|nil
+---@return string|nil base Parent directory path, or nil if not derivable
+function M.get_base(p)
+    if not p or p == "" then
+        return nil
+    end
+
+    p = M.remove_trailing_slash(p)
+
+    local base = p:match("(.*[/\\])")
+    if not base then
+        return nil
+    end
+
+    -- Remove trailing slash from match.
+    return base:sub(1, -2)
+end
+
+---Persist current python selection in module globals and log it.
+---Also computes the venv root path from the python executable location.
+---
+---Expected layout:
+---  .../venv/bin/python   (unix)
+---  ...\venv\Scripts\python.exe (windows)
+---This computes:
+---  .../venv
+---
+---@param python_path string Full path to python executable
+function M.save_selected_python(python_path)
+    M.current_python_path = python_path
+
+    -- python_path: .../venv/bin/python -> venv root: .../venv
+    M.current_venv_path = M.get_base(M.get_base(python_path))
+
+    log.debug('Setting require("venv-selector").python() to \'' .. tostring(M.current_python_path) .. "'")
+    log.debug('Setting require("venv-selector").venv() to \'' .. tostring(M.current_venv_path) .. "'")
+end
+
+-- ============================================================================
+-- PATH mutation API
+-- ============================================================================
+
+---Prepend a directory to $PATH, removing any previously-prepended venv dir.
+---No-op if terminal activation is disabled.
+---
+---@param newDir string|nil Directory to add (typically .../bin or .../Scripts)
 function M.add(newDir)
     if not activate_in_terminal_enabled() then
         return
@@ -125,11 +204,14 @@ function M.add(newDir)
     end
 
     local clean_dir = M.remove_trailing_slash(newDir)
+
+    -- If we already have this at the front from the last activation, no-op.
     if previous_dir == clean_dir then
         log.debug("Path unchanged - already using: " .. clean_dir)
         return
     end
 
+    -- Remove old venv dir first to avoid PATH stacking.
     if previous_dir then
         remove_from_path(previous_dir)
     end
@@ -138,6 +220,8 @@ function M.add(newDir)
     previous_dir = clean_dir
 end
 
+---Remove the currently active python's directory from $PATH (if known).
+---This is derived from `current_python_path` (dirname of the python executable).
 function M.remove_current()
     if M.current_python_path then
         local base = M.get_base(M.current_python_path)
@@ -147,7 +231,9 @@ function M.remove_current()
     end
 end
 
----@param removalDir string
+---Remove an explicit directory from $PATH.
+---
+---@param removalDir string Directory to remove
 function M.remove(removalDir)
     if not removalDir or removalDir == "" then
         return
@@ -155,7 +241,14 @@ function M.remove(removalDir)
     remove_from_path(removalDir)
 end
 
----@param python_path string
+-- ============================================================================
+-- Integrations
+-- ============================================================================
+
+---Configure dap-python (if installed) to use the selected python interpreter.
+---This overrides dap-python's internal python resolver.
+---
+---@param python_path string Full path to python executable
 function M.update_python_dap(python_path)
     local dap_python_installed, dap_python = pcall(require, "dap-python")
     local dap_installed, _dap = pcall(require, "dap")
@@ -167,7 +260,13 @@ function M.update_python_dap(python_path)
     end
 end
 
----@return string|nil
+-- ============================================================================
+-- Convenience utilities
+-- ============================================================================
+
+---Return the directory of the currently opened file (buffer).
+---
+---@return string|nil dir Absolute directory path, or nil if buffer has no file
 function M.get_current_file_directory()
     local opened_filepath = vim.fn.expand("%:p")
     if opened_filepath and opened_filepath ~= "" then
@@ -176,8 +275,10 @@ function M.get_current_file_directory()
     return nil
 end
 
+---Expand a path using vim.fn.expand (supports "~", env vars, etc).
+---
 ---@param p string
----@return string
+---@return string expanded
 function M.expand(p)
     return vim.fn.expand(p)
 end

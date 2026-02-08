@@ -1,3 +1,27 @@
+-- lua/venv-selector/gui/snacks.lua
+--
+-- Snacks picker backend for venv-selector.nvim.
+--
+-- Responsibilities:
+-- - Present discovered python interpreters (SearchResult) in a Snacks picker.
+-- - Configure matching mode based on picker_filter_type:
+--   - "character" => fuzzy matching enabled
+--   - otherwise   => non-fuzzy substring-like matching
+-- - Stream results into the picker as they arrive and refresh the UI with debouncing.
+-- - Keep active/selected environments at the top while streaming by deduping + sorting on refresh.
+-- - Stop running searches when the picker closes.
+--
+-- Design notes:
+-- - Snacks requires each item to have a `text` field used for matching; we synthesize it from
+--   "<source> <name>" so filtering naturally narrows on both.
+-- - Refresh is scheduled (debounced) to avoid excessive `picker:find()` calls while results stream.
+-- - `self.picker` is created lazily on first result to avoid opening an empty picker.
+--
+-- Conventions:
+-- - This module implements the Picker interface used by search.lua:
+--   - :insert_result(result)
+--   - :search_done()
+
 local gui_utils = require("venv-selector.gui.utils")
 local config = require("venv-selector.config")
 
@@ -7,6 +31,14 @@ local Snacks = Snacks
 local M = {}
 M.__index = M
 
+---@class venv-selector.SnacksPickerState
+---@field results table[] Accumulated SearchResult-like items
+---@field picker any|nil Active Snacks picker instance
+---@field _refresh_scheduled boolean True while a refresh timer is pending
+---@field _closed boolean True after on_close has fired (prevents further refresh)
+
+---Create a new Snacks picker state object.
+---@return venv-selector.SnacksPickerState self
 function M.new()
     return setmetatable({
         results = {},
@@ -16,6 +48,8 @@ function M.new()
     }, M)
 end
 
+---Schedule a debounced refresh of the picker UI.
+---While streaming results, we keep active entries at the top by deduping + sorting on refresh.
 function M:_schedule_refresh()
     if self._closed or self._refresh_scheduled or not self.picker then
         return
@@ -35,6 +69,9 @@ function M:_schedule_refresh()
     end, 80)
 end
 
+---Create and show the Snacks picker.
+---The picker reads from `self.results` via the finder callback.
+---@return any picker Snacks picker instance
 function M:pick()
     local marker_color = config.user_settings.options.selected_venv_marker_color
     vim.api.nvim_set_hl(0, "VenvSelectMarker", { fg = marker_color })
@@ -90,7 +127,11 @@ function M:pick()
     })
 end
 
+---Insert a streamed SearchResult into the picker.
+---Opens the picker on the first result, then refreshes (debounced) as more arrive.
+---@param result table SearchResult-like table produced by search.lua
 function M:insert_result(result)
+    -- Snacks uses `text` for filtering/matching.
     result.text = result.source .. " " .. result.name
     table.insert(self.results, result)
 
@@ -102,6 +143,7 @@ function M:insert_result(result)
     self:_schedule_refresh()
 end
 
+---Finalize search results (deduplicate + sort) and refresh the picker display.
 function M:search_done()
     self.results = gui_utils.remove_dups(self.results)
     gui_utils.sort_results(self.results)

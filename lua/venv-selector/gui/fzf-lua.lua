@@ -1,8 +1,41 @@
+```lua
+-- lua/venv-selector/gui/fzf-lua.lua
+--
+-- fzf-lua picker backend for venv-selector.nvim.
+--
+-- Responsibilities:
+-- - Present discovered python interpreters (SearchResult) in an fzf-lua picker.
+-- - Configure fzf matching mode based on options.picker_filter_type:
+--   - "character": fuzzy matching (fzf default) + smart-case
+--   - "substring": contiguous substring matching (exact/literal/no-extended) + smart-case
+-- - Stream results incrementally to fzf via the callback function provided by fzf-lua.
+-- - Keep the currently active venv prioritized near the top:
+--   - delay initial emission briefly to allow the active item to arrive
+--   - emit active items first, then sort the rest
+-- - Stop running searches when the fzf window closes.
+--
+-- Design notes:
+-- - fzf-lua consumes entries as strings; we maintain a `self.entries` map from rendered line -> result table
+--   so selection can activate the correct environment.
+-- - Streaming uses a queue and batched emission to keep UI responsive:
+--   - results are queued via :insert_result()
+--   - :consume_queue() dedups, sorts, formats, emits in batches
+-- - ANSI color is injected into the marker column for the active item using truecolor escape codes.
+--
+-- Conventions:
+-- - Each emitted entry line encodes the configured picker columns:
+--   marker / search_icon / search_name / search_result.
+-- - This module implements the Picker interface used by search.lua:
+--   - :insert_result(result)
+--   - :search_done()
+
 local gui_utils = require("venv-selector.gui.utils")
 
 local M = {}
 M.__index = M
 
+---Compute a window configuration sized to the current editor dimensions.
+---@return table winopts
 local function get_dynamic_winopts()
     local columns = vim.o.columns
     local lines = vim.o.lines
@@ -24,6 +57,24 @@ local function get_dynamic_winopts()
     }
 end
 
+---@class venv-selector.FzfLuaState
+---@field is_done boolean True after search_done() (signals final flush)
+---@field queue table[] Pending SearchResult-like items to emit
+---@field entries table<string, table> Map from rendered entry line to SearchResult-like item
+---@field is_closed boolean True after picker closes
+---@field picker_started boolean (legacy/unused) maintained for compatibility
+---@field fzf_cb? fun(entry?: string) fzf feed callback (nil when closed)
+---@field _started_emitting boolean True once the initial grace gate has passed
+---@field _grace_ms integer Grace period to allow active item to arrive before first emission
+---@field _t0 integer Start time (ms) used for grace-period measurement
+---@field _flush_scheduled boolean True while a flush is scheduled
+---@field _flush_ms integer Delay between flush cycles
+---@field _batch_size integer Maximum items emitted per flush cycle
+
+---Create and display an fzf-lua picker instance.
+---`search_opts` are passed through to the search layer by the caller (not used directly here).
+---@param search_opts table Search options (unused; accepted for backend parity)
+---@return venv-selector.FzfLuaState self
 function M.new(search_opts)
     local self = setmetatable({ is_done = false, queue = {}, entries = {}, is_closed = false, picker_started = false }, M)
     self._started_emitting = false
@@ -43,6 +94,7 @@ function M.new(search_opts)
 
     local fzf_lua = require("fzf-lua")
 
+    -- Stop search when the fzf window closes (and avoid further emissions).
     local augroup = vim.api.nvim_create_augroup("VenvSelectFzfLua", { clear = true })
     vim.api.nvim_create_autocmd("WinClosed", {
         group = augroup,
@@ -81,6 +133,7 @@ function M.new(search_opts)
         fzf_opts["--exact"] = nil
         fzf_opts["--literal"] = nil
     end
+
     fzf_lua.fzf_exec(function(fzf_cb)
         self.fzf_cb = fzf_cb
     end, {
@@ -102,6 +155,8 @@ function M.new(search_opts)
     return self
 end
 
+---Schedule a queue flush into fzf (debounced).
+---@param self venv-selector.FzfLuaState
 local function schedule_flush(self)
     if self._flush_scheduled or not self.fzf_cb or self.is_closed then
         return
@@ -117,6 +172,9 @@ local function schedule_flush(self)
     end, self._flush_ms or 25)
 end
 
+---Return true if a list contains at least one item that is currently active.
+---@param list table[]
+---@return boolean has
 local function has_active(list)
     for _, r in ipairs(list) do
         if gui_utils.hl_active_venv(r) ~= nil then
@@ -126,6 +184,8 @@ local function has_active(list)
     return false
 end
 
+---Consume queued results and emit formatted entries into fzf.
+---This function may reschedule itself until the queue is empty.
 function M:consume_queue()
     if self.is_closed or not self.fzf_cb then
         return
@@ -149,10 +209,6 @@ function M:consume_queue()
     end
 
     self.queue = gui_utils.remove_dups(self.queue)
-
-    -- NOTE: gating removed previously to improve smooth result count.
-    -- If you still want it, keep it; it will delay initial stream.
-    -- (Leaving it out tends to feel better for fzf.)
 
     local active, rest = {}, {}
     for _, r in ipairs(self.queue) do
@@ -232,6 +288,8 @@ function M:consume_queue()
     end
 end
 
+---Queue a SearchResult for emission into fzf and schedule a flush.
+---@param result table SearchResult-like table produced by search.lua
 function M:insert_result(result)
     if self.is_closed then
         return
@@ -240,6 +298,7 @@ function M:insert_result(result)
     schedule_flush(self)
 end
 
+---Mark the search as done and ensure the remaining queue is emitted, then close the fzf feed.
 function M:search_done()
     if self.is_closed then
         return
@@ -251,3 +310,4 @@ function M:search_done()
 end
 
 return M
+```

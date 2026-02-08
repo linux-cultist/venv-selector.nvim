@@ -1,34 +1,49 @@
+-- lua/venv-selector/utils.lua
+--
+-- Small utility helpers used across venv-selector.nvim.
+--
+-- Responsibilities:
+-- - Generic table helpers.
+-- - Safe nested table access.
+-- - Command string splitting (with basic quote handling).
+-- - Debug table printing.
+--
+-- Notes:
+-- - These utilities are intentionally dependency-light.
+-- - Some functionality (like Windows splitting) is currently thin wrappers,
+--   but kept for future extensibility.
+
 local log = require("venv-selector.logger")
 
 local M = {}
 
--- ---@type table
--- M.user_settings = {}
+-- ============================================================================
+-- Table helpers
+-- ============================================================================
 
--- ---@type table
--- M.default_settings = {}
-
----Check if a table has any entries
+---Check whether a table contains at least one key.
+---
 ---@param t table|nil The table to check
----@return boolean true if the table is not empty
+---@return boolean has_content True if table is non-nil and not empty
 function M.table_has_content(t)
     return t ~= nil and next(t) ~= nil
 end
 
--- ---Merge user configuration with plugin defaults
--- ---@param user_settings table User configuration settings
--- function M.merge_user_settings(user_settings)
---     log.debug("User plugin settings: ", user_settings.settings, "")
---     M.user_settings = vim.tbl_deep_extend("force", M.default_settings, user_settings.settings or {})
---     M.user_settings.detected = {
---         system = vim.uv.os_uname().sysname,
---     }
---     log.debug("Complete user settings:", M.user_settings, "")
--- end
+-- ============================================================================
+-- String / command splitting
+-- ============================================================================
 
----Split a string into parts, respecting single and double quotes
+---Split a string into whitespace-separated parts,
+---while respecting single and double quotes.
+---
+---Example:
+---  split_string([[cmd "arg with space" 'another one']])
+---  -> { "cmd", "arg with space", "another one" }
+---
+---Quotes are not included in the resulting tokens.
+---
 ---@param str string The string to split
----@return string[] A table of string parts
+---@return string[] parts
 function M.split_string(str)
     local result = {}
     local buffer = ""
@@ -38,20 +53,23 @@ function M.split_string(str)
 
     while i <= #str do
         local c = str:sub(i, i)
+
         if c == "'" or c == '"' then
             if in_quotes then
                 if c == quote_char then
+                    -- Closing matching quote.
                     in_quotes = false
                     quote_char = nil
-                    -- Do not include the closing quote
                 else
+                    -- Different quote inside quoted region.
                     buffer = buffer .. c
                 end
             else
+                -- Opening quote.
                 in_quotes = true
                 quote_char = c
-                -- Do not include the opening quote
             end
+
         elseif c == " " then
             if in_quotes then
                 buffer = buffer .. c
@@ -61,12 +79,15 @@ function M.split_string(str)
                     buffer = ""
                 end
             end
+
         else
             buffer = buffer .. c
         end
+
         i = i + 1
     end
 
+    -- Append trailing token.
     if #buffer > 0 then
         table.insert(result, buffer)
     end
@@ -74,17 +95,29 @@ function M.split_string(str)
     return result
 end
 
----Split a command string for Windows execution
----@param str string The command string
----@return string[] A table of command parts
+---Split a command string for Windows execution.
+---Currently just delegates to split_string, but exists
+---as a dedicated entrypoint for future platform-specific logic.
+---
+---@param str string
+---@return string[] parts
 function M.split_cmd_for_windows(str)
     return M.split_string(str)
 end
 
----Safely access nested table keys
----@param tbl table The table to access
----@param ... string The keys to follow
----@return any|nil The value if found, or nil
+-- ============================================================================
+-- Safe nested access
+-- ============================================================================
+
+---Safely access nested table keys.
+---
+---Example:
+---  M.try(tbl, "a", "b", "c")
+---  -> returns tbl.a.b.c or nil if any level is missing.
+---
+---@param tbl table The root table
+---@param ... string Keys to follow
+---@return any|nil value
 function M.try(tbl, ...)
     local result = tbl
     for _, key in ipairs({ ... }) do
@@ -97,13 +130,18 @@ function M.try(tbl, ...)
     return result
 end
 
----Recursively print a table's contents for debugging
----@param tbl table The table to print
----@param indent? integer The current indentation level
+-- ============================================================================
+-- Debug helpers
+-- ============================================================================
+
+---Recursively print a table to stdout (not to logger buffer).
+---Intended for quick debugging during development.
+---
+---@param tbl table
+---@param indent? integer
 function M.print_table(tbl, indent)
-    if not indent then
-        indent = 0
-    end
+    indent = indent or 0
+
     for k, v in pairs(tbl) do
         local formatting = string.rep("  ", indent) .. tostring(k) .. ": "
         if type(v) == "table" then

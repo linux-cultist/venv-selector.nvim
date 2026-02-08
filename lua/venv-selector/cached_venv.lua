@@ -1,4 +1,30 @@
 -- lua/venv-selector/cached_venv.lua
+--
+-- Persistent venv cache for venv-selector.nvim.
+--
+-- Responsibilities:
+-- - Persist the selected python executable per project root in a JSON file.
+-- - Restore a cached selection automatically (if enabled) on buffer lifecycle events.
+-- - Maintain a session-local “last selection per buffer” memory that restores without disk I/O.
+-- - Skip uv (PEP 723) buffers entirely: uv environments are derived from metadata and managed by uv2.lua.
+-- - Clean stale cache entries that point to missing python executables.
+--
+-- Design notes:
+-- - Cache keys are project roots as returned by `project_root.key_for_buf(bufnr)`; fallback to cwd for saving.
+-- - Automatic activation is gated by:
+--   - options.enable_cached_venvs
+--   - cache.file configured
+--   - options.cached_venv_automatic_activation
+-- - `ensure_cached_venv_activated()` is intended for frequent calls (BufEnter/BufWinEnter). It performs
+--   a cheap “already active?” check before switching environments.
+-- - Writes are small JSON blobs stored as a single-line file (one JSON object).
+--
+-- Conventions:
+-- - CachedVenvInfo.value is an absolute path to a python executable (interpreter).
+-- - CachedVenvTable is keyed by project_root: table<string, CachedVenvInfo>.
+-- - Buffer-local fields used:
+--   - b:venv_selector_last_python / b:venv_selector_last_type
+--   - b:venv_selector_cached_applied (tracks what cache was last applied to this buffer)
 
 local config = require("venv-selector.config")
 local path = require("venv-selector.path")
@@ -35,6 +61,7 @@ if cache_file and cache_file ~= "" then
     end
 end
 
+---Invoke a completion callback with a boolean `activated` value, preserving legacy behavior.
 ---@param done? fun(activated: boolean)
 ---@param ok boolean
 local function finish(done, ok)
@@ -42,7 +69,7 @@ local function finish(done, ok)
 end
 
 ---Cache storage feature enabled (read/write allowed).
----@return boolean
+---@return boolean ok
 local function cache_feature_enabled()
     if config.user_settings.options.enable_cached_venvs ~= true then
         log.debug("Option 'enable_cached_venvs' is false so will not use cache.")
@@ -56,7 +83,7 @@ local function cache_feature_enabled()
 end
 
 ---Automatic cache activation enabled (auto restore on events).
----@return boolean
+---@return boolean ok
 local function cache_auto_enabled()
     if not cache_feature_enabled() then
         return false
@@ -67,15 +94,21 @@ local function cache_auto_enabled()
     return true
 end
 
+---Return true if the buffer is a normal on-disk python buffer (not a special buftype).
 ---@param bufnr integer
----@return boolean
+---@return boolean ok
 local function valid_py_buf(bufnr)
     return vim.api.nvim_buf_is_valid(bufnr)
         and vim.bo[bufnr].buftype == ""
         and vim.bo[bufnr].filetype == "python"
 end
 
----Ensure the last venv used in this buffer is active (session-local memory; does not read cache).
+---Ensure the last venv used in this buffer is active.
+---This is session-local memory only (no disk I/O, no persistent cache dependency).
+---
+---Notes:
+--- - Skips uv buffers; those are managed by uv2.lua.
+--- - Does not write cache again (save_cache=false).
 ---@param bufnr? integer
 function M.ensure_buffer_last_venv_activated(bufnr)
     bufnr = bufnr or vim.api.nvim_get_current_buf()

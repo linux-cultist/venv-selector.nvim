@@ -1,4 +1,24 @@
 -- lua/venv-selector/config.lua
+--
+-- Configuration and defaults for venv-selector.nvim.
+--
+-- Responsibilities:
+-- - Define typed configuration shapes (Options / Settings / Searches).
+-- - Provide OS-specific default search commands (fd-based discovery).
+-- - Provide default options and cache location.
+-- - Finalize settings:
+--     - Merge shell defaults
+--     - Auto-detect fd binary name
+--     - Populate default searches (if user didn't specify any)
+--     - Inject default hook(s) if user didn't provide hooks
+-- - Store user configuration (deep-merge) and expose getters.
+--
+-- Design notes:
+-- - This module intentionally avoids hard-requiring other modules at load time
+--   where it might create cycles; e.g. default hook is injected via pcall(require)
+--   inside ensure_default_hooks().
+-- - fd_binary_name is computed during finalize_settings so it is always available
+--   to the search layer without repeated detection calls.
 
 ---@class venv-selector.SearchCommand
 ---@field command string The command to execute for finding python interpreters
@@ -66,7 +86,14 @@ local M = {}
 
 local uv = vim.uv or vim.loop
 
----@return string|nil
+-- ============================================================================
+-- Helpers
+-- ============================================================================
+
+---Return the first available fd executable name, or nil if none found.
+---Supports common distro naming variants (fd, fdfind, fd_find).
+---
+---@return string|nil fd_name
 local function find_fd_command_name()
     for _, cmd in ipairs({ "fd", "fdfind", "fd_find" }) do
         if vim.fn.executable(cmd) == 1 then
@@ -76,7 +103,30 @@ local function find_fd_command_name()
     return nil
 end
 
----@return venv-selector.SearchCommands
+---Build default shell settings from current Neovim options.
+---These defaults are merged with any user-provided overrides during finalize_settings().
+---
+---@return table shell_settings
+local function default_shell_settings()
+    return {
+        shellcmdflag = vim.o.shellcmdflag,
+        shell = vim.o.shell,
+    }
+end
+
+-- ============================================================================
+-- Default searches
+-- ============================================================================
+
+---Return OS-specific default search definitions.
+---These searches are fd-based and expanded by search.lua with $FD/$CWD/$WORKSPACE_PATH/$FILE_DIR.
+---
+---Notes:
+--- - Windows searches use python.exe and Scripts\\python.exe patterns.
+--- - Mac/Linux searches use regex forms like '/bin/python$' depending on expected layout.
+--- - "type = anaconda" is used to mark conda-derived environments for env var handling.
+---
+---@return venv-selector.SearchCommands searches
 function M.get_default_searches()
     local system = (uv.os_uname() or {}).sysname
 
@@ -184,6 +234,7 @@ function M.get_default_searches()
             },
         }
     else
+        -- Linux / other UNIX
         return {
             virtualenvs = {
                 command = "$FD 'python$' ~/.virtualenvs --no-ignore-vcs --color never",
@@ -238,20 +289,20 @@ function M.get_default_searches()
     end
 end
 
-local function default_shell_settings()
-    return {
-        shellcmdflag = vim.o.shellcmdflag,
-        shell = vim.o.shell,
-    }
-end
+-- ============================================================================
+-- Defaults
+-- ============================================================================
 
+---Default plugin settings used when the user does not override values.
 ---@type venv-selector.Settings
 local default_settings = {
     cache = {
         file = "~/.cache/venv-selector/venvs3.json",
     },
-    -- keep as table; default hook will be injected if empty
+
+    -- Hooks are kept as a table; if empty, a default hook is injected at finalize time.
     hooks = {},
+
     options = {
         on_venv_activate_callback = nil,
         enable_default_searches = true,
@@ -263,7 +314,7 @@ local default_settings = {
         override_notify = true,
         search_timeout = 5,
         debug = false,
-        fd_binary_name = nil, -- filled in by finalize_settings
+        fd_binary_name = nil, -- filled in by finalize_settings()
         require_lsp_activation = true,
         on_telescope_result_callback = nil,
         picker_filter_type = "substring",
@@ -281,22 +332,35 @@ local default_settings = {
         },
         shell = default_shell_settings(),
     },
-    -- filled in by finalize_settings
+
+    -- Filled in by finalize_settings() if missing/empty.
     search = {},
 }
 
+-- ============================================================================
+-- Finalization steps (hooks, fd detection, searches)
+-- ============================================================================
+
+---Ensure a default hook exists if the user did not provide any hooks.
+---This keeps the configuration "just works" by default, while allowing users
+---to supply their own hooks list.
+---
+---Implementation detail:
+--- - Uses pcall(require, ...) to avoid config<->hooks require cycles at module load time.
+---
+---@param s venv-selector.Settings
 local function ensure_default_hooks(s)
-    -- normalize to table
+    -- Normalize to table.
     if type(s.hooks) ~= "table" then
         s.hooks = {}
     end
 
-    -- user provided hooks (non-empty): respect
+    -- User provided hooks (non-empty): respect them.
     if #s.hooks > 0 then
         return
     end
 
-    -- default hook (lazy require to avoid config<->hooks cycles at module load)
+    -- Default hook (lazy require).
     local ok, hooks_mod = pcall(require, "venv-selector.hooks")
     if ok and hooks_mod and type(hooks_mod.dynamic_python_lsp_hook) == "function" then
         s.hooks = { hooks_mod.dynamic_python_lsp_hook }
@@ -305,50 +369,74 @@ local function ensure_default_hooks(s)
     end
 end
 
+---Finalize settings after merge:
+--- - Merge shell defaults
+--- - Auto-detect fd binary
+--- - Populate searches if missing/empty
+--- - Ensure default hooks if user provided none
+---
+---@param s venv-selector.Settings
+---@return venv-selector.Settings finalized
 local function finalize_settings(s)
-    -- shell defaults
+    -- Shell defaults: merge user overrides onto current Neovim defaults.
     s.options.shell = vim.tbl_deep_extend("force", default_shell_settings(), s.options.shell or {})
 
-    -- fd auto-detect
+    -- fd auto-detect.
     if not s.options.fd_binary_name or s.options.fd_binary_name == "" then
         s.options.fd_binary_name = find_fd_command_name()
     end
 
-    -- default searches
+    -- Default searches if missing/empty.
     if not s.search or vim.tbl_isempty(s.search) then
         s.search = M.get_default_searches()
     end
 
-    -- default hooks
+    -- Default hooks if none provided.
     ensure_default_hooks(s)
 
     return s
 end
 
+-- ============================================================================
+-- State + public API
+-- ============================================================================
+
+---Current effective user settings (defaults, optionally merged with user overrides).
 ---@type venv-selector.Settings
 M.user_settings = finalize_settings(vim.deepcopy(default_settings))
 
----@param settings venv-selector.Settings|nil
+---Store user settings (deep-merge with defaults) and finalize.
+---
+---@param settings venv-selector.Settings|nil User overrides (can be nil)
+---@return venv-selector.Settings effective_settings
 function M.store(settings)
     local log = require("venv-selector.logger")
     log.debug("User plugin settings: ", settings, "")
 
+    -- Merge onto defaults, then finalize derived fields.
     M.user_settings = vim.tbl_deep_extend("force", default_settings, settings or {})
     M.user_settings = finalize_settings(M.user_settings)
+
     return M.get_user_settings()
 end
 
+---Get the current Options table (convenience helper).
+---
 ---@return venv-selector.Options
 function M.get_user_options()
     return M.user_settings.options
 end
 
+---Get the current full Settings table (hooks/options/search/cache).
+---
 ---@return venv-selector.Settings
 function M.get_user_settings()
     return M.user_settings
 end
 
----@return venv-selector.Settings
+---Return a finalized copy of the defaults (no user overrides).
+---
+---@return venv-selector.Settings defaults
 function M.get_defaults()
     return finalize_settings(vim.deepcopy(default_settings))
 end

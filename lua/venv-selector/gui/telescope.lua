@@ -1,12 +1,46 @@
+-- lua/venv-selector/gui/telescope.lua
+--
+-- Telescope picker backend for venv-selector.nvim.
+--
+-- Responsibilities:
+-- - Present discovered python interpreters (SearchResult) in a Telescope picker.
+-- - Provide smartcase filtering with two modes:
+--   - substring match (default): prompt must appear as a contiguous substring
+--   - character/subsequence match: prompt characters must appear in order
+-- - Keep the currently active venv visually pinned near the top by prefix-ranking entries.
+-- - Refresh dynamically:
+--   - incremental refresh while search jobs stream results
+--   - full refresh on search completion (dedup + sort)
+--   - auto-refresh on VimResized while the picker is active
+-- - Stop any running searches when the Telescope window closes.
+--
+-- Design notes:
+-- - Telescope sorter scoring uses an ordinal prefix ("0 " for active, "1 " otherwise).
+--   The scoring_function then incorporates that rank so active entries stay on top.
+-- - Display layout (column widths) adapts to vim.o.columns and configured picker columns.
+-- - Search results are collected in `self.results` and re-rendered via a new finder.
+--
+-- Conventions:
+-- - `entry.ordinal` is formatted as: "<rank> <name> <source> <path>" for matching/sorting.
+-- - `search_opts` are passed through to search.run_search() on manual refresh (<C-r>).
+-- - This module implements the Picker interface used by search.lua:
+--   - :insert_result(result)
+--   - :search_done()
+
 local config = require("venv-selector.config")
 local gui_utils = require("venv-selector.gui.utils")
 
 local M = {}
 M.__index = M
 
--- Track active telescope instance for auto-refresh on resize
+---Track the active telescope instance so resize events only refresh the visible picker.
+---@type any|nil
 local active_telescope_instance = nil
 
+---Split the ordinal prefix ("0 " or "1 ") used for active/inactive ranking.
+---@param line any
+---@return integer rank 0 for active, 1 for others
+---@return string rest Remaining string after the prefix
 local function split_prefix(line)
     line = tostring(line or "")
     local pfx = line:sub(1, 2) -- "0 " or "1 "
@@ -15,6 +49,13 @@ local function split_prefix(line)
     return 1, line
 end
 
+---Prepare prompt/line for smartcase matching:
+--- - if prompt contains uppercase letters: use exact case
+--- - otherwise: compare lowercased values
+---@param prompt string
+---@param line string
+---@return string p Prepared prompt
+---@return string l Prepared line
 local function smartcase_prepare(prompt, line)
     line = tostring(line or "")
     if prompt:match("%u") then
@@ -23,6 +64,11 @@ local function smartcase_prepare(prompt, line)
     return prompt:lower(), line:lower()
 end
 
+---Create a Telescope sorter that performs smartcase substring matching.
+---Scores by:
+--- - rank (active first)
+--- - first substring match position
+---@return any sorter Telescope sorter instance
 local function make_smartcase_substring_sorter()
     local sorters = require("telescope.sorters")
     return sorters.new {
@@ -37,13 +83,19 @@ local function make_smartcase_substring_sorter()
             local start = l:find(p, 1, true)
             if not start then return -1 end
 
-            -- active bias: subtract a large constant so it stays on top
+            -- Active bias: keep active entries grouped ahead of others.
             return (rank * 1000000) + start
         end,
         highlighter = function() return {} end,
     }
 end
 
+---Create a Telescope sorter that performs smartcase subsequence (character) matching.
+---Scores by:
+--- - rank (active first)
+--- - first matched character position
+--- - compactness (span) of the match (smaller span is better)
+---@return any sorter Telescope sorter instance
 local function make_smartcase_subsequence_sorter()
     local sorters = require("telescope.sorters")
     return sorters.new {
@@ -74,11 +126,12 @@ local function make_smartcase_subsequence_sorter()
     }
 end
 
-
-
+---Compute a layout_config based on the current editor dimensions.
+---This keeps the Telescope window readable across small/large terminals.
+---@return table layout_config
 local function get_dynamic_layout_config()
     local columns = vim.o.columns
-    local lines = vim.o.lines
+    local _lines = vim.o.lines
 
     -- Calculate dynamic width (80-95% of terminal width, with min/max constraints)
     local width_ratio = 0.9
@@ -99,6 +152,8 @@ local function get_dynamic_layout_config()
     }
 end
 
+---Compute a Telescope entry_display configuration based on the current width and configured columns.
+---@return table display_config
 local function get_dynamic_display_config()
     local columns = vim.o.columns
     local picker_columns = gui_utils.get_picker_columns()
@@ -153,6 +208,8 @@ local function get_dynamic_display_config()
     }
 end
 
+---Choose the appropriate sorter based on the configured filter type.
+---@return any sorter Telescope sorter instance
 local function get_sorter()
     local filter_type = config.get_user_options().picker_filter_type
 
@@ -165,6 +222,9 @@ local function get_sorter()
     return make_smartcase_substring_sorter()
 end
 
+---Create and display a Telescope picker that streams results from the search layer.
+---@param search_opts table Search options passed through to search.run_search() on manual refresh
+---@return table self Picker instance implementing :insert_result and :search_done
 function M.new(search_opts)
     local self = setmetatable({ results = {} }, M)
 
@@ -239,13 +299,15 @@ function M.new(search_opts)
     return self
 end
 
+---Create a Telescope finder for the current `self.results` table.
+---This recreates the entry_display config each time so column widths track window size.
+---@return any finder Telescope finder
 function M:make_finder()
     local display_config = get_dynamic_display_config()
     local displayer = require("telescope.pickers.entry_display").create(display_config)
 
-
     local entry_maker = function(entry)
-        local icon = entry.icon
+        local _icon = entry.icon
         entry.value = entry.name
         local is_active = gui_utils.hl_active_venv(entry) ~= nil
         local prefix = is_active and "0 " or "1 "
@@ -301,6 +363,7 @@ function M:make_finder()
     })
 end
 
+---Refresh Telescope picker layout and finder to reflect the current results and window size.
 function M:update_results()
     local bufnr = vim.api.nvim_get_current_buf()
     local picker = require("telescope.actions.state").get_current_picker(bufnr)
@@ -313,6 +376,9 @@ function M:update_results()
     end
 end
 
+---Insert a streamed SearchResult into the picker and schedule a refresh.
+---Refresh is debounced to avoid excessive UI updates while jobs stream results.
+---@param result table SearchResult-like table: {name, path, icon, source, type}
 function M:insert_result(result) -- result is a table with name, path, icon, source, venv.
     table.insert(self.results, result)
 
@@ -331,6 +397,7 @@ function M:insert_result(result) -- result is a table with name, path, icon, sou
     end, 30) -- 20–50ms is usually fine
 end
 
+---Finalize search results (deduplicate + sort) and refresh the picker display.
 function M:search_done()
     self.results = gui_utils.remove_dups(self.results)
     gui_utils.sort_results(self.results)
@@ -338,6 +405,7 @@ function M:search_done()
     self:update_results()
 end
 
+---Install an autocmd that refreshes the picker layout on VimResized while this instance is active.
 function M:setup_resize_autocmd()
     -- Create autocmd group for this telescope instance
     local group = vim.api.nvim_create_augroup("VenvSelectorTelescope", { clear = true })

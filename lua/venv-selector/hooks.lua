@@ -1,167 +1,227 @@
+-- lua/venv-selector/hooks.lua
+--
+-- Hook implementations for venv-selector.nvim.
+--
+-- Responsibilities:
+-- - Provide the default “restart python LSP clients” hook used after venv activation.
+-- - Generate venv-aware LSP settings/cmd_env (VIRTUAL_ENV / CONDA_PREFIX) while preserving user config.
+-- - Select only python-specific LSP clients (avoid generic/multi-language servers).
+-- - Coalesce and scope restarts via the LSP restart gate using a stable key: "<client_name>::<root_dir>".
+-- - Throttle user notifications to avoid spam (per-message, 1s).
+--
+-- Design notes:
+-- - Restarts are memoized per project_root so identical (python,type) combinations are a no-op.
+-- - Buffer reattachment is preserved by collecting attached python buffers before restarting.
+-- - Root resolution prefers project_root.key_for_buf(bufnr) and falls back to venv.active_project_root().
+--
+-- Conventions:
+-- - env_type is one of: "venv" | "conda" | "uv".
+-- - Returned buffer sets are keyed as: table<integer, true>.
+
 local log = require("venv-selector.logger")
 local gate = require("venv-selector.lsp_gate")
 
 local M = {}
-local last_restart_by_root = {} -- project_root -> { py=string, ty=string }
 
+---@alias venv-selector.VenvType "venv"|"conda"|"uv"
 
+---@class venv-selector.LspCmdEnv
+---@field cmd_env table<string, string>
+
+---@class venv-selector.LspClientConfig
+---@field settings? table
+---@field cmd_env? table<string, string>
+---@field capabilities? table
+---@field handlers? table
+---@field on_attach? fun(...)
+---@field init_options? table
+
+---@class venv-selector.RestartMemo
+---@field py string
+---@field ty string
+
+---@type table<string, venv-selector.RestartMemo> project_root -> last restart parameters
+local last_restart_by_root = {}
+
+---@type table<string, integer> message -> last hrtime
 M.notifications_memory = {}
 
+-- preserved behavior (used elsewhere in plugin)
 vim.g.venv_selector_pending_lsp_apply = true
 
+---@param t any
+---@return string
+local function tostring1(t)
+    return tostring(t)
+end
 
----Create environment variables for the LSP client command
----@param client_name string The name of the LSP client
----@param venv_python string|nil The path to the python executable
----@param env_type string|nil The type of the virtual environment
----@return table env A table containing the cmd_env configuration
+---@param list any[]|nil
+---@param item any
+---@return boolean
+local function contains(list, item)
+    return list ~= nil and vim.tbl_contains(list, item)
+end
+
+---Heuristic: treat large or generic/multi-filetype servers as non-python-specific.
+---@param client any
+---@return boolean
+local function is_generic_or_multi(client)
+    local fts = client.config and client.config.filetypes or nil
+    if not fts then return false end
+    if vim.tbl_contains(fts, "markdown") or vim.tbl_contains(fts, "text") or vim.tbl_contains(fts, "gitcommit") then
+        return true
+    end
+    return #fts > 8
+end
+
+---True if client is a python-specific LSP (not a generic multi-language server).
+---@param client any
+---@return boolean
+local function is_python_lsp(client)
+    local fts = client.config and client.config.filetypes or nil
+    return contains(fts, "python") and not is_generic_or_multi(client)
+end
+
+---Collect python buffers currently attached to an LSP client.
+---Returned set is keyed by bufnr: { [bufnr]=true, ... }
+---@param client any
+---@return table<integer, true> bufs
+local function attached_python_bufs(client)
+    ---@type table<integer, true>
+    local bufs = {}
+    for b, _ in pairs(client.attached_buffers or {}) do
+        if vim.api.nvim_buf_is_valid(b) and vim.bo[b].filetype == "python" and vim.bo[b].buftype == "" then
+            bufs[b] = true
+        end
+    end
+    return bufs
+end
+
+---Create cmd_env for a client restart based on venv type.
+---@param client_name string
+---@param venv_python string|nil
+---@param env_type venv-selector.VenvType|nil
+---@return venv-selector.LspCmdEnv env
 local function create_cmd_env(client_name, venv_python, env_type)
-    if venv_python == nil then return { cmd_env = {} } end
-    local venv_path = vim.fn.fnamemodify(venv_python, ":h:h")
-    local env = {
-        cmd_env = {}
-    }
-    if env_type == "anaconda" then
+    if not venv_python or venv_python == "" then
+        return { cmd_env = {} }
+    end
+
+    local venv_path = vim.fn.fnamemodify(venv_python, ":h:h") -- .../venv
+    local env = { cmd_env = {} }
+
+    if env_type == "conda" then
         env.cmd_env.CONDA_PREFIX = venv_path
         log.debug(client_name .. ": Setting CONDA_PREFIX for conda environment: " .. venv_path)
-    elseif env_type == "venv" then
+    elseif env_type == "venv" or env_type == "uv" then
         env.cmd_env.VIRTUAL_ENV = venv_path
-        log.debug(client_name .. ": Setting VIRTUAL_ENV for regular environment: " .. venv_path)
-    elseif env_type == "uv" then
-        env.cmd_env.VIRTUAL_ENV = venv_path
-        log.debug(client_name .. ": Setting VIRTUAL_ENV for uv environment: " .. venv_path)
+        log.debug(client_name .. ": Setting VIRTUAL_ENV for environment: " .. venv_path)
     else
-        log.debug(client_name .. "Unknown venv type: " .. env_type)
+        log.debug(client_name .. ": Unknown venv type: " .. tostring1(env_type))
     end
 
     return env
 end
 
-
----Generate default LSP settings and environment for a venv
----@param client_name string The name of the LSP client
----@param venv_python string|nil The path to the python executable
----@param env_type string|nil The type of the virtual environment
----@return table client_config The configuration structure for the LSP client
+---Generate venv-specific LSP settings, preserving existing user settings where possible.
+---@param client_name string
+---@param venv_python string|nil
+---@param env_type venv-selector.VenvType|nil
+---@return venv-selector.LspClientConfig cfg
 local function default_lsp_settings(client_name, venv_python, env_type)
-    if venv_python == nil then return { settings = {} } end
-    local venv_dir          = vim.fn.fnamemodify(venv_python, ":h:h")
-    local venv_name         = vim.fn.fnamemodify(venv_dir, ":t")
-    local venv_path         = vim.fn.fnamemodify(venv_dir, ":h")
+    if not venv_python or venv_python == "" then
+        return { settings = {} }
+    end
 
-    -- Get existing client configuration to preserve user settings
-    local existing_clients  = vim.lsp.get_clients({ name = client_name })
+    local venv_dir  = vim.fn.fnamemodify(venv_python, ":h:h")
+    local venv_name = vim.fn.fnamemodify(venv_dir, ":t")
+    local venv_path = vim.fn.fnamemodify(venv_dir, ":h")
+
+    -- Preserve existing settings for this client if one exists
+    local existing_clients = vim.lsp.get_clients({ name = client_name })
     local existing_settings = {}
-
     if #existing_clients > 0 then
         local client_config = existing_clients[1].config or {}
         existing_settings = vim.deepcopy(client_config.settings or {})
-        -- log.debug("Found existing settings for " .. client_name .. ":", existing_settings)
     end
 
-    -- Create venv-specific settings
     local venv_settings = {
         python = {
             pythonPath = venv_python,
-            venv       = venv_name,
-            venvPath   = venv_path,
+            venv = venv_name,
+            venvPath = venv_path,
         },
     }
 
-    -- Merge existing user settings with venv settings (venv settings take precedence for python path)
     local merged_settings = vim.tbl_deep_extend("force", existing_settings, venv_settings)
-
-    -- Create cmd_env for the client config
     local cmd_env = create_cmd_env(client_name, venv_python, env_type)
 
-    -- Return proper ClientConfig structure
-    local client_config = {
-        settings = merged_settings,
-    }
+    ---@type venv-selector.LspClientConfig
+    local cfg = { settings = merged_settings }
 
-    -- Add cmd_env to the client config if it has values
     if cmd_env.cmd_env and next(cmd_env.cmd_env) then
-        client_config.cmd_env = cmd_env.cmd_env
+        cfg.cmd_env = cmd_env.cmd_env
     end
 
-    -- log.debug("Generated client config for " .. client_name .. ":", client_config)
-    return client_config
+    return cfg
 end
 
-
-
-
----Restart all active python LSP clients with the new venv configuration
----@param venv_python string|nil The path to the python executable
----@param env_type string|nil The type of the virtual environment
----@return boolean success, string? error Whether any clients were found and restart was attempted
-local function restart_all_python_lsps(venv_python, env_type, bufnr)
-    bufnr = bufnr or vim.api.nvim_get_current_buf()
+---Resolve project_root for a buffer; fall back to currently active root if available.
+---@param bufnr integer
+---@return string project_root
+local function resolve_project_root(bufnr)
     local project_root = require("venv-selector.project_root").key_for_buf(bufnr) or ""
-
-    if not project_root or project_root == "" then
+    if project_root == "" then
         local venv = require("venv-selector.venv")
-        if venv.active_project_root then
-            project_root = venv.active_project_root()
+        if type(venv.active_project_root) == "function" then
+            local pr = venv.active_project_root()
+            if type(pr) == "string" then
+                project_root = pr
+            end
         end
     end
+    return project_root
+end
 
+---Restart python LSP clients for the given project root using the gate.
+---Uses memoization per project_root to avoid repeating identical restarts.
+---@param venv_python string|nil
+---@param env_type venv-selector.VenvType|nil
+---@param bufnr? integer
+---@return boolean ok
+---@return string? err
+local function restart_all_python_lsps(venv_python, env_type, bufnr)
+    bufnr = bufnr or vim.api.nvim_get_current_buf()
 
+    local project_root = resolve_project_root(bufnr)
     local py = venv_python or ""
     local ty = env_type or ""
 
-    if project_root == "" then
-        log.debug("restart_all_python_lsps: project_root empty; not caching restart decision")
-    else
+    if project_root ~= "" then
         local last = last_restart_by_root[project_root]
         if last and last.py == py and last.ty == ty then
             log.debug(("restart_all_python_lsps: no-op (unchanged) root=%s py=%s type=%s"):format(project_root, py, ty))
             return true
         end
-
         last_restart_by_root[project_root] = { py = py, ty = ty }
+    else
+        log.debug("restart_all_python_lsps: project_root empty; not caching restart decision")
     end
 
+    -- Optional visibility for debugging
     for _, c in ipairs(vim.lsp.get_clients()) do
         local fts = (c.config and c.config.filetypes) and table.concat(c.config.filetypes, ",") or ""
         local root = (c.config and c.config.root_dir) or ""
         log.debug(("lsp seen id=%d name=%s root=%s fts=[%s]"):format(c.id, c.name, root, fts))
     end
 
-    local function contains(list, item)
-        return list and vim.tbl_contains(list, item)
-    end
-
-    local function is_generic_or_multi(client)
-        local fts = client.config and client.config.filetypes or nil
-        if not fts then return false end
-        if vim.tbl_contains(fts, "markdown") or vim.tbl_contains(fts, "text") or vim.tbl_contains(fts, "gitcommit") then
-            return true
-        end
-        return #fts > 8
-    end
-
-    local function is_python_lsp(client)
-        local fts = client.config and client.config.filetypes or nil
-        return contains(fts, "python") and not is_generic_or_multi(client)
-    end
-
-    local function attached_python_bufs(client)
-        local bufs = {}
-        for b, _ in pairs(client.attached_buffers or {}) do
-            if vim.api.nvim_buf_is_valid(b) and vim.bo[b].filetype == "python" and vim.bo[b].buftype == "" then
-                bufs[b] = true
-            end
-        end
-        return bufs
-    end
-
-    local by_key = {} ---@type table<string, {client:any, bufs:table<number,true>, name:string, root:string}>
+    ---@type table<string, {client:any, bufs:table<integer,true>, name:string, root:string}>
+    local by_key = {}
 
     for _, c in ipairs(vim.lsp.get_clients()) do
         if is_python_lsp(c) then
             local root = (c.config and c.config.root_dir) or ""
-            if project_root == nil or root == project_root then
+            if project_root == "" or root == project_root then
                 local key = c.name .. "::" .. root
                 if not by_key[key] then
                     by_key[key] = { client = c, bufs = attached_python_bufs(c), name = c.name, root = root }
@@ -175,59 +235,53 @@ local function restart_all_python_lsps(venv_python, env_type, bufnr)
         return false, "no python LSP clients selected for this project_root"
     end
 
-    if venv_python == nil then
-        log.debug("restart_all_python_lsps: venv_python=nil, nothing to restart")
+    if not venv_python or venv_python == "" then
+        log.debug("restart_all_python_lsps: venv_python=nil/empty, nothing to restart")
         return true
     end
 
     for key, entry in pairs(by_key) do
-        local old_cfg    = entry.client.config or {}
-        local cfg        = vim.deepcopy(old_cfg)
+        local old_cfg = entry.client.config or {}
+        local cfg = vim.deepcopy(old_cfg)
 
-        local gen        = default_lsp_settings(entry.name, venv_python, env_type)
-        cfg.settings     = gen.settings
-        cfg.cmd_env      = gen.cmd_env
+        local gen = default_lsp_settings(entry.name, venv_python, env_type)
+        cfg.settings = gen.settings
+        cfg.cmd_env = gen.cmd_env
 
+        -- preserve key fields from old config
         cfg.capabilities = old_cfg.capabilities
-        cfg.handlers     = old_cfg.handlers
-        cfg.on_attach    = old_cfg.on_attach
+        cfg.handlers = old_cfg.handlers
+        cfg.on_attach = old_cfg.on_attach
         cfg.init_options = old_cfg.init_options
 
-        -- NOTE: gate key is now key (= name::root)
+        -- gate key is name::root
         gate.request(key, cfg, entry.bufs)
     end
 
     return true
 end
 
-
-
-
----Dynamic hook that processes currently running clients (called when venv is selected)
----@param venv_python string|nil The path to the python executable
----@param env_type string|nil The type of the virtual environment
----@return integer count The number of hooks that were processed
+---Hook: restart python LSPs when a venv is activated.
+---@param venv_python string|nil
+---@param env_type venv-selector.VenvType|nil
+---@param bufnr? integer
+---@return integer count Number of LSP restarts requested (0 or 1)
 function M.dynamic_python_lsp_hook(venv_python, env_type, bufnr)
-    log.debug(("hook dynamic_python_lsp_hook venv=%s type=%s"):format(tostring(venv_python), tostring(env_type)))
+    log.debug(("hook dynamic_python_lsp_hook venv=%s type=%s"):format(tostring1(venv_python), tostring1(env_type)))
     local ok = restart_all_python_lsps(venv_python, env_type, bufnr)
     return ok == true and 1 or 0
 end
 
----Send a notification to the user, throttled to once per second for unique messages
----@param message string The message to notify
+---Notify the user with throttling (per unique message, 1 second).
+---@param message string
 function M.send_notification(message)
-    local now = vim.loop.hrtime()
-
-    -- Check if this is the first notification or if more than 1 second has passed
-    local last_notification_time = M.notifications_memory[message]
-    if last_notification_time == nil or (now - last_notification_time) > 1e9 then
-        log.debug("Below message sent to user since this message was not notified about before.")
+    local now = (vim.uv or vim.loop).hrtime()
+    local last = M.notifications_memory[message]
+    if last == nil or (now - last) > 1e9 then
         log.info(message)
         vim.notify(message, vim.log.levels.INFO, { title = "VenvSelect" })
         M.notifications_memory[message] = now
     else
-        -- Less than one second since last notification with same message
-        log.debug("Below message was NOT sent to user since we notified about the same message less than a second ago.")
         log.debug(message)
     end
 end

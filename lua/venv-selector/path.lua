@@ -14,6 +14,7 @@
 --   only applies the global PATH/env mutations and stores global pointers.
 -- - PATH mutation is done by prepending the env's bin/Scripts directory and
 --   removing the previously prepended directory to avoid stacking.
+require("venv-selector.types")
 
 local log = require("venv-selector.logger")
 
@@ -32,7 +33,7 @@ M.current_venv_path = nil -- Derived venv root (typically parent of bin/Scripts)
 ---@type string|nil
 M.current_source = nil -- Optional tag: where the selection came from (cwd/workspace/pipx/etc).
 
----@type string|nil
+---@type venv-selector.VenvType|nil
 M.current_type = nil -- Environment type ("venv", "conda", "uv", etc. depending on caller).
 
 ---@type string|nil
@@ -283,4 +284,5 @@ function M.expand(p)
     return vim.fn.expand(p)
 end
 
+---@cast M venv-selector.PathModule
 return M

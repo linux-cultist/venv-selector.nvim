@@ -29,17 +29,8 @@ local FORCE_EXTRA_TRIES = 30
 
 local M = {}
 
-local uv = vim.uv or vim.loop
+local uv = vim.uv
 
----@class venv-selector.LspGateJob
----@field cfg table LSP client configuration passed to vim.lsp.start
----@field bufs table<integer, true> Set of buffers that should be attached to the started client
-
----@class venv-selector.LspGateState
----@field gen table<string, integer> Generation counter per key
----@field inflight table<string, boolean> True while a stop/poll/start cycle is running
----@field pending table<string, venv-selector.LspGateJob|nil> Last requested job for this key
----@field timer table<string, uv_timer_t|nil> Active poll timer per key
 
 ---Per-key gate state (the "key" is usually "name::root").
 ---@type venv-selector.LspGateState
@@ -108,7 +99,7 @@ end
 ---Pick any valid buffer from a buffer-set.
 ---Used to seed vim.lsp.start; remaining buffers are attached afterwards.
 ---
----@param bufs table<integer, true>
+---@param bufs venv-selector.LspBufSet
 ---@return integer|nil bufnr
 local function first_valid_buf(bufs)
     for b, _ in pairs(bufs) do
@@ -293,7 +284,7 @@ end
 ---
 ---@param key string Gate key, typically "client_name::root_dir"
 ---@param cfg table LSP client config passed to vim.lsp.start
----@param bufs table<integer, true> Set of buffers that should attach to the started client
+---@param bufs venv-selector.LspBufSet Set of buffers that should attach to the started client
 function M.request(key, cfg, bufs)
     if type(key) ~= "string" or key == "" then
         log.debug("gate.request: nil/empty key; ignoring")
@@ -317,4 +308,5 @@ function M.request(key, cfg, bufs)
     schedule_poll(key, my_gen)
 end
 
+---@cast M venv-selector.LspGateModule
 return M

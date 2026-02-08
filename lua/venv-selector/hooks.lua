@@ -18,31 +18,19 @@
 -- - env_type is one of: "venv" | "conda" | "uv".
 -- - Returned buffer sets are keyed as: table<integer, true>.
 
+require("venv-selector.types")
+
 local log = require("venv-selector.logger")
 local gate = require("venv-selector.lsp_gate")
 
 local M = {}
 
 
----@class venv-selector.LspCmdEnv
----@field cmd_env table<string, string>
 
----@class venv-selector.LspClientConfig
----@field settings? table
----@field cmd_env? table<string, string>
----@field capabilities? table
----@field handlers? table
----@field on_attach? fun(...)
----@field init_options? table
-
----@class venv-selector.RestartMemo
----@field py string
----@field ty string
-
----@type table<string, venv-selector.RestartMemo> project_root -> last restart parameters
+---@type table<string, venv-selector.RestartMemo>
 local last_restart_by_root = {}
 
----@type table<string, integer> message -> last hrtime
+---@type table<string, integer>
 M.notifications_memory = {}
 
 -- preserved behavior (used elsewhere in plugin)
@@ -272,9 +260,8 @@ function M.dynamic_python_lsp_hook(venv_python, env_type, bufnr)
 end
 
 ---Notify the user with throttling (per unique message, 1 second).
----@param message string
 function M.send_notification(message)
-    local now = (vim.uv or vim.loop).hrtime()
+    local now = vim.uv.hrtime()
     local last = M.notifications_memory[message]
     if last == nil or (now - last) > 1e9 then
         log.info(message)
@@ -285,4 +272,5 @@ function M.send_notification(message)
     end
 end
 
+---@cast M venv-selector.HooksModule
 return M

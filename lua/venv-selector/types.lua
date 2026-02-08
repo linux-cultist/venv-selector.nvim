@@ -81,7 +81,7 @@ local M = {}
 ---@field insert_result fun(self: venv-selector.FzfLuaState, result: venv-selector.SearchResult)
 ---@field search_done fun(self: venv-selector.FzfLuaState)
 
----@alias venv-selector.VenvType "venv"|"conda"|"uv"|string
+---@alias venv-selector.VenvType "venv"|"conda"|"uv"
 
 ---@class venv-selector.CachedVenvInfo
 ---@field value string Absolute path to python executable
@@ -168,6 +168,171 @@ local M = {}
 ---@field get_user_options fun(): venv-selector.Options
 ---@field get_user_settings fun(): venv-selector.Settings
 ---@field get_defaults fun(): venv-selector.Settings
+
+---@alias venv-selector.PickerName
+---| "telescope"
+---| "fzf-lua"
+---| "snacks"
+---| "mini-pick"
+---| "native"
+
+---@alias venv-selector.PickerSetting venv-selector.PickerName|"auto"
+
+---@class venv-selector.GuiOpenOpts: venv-selector.SearchOpts
+---@field icon? string Optional icon override (passed through to search layer)
+---@field on_telescope_result_callback? fun(line: string, source: string): string
+---@field on_fd_result_callback? fun(line: string, source: string): string
+
+---@class venv-selector.PickerSpec
+---@field name venv-selector.PickerName
+---@field module? string Module to require to consider it installed; nil means always available
+
+---@class venv-selector.GuiModule
+---@field open fun(opts?: venv-selector.GuiOpenOpts)
+
+---@class venv-selector.LspCmdEnv
+---@field cmd_env table<string, string>
+
+---@class venv-selector.LspClientConfig
+---@field settings? table
+---@field cmd_env? table<string, string>
+---@field capabilities? table
+---@field handlers? table
+---@field on_attach? fun(...)
+---@field init_options? table
+
+---@class venv-selector.RestartMemo
+---@field py string
+---@field ty string
+
+---@class venv-selector.HooksModule
+---@field notifications_memory table<string, integer>
+---@field dynamic_python_lsp_hook fun(venv_python: string|nil, env_type: venv-selector.VenvType|nil, bufnr?: integer): integer
+---@field send_notification fun(message: string)
+
+---@class venv-selector.AutocmdArgs
+---@field buf integer
+
+---@class venv-selector.InitModule
+---@field setup fun(conf?: venv-selector.Settings)
+---@field python fun(): string|nil
+---@field venv fun(): string|nil
+---@field source fun(): string|nil
+---@field workspace_paths fun(): string[]
+---@field cwd fun(): string
+---@field file_dir fun(): string|nil
+---@field stop_lsp_servers fun()
+---@field activate_from_path fun(python_path: string)
+---@field deactivate fun()
+
+---@alias venv-selector.ActivationReason "read"|"filetype"|"enter"
+
+---@alias venv-selector.LogLevel "DEBUG"|"INFO"|"WARNING"|"ERROR"|"NONE"
+
+---@class venv-selector.LoggerModule
+---@field levels table<string, integer>
+---@field colors table<string, string>
+---@field current_level integer
+---@field enabled boolean
+---@field notifications_memory? table<string, integer>  -- if you keep this pattern elsewhere
+---@field python_lsp_clients table<string, true>
+---@field set_level fun(level: venv-selector.LogLevel)
+---@field get_level fun(): venv-selector.LogLevel|nil
+---@field iterate_args fun(level: venv-selector.LogLevel, ...: any)
+---@field debug fun(...: any)
+---@field info fun(...: any)
+---@field warning fun(...: any)
+---@field error fun(...: any)
+---@field get_utc_date_time fun(): string
+---@field log_table fun(tbl: table, indent?: integer)
+---@field setup_syntax_highlighting fun()
+---@field log_line fun(msg: string, level: venv-selector.LogLevel)
+---@field log fun(level: venv-selector.LogLevel, msg: any, indent?: integer)
+---@field toggle fun(): integer|nil
+---@field find_log_window fun(): integer|nil
+---@field setup_lsp_message_forwarding fun()
+---@field disable_lsp_log_forwarding fun()
+---@field track_python_lsp fun(client_name: string)
+
+---@class venv-selector.LspBufSet
+---@field [integer] true
+
+---@class venv-selector.LspGateJob
+---@field cfg table
+---@field bufs venv-selector.LspBufSet
+
+---@class venv-selector.LspGateState
+---@field gen table<string, integer>
+---@field inflight table<string, boolean>
+---@field pending table<string, venv-selector.LspGateJob|nil>
+---@field timer table<string, uv_timer_t|nil>
+
+---@class venv-selector.LspGateModule
+---@field request fun(key: string, cfg: table, bufs: venv-selector.LspBufSet)
+
+---@class venv-selector.PathModule
+---@field current_python_path string|nil
+---@field current_venv_path string|nil
+---@field current_source string|nil
+---@field current_type venv-selector.VenvType|nil
+---@field remove_trailing_slash fun(p: string): string
+---@field get_base fun(p: string|nil): string|nil
+---@field save_selected_python fun(python_path: string)
+---@field add fun(newDir: string|nil)
+---@field remove_current fun()
+---@field remove fun(removalDir: string)
+---@field update_python_dap fun(python_path: string)
+---@field get_current_file_directory fun(): string|nil
+---@field expand fun(p: string): string
+
+---@class venv-selector.ProjectRootModule
+---@field for_buf fun(bufnr?: integer, markers?: string[]): string|nil
+---@field key_for_buf fun(bufnr?: integer, markers?: string[]): string|nil
+
+---@class venv-selector.SearchResult
+---@field path string          -- absolute path to python executable
+---@field name string          -- display name
+---@field icon string          -- optional icon
+---@field type venv-selector.VenvType
+---@field source string        -- search name/source tag
+
+---@class venv-selector.SearchConfig
+---@field command string
+---@field type? venv-selector.VenvType|string
+---@field name? string
+---@field execute_command? string
+---@field stderr_output? string[]
+---@field on_telescope_result_callback? fun(line: string, source: string): string
+---@field on_fd_result_callback? fun(line: string, source: string): string
+
+---@class venv-selector.SearchCallbacks
+---@field on_result fun(result: venv-selector.SearchResult)
+---@field on_complete fun()
+
+---@class venv-selector.Picker
+---@field insert_result fun(self: venv-selector.Picker, result: venv-selector.SearchResult)
+---@field search_done fun(self: venv-selector.Picker)
+
+---@class venv-selector.SearchOpts
+---@field args? string
+---@field icon? string
+---@field on_telescope_result_callback? fun(line: string, source: string): string
+---@field on_fd_result_callback? fun(line: string, source: string): string
+
+---@class venv-selector.ActiveJobState : venv-selector.SearchConfig
+---@field name string
+
+---@class venv-selector.SearchModule
+---@field active_jobs table<integer, venv-selector.ActiveJobState>
+---@field search_in_progress boolean
+---@field stop_search fun()
+---@field run_search fun(picker: venv-selector.Picker|venv-selector.SearchCallbacks|nil, opts: venv-selector.SearchOpts|nil)
+
+---@class venv-selector.UserCommandsModule
+---@field register fun()
+
+---@alias venv-selector.UserCommandOpts vim.api.keyset.user_command
+
 
 
 return M

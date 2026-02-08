@@ -51,9 +51,9 @@ end
 
 local function wait_for(cond, timeout_ms)
     timeout_ms = timeout_ms or 8000
-    local start = vim.loop.now()
+    local start = vim.uv.now()
     while not cond() do
-        if vim.loop.now() - start > timeout_ms then
+        if vim.uv.now() - start > timeout_ms then
             return false
         end
         vim.wait(50)

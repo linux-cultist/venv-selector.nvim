@@ -13,6 +13,10 @@
 -- - For :VenvSelect, `opts` are passed through to gui.open(), and ultimately to search.run_search().
 -- - The cached command is only created when auto-activation is disabled to avoid redundancy.
 
+require("venv-selector.types")
+
+---@class venv-selector.UserCommandsModule
+---@field register fun()
 local M = {}
 
 ---Register all venv-selector user commands.
@@ -20,6 +24,9 @@ local M = {}
 function M.register()
     -- Open picker UI and run configured searches (or interactive search if args provided).
     vim.api.nvim_create_user_command("VenvSelect", function(opts)
+        ---@type vim.api.keyset.user_command
+        ---@cast opts vim.api.keyset.user_command
+
         local gui = require("venv-selector.gui")
         gui.open(opts)
     end, { nargs = "*", desc = "Activate venv" })
@@ -48,4 +55,5 @@ function M.register()
     end
 end
 
+---@cast M venv-selector.UserCommandsModule
 return M

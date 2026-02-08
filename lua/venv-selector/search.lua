@@ -268,7 +268,7 @@ local function start_search_job(search_name, search_config, job_event_handler, s
     search_config.name = search_name
     M.active_jobs[job_id] = search_config
 
-    local timer = (vim.uv or vim.loop).new_timer()
+    local timer = vim.uv.new_timer()
     if timer then
         timer:start(search_timeout * 1000, 0, vim.schedule_wrap(function()
             if vim.fn.jobwait({ job_id }, 0)[1] == -1 then
@@ -376,4 +376,5 @@ function M.run_search(picker, opts)
     end
 end
 
+---@cast M venv-selector.SearchModule
 return M

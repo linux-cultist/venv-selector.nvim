@@ -14,6 +14,9 @@
 -- - Logging is gated by both `M.enabled` and the current log level threshold.
 -- - The log buffer is a scratch buffer (listed=false, scratch=true).
 
+require("venv-selector.types")
+
+
 local log_buf = nil
 local prev_buf = nil
 local buffer_name = "VenvSelectLog"
@@ -58,7 +61,7 @@ M.enabled = false
 
 ---Set the active minimum log level.
 ---
----@param level string One of: "DEBUG"|"INFO"|"WARNING"|"ERROR"|"NONE"
+---@param level venv-selector.LogLevel
 function M.set_level(level)
     if M.levels[level] then
         M.current_level = M.levels[level]
@@ -82,8 +85,7 @@ end
 ---Log each argument separately at the given level.
 ---This preserves existing call-sites that do `log.debug("a", tbl, "b")`.
 ---
----@param level string
----@param ... any
+---@param level venv-selector.LogLevel
 function M.iterate_args(level, ...)
     for i = 1, select("#", ...) do
         local msg = select(i, ...)
@@ -119,12 +121,17 @@ end
 -- Formatting helpers
 -- ============================================================================
 
----Return a UTC timestamp in a stable format.
+---Return a timestamp with millisecond precision.
 ---
----@return string utc_timestamp "YYYY-MM-DD HH:MM:SS"
+---@return string timestamp "HH:MM:SS.mmm"
 function M.get_utc_date_time()
-    local utc_time = os.date("!%Y-%m-%d %H:%M:%S", os.time())
-    return utc_time
+    local now_sec = os.time()
+    local base = os.date("%H:%M:%S", now_sec)
+
+    local ns = vim.uv.hrtime()
+    local ms = math.floor((ns % 1e9) / 1e6)
+
+    return string.format("%s.%03d", tostring(base), ms)
 end
 
 ---Recursively log a table in an indented "key: value" form.
@@ -181,7 +188,7 @@ function M.setup_syntax_highlighting()
     -- Syntax patterns. These attach highlight groups to timestamp + [LEVEL] tags.
     vim.api.nvim_buf_call(log_buf, function()
         vim.cmd("syntax clear")
-        vim.cmd([[syntax match VenvLogTimestamp /^\d\{4\}-\d\{2\}-\d\{2\} \d\{2\}:\d\{2\}:\d\{2\}/]])
+        vim.cmd([[syntax match VenvLogTimestamp /^\d\{2\}:\d\{2\}:\d\{2\}\.\d\{3\}/]])
         vim.cmd([[syntax match VenvLogDebug /\[DEBUG\]/]])
         vim.cmd([[syntax match VenvLogInfo /\[INFO\]/]])
         vim.cmd([[syntax match VenvLogWarning /\[WARNING\]/]])
@@ -197,7 +204,7 @@ end
 ---Uses vim.schedule to avoid text-change restrictions in callbacks/autocmd contexts.
 ---
 ---@param msg string
----@param level string
+---@param level venv-selector.LogLevel
 function M.log_line(msg, level)
     if M.enabled == false then
         return
@@ -241,7 +248,7 @@ end
 ---Log a message (string or table) at the given level.
 ---Respects current minimum log level threshold.
 ---
----@param level string
+---@param level venv-selector.LogLevel
 ---@param msg any
 ---@param indent? integer
 function M.log(level, msg, indent)
@@ -276,7 +283,7 @@ function M.toggle()
         if prev_buf and vim.api.nvim_buf_is_valid(prev_buf) then
             vim.api.nvim_win_set_buf(0, prev_buf)
         else
-            vim.api.nvim_command("enew")
+        vim.cmd("enew")
         end
         prev_buf = nil
     else
@@ -337,7 +344,7 @@ function M.setup_lsp_message_forwarding()
         original_lsp_log.warn = vim.lsp.log.warn
         original_lsp_log.info = vim.lsp.log.info
         original_lsp_log.debug = vim.lsp.log.debug
-        original_lsp_log.trace = vim.lsp.log.trace
+        original_lsp_log.trace = vim.lsp.log.trace or function(...) end
     end
 
     ---Convert arbitrary log arguments to a single-line string.
@@ -423,4 +430,5 @@ end
 -- Enable forwarding by default (preserved behavior).
 M.setup_lsp_message_forwarding()
 
+---@cast M venv-selector.LoggerModule
 return M

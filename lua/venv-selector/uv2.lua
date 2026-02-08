@@ -21,7 +21,7 @@
 
 local M = {}
 
-local uv = vim.uv or vim.loop
+local uv = vim.uv
 local log = require("venv-selector.logger")
 local path_mod = require("venv-selector.path")
 

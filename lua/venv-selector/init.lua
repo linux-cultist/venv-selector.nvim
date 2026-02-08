@@ -21,12 +21,12 @@
 -- - env_type values are: "venv" | "conda" | "uv".
 -- - Public status helpers reflect the current state tracked by `path.lua`.
 
+require("venv-selector.types")
+
 local M = {}
 
 
 
----@class venv-selector.AutocmdArgs
----@field buf integer
 
 ---Return true if the buffer is a normal on-disk python buffer (not a special buftype).
 ---@param bufnr integer
@@ -97,7 +97,7 @@ local uv_group = vim.api.nvim_create_augroup("VenvSelectorUvDetect", { clear = t
 ---This function is intentionally used by multiple autocmds to cover session restore and late filetype.
 ---
 ---@param bufnr integer
----@param reason "read"|"filetype"|"enter"
+---@param reason venv-selector.ActivationReason
 local function uv_maybe_activate(bufnr, reason)
     if not is_normal_python_buf(bufnr) then
         return
@@ -294,4 +294,5 @@ function M.setup(conf)
     require("venv-selector.user_commands").register()
 end
 
+---@cast M venv-selector.InitModule
 return M

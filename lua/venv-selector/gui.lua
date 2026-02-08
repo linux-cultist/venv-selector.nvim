@@ -19,27 +19,10 @@
 -- - Search options (interactive args, callbacks, icon override) are passed through to the search layer.
 
 local log = require("venv-selector.logger")
+require("venv-selector.types")
 
 local M = {}
 
----@alias venv-selector.PickerName
----| "telescope"
----| "fzf-lua"
----| "snacks"
----| "mini-pick"
----| "native"
-
----@alias venv-selector.PickerSetting venv-selector.PickerName|"auto"
-
----@class venv-selector.GuiOpenOpts
----@field args? string Command args for interactive search (passed through to search.run_search)
----@field icon? string Optional icon override (passed through to search layer)
----@field on_telescope_result_callback? fun(line: string, source: string): string
----@field on_fd_result_callback? fun(line: string, source: string): string
-
----@class venv-selector.PickerSpec
----@field name venv-selector.PickerName
----@field module? string Module to require to consider it installed; nil means always available
 
 ---@type venv-selector.PickerSpec[]
 local PICKERS = {
@@ -116,6 +99,7 @@ local function resolve_picker_name(picker_setting, installed)
         return nil
     end
 
+    ---@cast picker_setting venv-selector.PickerName
     return picker_setting
 end
 
@@ -144,4 +128,5 @@ function M.open(opts)
     require("venv-selector.search").run_search(picker, opts)
 end
 
+---@cast M venv-selector.GuiModule
 return M

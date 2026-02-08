@@ -12,6 +12,8 @@
 -- - This module intentionally returns a string path (or nil) and does not normalize.
 -- - Callers may treat the returned path as a key for caching / LSP scoping.
 
+require("venv-selector.types")
+
 local M = {}
 
 ---@type string[]
@@ -97,4 +99,5 @@ function M.key_for_buf(bufnr, markers)
     return M.for_buf(bufnr, markers)
 end
 
+---@cast M venv-selector.ProjectRootModule
 return M

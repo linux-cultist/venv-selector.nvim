@@ -343,7 +343,7 @@ local M = {}
 ---@field stop_lsp_servers fun()
 ---@field set_source fun(source: string)
 ---@field activate_for_buffer fun(python_path: string, env_type: venv-selector.VenvType, bufnr?: integer, opts?: venv-selector.VenvActivateOpts): boolean
----@field activate fun(python_path: string, env_type: venv-selector.VenvType, check_lsp: boolean): boolean
+---@field activate fun(python_path: string, env_type: venv-selector.VenvType): boolean
 ---@field update_paths fun(venv_path: string, env_type: venv-selector.VenvType)
 ---@field set_env fun(env_variable_value: string, env_variable_name: string)
 ---@field unset_env fun(env_variable_name: string)

@@ -173,7 +173,7 @@ end
 function M.draw_icons_for_types(source)
     local config = require("venv-selector.config")
     local icons = (config.user_settings and config.user_settings.options and config.user_settings.options.picker_icons) or
-    {}
+        {}
 
     if icons["default"] then
         return icons["default"]
@@ -273,12 +273,7 @@ function M.select(entry)
     venv.set_source(entry.source)
 
     local bufnr = pick_target_python_buf()
-
-    if type(venv.activate_for_buffer) == "function" then
-        venv.activate_for_buffer(entry.path, entry.type, bufnr, { save_cache = true })
-    else
-        venv.activate(entry.path, entry.type, true)
-    end
+    venv.activate_for_buffer(entry.path, entry.type, bufnr, { save_cache = true })
 end
 
 return M

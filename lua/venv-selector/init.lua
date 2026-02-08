@@ -71,8 +71,8 @@ end
 
 ---Activate an environment given an explicit python executable path.
 ---@param python_path string
-function M.activate_from_path(python_path)
-    require("venv-selector.venv").activate(python_path, "activate_from_path", true)
+function M.activate_from_path(python_path, env_type)
+    require("venv-selector.venv").activate(python_path, env_type)
 end
 
 ---Deactivate the current environment:

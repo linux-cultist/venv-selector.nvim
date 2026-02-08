@@ -55,7 +55,13 @@ local function do_activate(python_path, env_type, bufnr, opts)
     path.current_venv_path = path.get_base(python_path)
     path.current_type = env_type
 
-
+    
+    -- Remember per-buffer selection for session switching (works even if cache is disabled)
+    if bufnr and vim.api.nvim_buf_is_valid(bufnr) then
+        vim.b[bufnr].venv_selector_last_python = python_path
+        vim.b[bufnr].venv_selector_last_type = env_type
+    end
+    
     local pr = require("venv-selector.project_root").key_for_buf(bufnr)
     active_project_root = pr
 

@@ -1,50 +1,192 @@
+-- lua/venv-selector/cached_venv.lua
+
 local config = require("venv-selector.config")
 local path = require("venv-selector.path")
 local log = require("venv-selector.logger")
 local uv2 = require("venv-selector.uv2")
 
-local cache_file
-if config.user_settings and config.user_settings.cache and config.user_settings.cache.file then
-    cache_file = path.expand(config.user_settings.cache.file)
-else
-    -- -- Fall back to default cache file if the user setting is not present
-    -- cache_file = path.expand(config.default_settings.cache.file)
-end
-
--- Ensure the cache directory exists
-local cache_dir = path.get_base(cache_file)
-if cache_dir and vim.fn.isdirectory(cache_dir) == 0 then
-    vim.fn.mkdir(cache_dir, "p")
-    log.debug("Created cache directory: " .. cache_dir)
-end
-
-
-
 local M = {}
 
----Handle automatic activation of cached venv on startup
----@param done? fun(activated: boolean) Callback called when activation attempt finishes
-function M.handle_automatic_activation(done)
-    -- done: function() called when the activation attempt finishes (success or not)
-    if not config.user_settings.options.cached_venv_automatic_activation then
-        if done then done(false) end
-        return
-    end
+---@alias venv-selector.VenvType "venv"|"conda"|"uv"
 
-    -- M.retrieve must accept a callback and call it once when it finishes.
-    M.retrieve(function(activated)
-        if done then done(activated == true) end
-    end)
+---@class venv-selector.CachedVenvInfo
+---@field value string Absolute path to python executable
+---@field type venv-selector.VenvType Environment type ("venv", "conda", or "uv")
+---@field source? string Source tag used by venv-selector (e.g. "workspace", "cwd", ...)
+
+---@alias venv-selector.CachedVenvTable table<string, venv-selector.CachedVenvInfo> -- keyed by project_root
+
+---@type string|nil
+local cache_file
+
+if config.user_settings
+    and config.user_settings.cache
+    and config.user_settings.cache.file
+then
+    cache_file = path.expand(config.user_settings.cache.file)
 end
 
----Save current venv to cache for the current working directory
----@param python_path string Path to the python executable
----@param venv_type string Type of the virtual environment
-function M.save(python_path, venv_type, bufnr)
+-- Ensure cache directory exists
+if cache_file and cache_file ~= "" then
+    local cache_dir = path.get_base(cache_file)
+    if cache_dir and vim.fn.isdirectory(cache_dir) == 0 then
+        vim.fn.mkdir(cache_dir, "p")
+        log.debug("Created cache directory: " .. cache_dir)
+    end
+end
+
+---@param done? fun(activated: boolean)
+---@param ok boolean
+local function finish(done, ok)
+    if done then done(ok == true) end
+end
+
+---Cache storage feature enabled (read/write allowed).
+---@return boolean
+local function cache_feature_enabled()
     if config.user_settings.options.enable_cached_venvs ~= true then
         log.debug("Option 'enable_cached_venvs' is false so will not use cache.")
+        return false
+    end
+    if not cache_file or cache_file == "" then
+        log.debug("Cache disabled: cache file not configured.")
+        return false
+    end
+    return true
+end
+
+---Automatic cache activation enabled (auto restore on events).
+---@return boolean
+local function cache_auto_enabled()
+    if not cache_feature_enabled() then
+        return false
+    end
+    if config.user_settings.options.cached_venv_automatic_activation ~= true then
+        return false
+    end
+    return true
+end
+
+---@param bufnr integer
+---@return boolean
+local function valid_py_buf(bufnr)
+    return vim.api.nvim_buf_is_valid(bufnr)
+        and vim.bo[bufnr].buftype == ""
+        and vim.bo[bufnr].filetype == "python"
+end
+
+---Ensure the last venv used in this buffer is active (session-local memory; does not read cache).
+---@param bufnr? integer
+function M.ensure_buffer_last_venv_activated(bufnr)
+    bufnr = bufnr or vim.api.nvim_get_current_buf()
+    if not valid_py_buf(bufnr) then
         return
     end
+
+    -- uv buffers are handled by uv2
+    if uv2.is_uv_buffer(bufnr) then
+        return
+    end
+
+    local last = vim.b[bufnr].venv_selector_last_python
+    local typ = vim.b[bufnr].venv_selector_last_type or "venv"
+    if type(last) ~= "string" or last == "" then
+        return
+    end
+
+    -- If already active globally, just stop.
+    if path.current_python_path == last then
+        return
+    end
+
+    require("venv-selector.venv").activate_for_buffer(last, typ, bufnr, { save_cache = false })
+end
+
+---Read and decode the cache JSON file.
+---@return venv-selector.CachedVenvTable|nil cache_tbl
+local function read_cache()
+    if vim.fn.filereadable(cache_file) ~= 1 then
+        return nil
+    end
+
+    local content = vim.fn.readfile(cache_file)
+    if not content or not content[1] then
+        return nil
+    end
+
+    local ok, decoded = pcall(vim.fn.json_decode, content[1])
+    if not ok or type(decoded) ~= "table" then
+        return nil
+    end
+
+    log.debug("Cache retrieved from file " .. cache_file)
+    return decoded
+end
+
+---Encode and write the cache table to disk.
+---@param tbl venv-selector.CachedVenvTable
+---@return boolean ok
+local function write_cache(tbl)
+    local ok, json = pcall(vim.fn.json_encode, tbl or {})
+    if not ok or not json then
+        return false
+    end
+    vim.fn.writefile({ json }, cache_file)
+    return true
+end
+
+---Remove entries that point to missing python executables.
+---If any entries are removed, the cache file is rewritten.
+---@param cache_tbl venv-selector.CachedVenvTable|any
+---@return venv-selector.CachedVenvTable cleaned
+function M.clean_stale_entries(cache_tbl)
+    if type(cache_tbl) ~= "table" then
+        return {}
+    end
+
+    ---@type venv-selector.CachedVenvTable
+    local cleaned = {}
+    local modified = false
+
+    for root, info in pairs(cache_tbl) do
+        local val = info and info.value
+        if type(val) == "string" and vim.fn.filereadable(val) == 1 then
+            ---@cast info venv-selector.CachedVenvInfo
+            cleaned[root] = info
+        else
+            modified = true
+            if val then
+                log.debug("Removing stale cache entry: " .. tostring(val))
+            end
+        end
+    end
+
+    if modified then
+        write_cache(cleaned)
+        log.debug("Updated cache file with cleaned entries")
+    end
+
+    return cleaned
+end
+
+---Attempt automatic activation of the cached venv for the current buffer.
+---Respects option: `cached_venv_automatic_activation`.
+---@param done? fun(activated: boolean) Callback called when activation attempt finishes
+function M.handle_automatic_activation(done)
+    if not cache_auto_enabled() then return finish(done, false) end
+
+    local bufnr = vim.api.nvim_get_current_buf()
+    M.retrieve(bufnr, done)
+end
+
+---Save the selected interpreter to cache under the project root for `bufnr`.
+---No-op if caching is disabled.
+---Skips saving for uv (PEP 723) environments.
+---@param python_path string Absolute path to python executable
+---@param venv_type venv-selector.VenvType Environment type
+---@param bufnr? integer Buffer used to compute project root (defaults to current buffer)
+function M.save(python_path, venv_type, bufnr)
+    if not cache_feature_enabled() then return end
 
     if venv_type == "uv" then
         log.debug("Skipping cache save for UV environment: " .. python_path)
@@ -52,111 +194,60 @@ function M.save(python_path, venv_type, bufnr)
     end
 
     bufnr = bufnr or vim.api.nvim_get_current_buf()
-    local project_root = require("venv-selector.project_root").key_for_buf(bufnr) or vim.fn.getcwd()
 
-    local venv_cache = {
-        [project_root] = {
-            value = python_path,
-            type = venv_type,
-            source = path.current_source,
-        },
+    local project_root =
+        require("venv-selector.project_root").key_for_buf(bufnr)
+        or vim.fn.getcwd()
+
+    local existing = read_cache() or {}
+
+    ---@type venv-selector.CachedVenvInfo
+    existing[project_root] = {
+        value = python_path,
+        type = venv_type,
+        source = path.current_source,
     }
 
-    local venv_cache_json = nil
-
-    if vim.fn.filereadable(cache_file) == 1 then
-        local cached_file = vim.fn.readfile(cache_file)
-        if cached_file ~= nil and cached_file[1] ~= nil then
-            local cached_json = vim.fn.json_decode(cached_file[1])
-            local merged_cache = vim.tbl_deep_extend("force", cached_json, venv_cache)
-            venv_cache_json = vim.fn.json_encode(merged_cache)
-        else
-            venv_cache_json = vim.fn.json_encode(venv_cache)
-        end
-    else
-        venv_cache_json = vim.fn.json_encode(venv_cache)
+    if write_cache(existing) then
+        log.debug("Cache written to file " .. cache_file)
     end
-
-    vim.fn.writefile({ venv_cache_json }, cache_file)
-    log.debug("Cache written to file " .. cache_file)
 end
 
----Remove entries from cache that point to non-existent python executables
----@param venv_cache table The loaded cache table
----@return table The cleaned cache table
-function M.clean_stale_entries(venv_cache)
-    local cleaned_cache = {}
-    local cache_modified = false
-
-    for cwd, venv_info in pairs(venv_cache) do
-        if vim.fn.filereadable(venv_info.value) == 1 then
-            cleaned_cache[cwd] = venv_info
-        else
-            log.debug("Removing stale cache entry: " .. venv_info.value .. " (no longer exists)")
-            cache_modified = true
-        end
-    end
-
-    -- Save cleaned cache if modified
-    if cache_modified then
-        local cleaned_json = vim.fn.json_encode(cleaned_cache)
-        vim.fn.writefile({ cleaned_json }, cache_file)
-        log.debug("Updated cache file with cleaned entries")
-    end
-
-    return cleaned_cache
-end
-
----Retrieve and activate the cached venv for the current working directory
----@param done? fun(activated: boolean) Callback called when retrieval/activation finishes
+---Retrieve and activate cached venv for the given buffer's project root.
+---No-op for uv (PEP 723) buffers.
+---@param bufnr? integer Buffer to use for project root lookup (defaults to current buffer)
+---@param done? fun(activated: boolean) Callback called after activation attempt completes
 function M.retrieve(bufnr, done)
-    local function finish(activated)
-        if done then done(activated == true) end
-    end
-
-    if config.user_settings.options.enable_cached_venvs ~= true then
-        log.debug("Option 'enable_cached_venvs' is false so will not use cache.")
-        return finish(false)
-    end
+    if not cache_auto_enabled() then return finish(done, false) end
 
     bufnr = bufnr or vim.api.nvim_get_current_buf()
 
-    -- skip uv buffers
-    if vim.api.nvim_buf_is_valid(bufnr) and uv2.is_uv_buffer(bufnr) then
-        log.debug("Skipping cached venv retrieval: uv (PEP 723) buffer detected")
-        return finish(false)
+    if not valid_py_buf(bufnr) then
+        return finish(done, false)
     end
 
-    if vim.fn.filereadable(cache_file) ~= 1 then
-        return finish(false)
+    -- Skip uv buffers
+    if uv2.is_uv_buffer(bufnr) then
+        log.debug("Skipping cached venv retrieval: uv buffer detected")
+        return finish(done, false)
     end
 
-    local cache_file_content = vim.fn.readfile(cache_file)
-    log.debug("Cache retrieved from file " .. cache_file)
-
-    if not cache_file_content or not cache_file_content[1] then
-        return finish(false)
+    local cache_tbl = read_cache()
+    if not cache_tbl then
+        return finish(done, false)
     end
 
-    local venv_cache = vim.fn.json_decode(cache_file_content[1])
-    if not venv_cache then
-        return finish(false)
-    end
-
-    local cleaned_cache = M.clean_stale_entries(venv_cache)
+    local cleaned = M.clean_stale_entries(cache_tbl)
 
     local project_root = require("venv-selector.project_root").key_for_buf(bufnr)
     if not project_root then
         log.debug("Cache lookup skipped: project_root=nil for bufnr=" .. tostring(bufnr))
-        return finish(false)
+        return finish(done, false)
     end
 
-    local venv_info = cleaned_cache[project_root]
+    local venv_info = cleaned[project_root]
     if not venv_info then
-        log.debug(("Cache miss: project_root=%s (keys=%d)"):format(
-            project_root, vim.tbl_count(cleaned_cache)
-        ))
-        return finish(false)
+        return finish(done, false)
     end
 
     local venv = require("venv-selector.venv")
@@ -169,10 +260,76 @@ function M.retrieve(bufnr, done)
     ))
 
     vim.schedule(function()
-        venv.activate_for_buffer(venv_info.value, venv_info.type, bufnr, { save_cache = false })
-        -- venv.activate(venv_info.value, venv_info.type, false)
-        finish(true)
+        venv.activate_for_buffer(
+            venv_info.value,
+            venv_info.type,
+            bufnr,
+            { save_cache = false }
+        )
+        finish(done, true)
     end)
+end
+
+---Ensure the cached venv for this buffer is active (use on BufEnter/BufWinEnter).
+---@param bufnr? integer
+function M.ensure_cached_venv_activated(bufnr)
+    if not cache_auto_enabled() then return end
+
+    bufnr = bufnr or vim.api.nvim_get_current_buf()
+    if not valid_py_buf(bufnr) then
+        return
+    end
+
+    if uv2.is_uv_buffer(bufnr) then
+        return
+    end
+
+    local project_root = require("venv-selector.project_root").key_for_buf(bufnr)
+    if not project_root then
+        return
+    end
+
+    local cache_tbl = read_cache()
+    if not cache_tbl then
+        return
+    end
+
+    local cleaned = M.clean_stale_entries(cache_tbl)
+    local venv_info = cleaned[project_root]
+    if not venv_info or type(venv_info.value) ~= "string" or venv_info.value == "" then
+        return
+    end
+
+    -- If already active globally, just mark buffer and stop.
+    if path.current_python_path == venv_info.value then
+        vim.b[bufnr].venv_selector_cached_applied = venv_info.value
+        return
+    end
+
+    -- If we already applied this for this buffer, but global differs, we must switch back.
+    local applied = vim.b[bufnr].venv_selector_cached_applied
+    if applied == venv_info.value and path.current_python_path ~= venv_info.value then
+        -- fallthrough (must activate)
+    end
+
+    local venv = require("venv-selector.venv")
+    if venv_info.source ~= nil then
+        venv.set_source(venv_info.source)
+    end
+
+    log.debug(("ensure_cached_venv_activated: switching to `%s` for project_root=%s"):format(
+        venv_info.value, project_root
+    ))
+
+    -- Do it synchronously so state is correct immediately (picker markers, etc.)
+    venv.activate_for_buffer(
+        venv_info.value,
+        venv_info.type,
+        bufnr,
+        { save_cache = false }
+    )
+
+    vim.b[bufnr].venv_selector_cached_applied = venv_info.value
 end
 
 return M

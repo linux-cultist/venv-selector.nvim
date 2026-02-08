@@ -55,6 +55,13 @@ local function uv_maybe_activate(bufnr, reason)
     local log = require("venv-selector.logger")
     log.debug(("uv-autocmd %s b=%d file=%s"):format(reason, bufnr, vim.api.nvim_buf_get_name(bufnr)))
 
+    -- 1) session-local per-buffer restore (works even if cache is disabled)
+    require("venv-selector.cached_venv").ensure_buffer_last_venv_activated(bufnr)
+
+    -- 2) persistent cache restore (only does anything if cache enabled)
+    require("venv-selector.cached_venv").ensure_cached_venv_activated(bufnr)
+
+    -- 3) uv restore
     require("venv-selector.uv2").ensure_uv_buffer_activated(bufnr)
 end
 
@@ -74,7 +81,7 @@ vim.api.nvim_create_autocmd("FileType", {
 })
 
 -- Critical: catches session restore, already-loaded buffers, and window switches
-vim.api.nvim_create_autocmd({ "BufEnter"}, {
+vim.api.nvim_create_autocmd({ "BufEnter" }, {
     group = uv_group,
     callback = function(args)
         uv_maybe_activate(args.buf, "enter")
@@ -89,7 +96,6 @@ vim.api.nvim_create_autocmd("BufWritePost", {
         require("venv-selector.uv2").run_uv_flow_if_needed(args.buf)
     end,
 })
-
 
 
 function M.python()

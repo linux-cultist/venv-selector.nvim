@@ -15,6 +15,9 @@
 --     - it is attached to at least one python buffer.
 -- - Workspace folders are deduplicated by `folder.name` (as used by Neovim’s LSP API).
 
+-- Shared annotations live here (WorkspaceFolder, etc.)
+require("venv-selector.types")
+
 local M = {}
 
 ---Return true if an LSP client should be considered "python-supporting".
@@ -27,9 +30,9 @@ local M = {}
 ---@return boolean ok
 local function supports_python(client)
     -- Method 1: Check configured filetypes.
-    ---@cast client +{config: {filetypes: string[]}}
-    local filetypes = client.config and client.config.filetypes or {}
-    if vim.tbl_contains(filetypes, "python") then
+    -- NOTE: Some language servers / LuaLS typings don't expose config.filetypes cleanly.
+    local filetypes = (client.config and client.config.filetypes) or nil
+    if type(filetypes) == "table" and vim.tbl_contains(filetypes, "python") then
         return true
     end
 
@@ -72,9 +75,13 @@ function M.list_folders(bufnr)
             for _, folder in pairs(client.workspace_folders or {}) do
                 -- Neovim represents folders as {name=..., uri=...} in many configs.
                 -- This code uses folder.name as the path key.
-                if folder and folder.name and not seen_folders[folder.name] then
-                    seen_folders[folder.name] = true
-                    table.insert(workspace_folders, folder.name)
+                ---@type venv-selector.WorkspaceFolder|any
+                local f = folder
+
+                local folder_name = (type(f) == "table" and type(f.name) == "string") and f.name or nil
+                if folder_name and folder_name ~= "" and not seen_folders[folder_name] then
+                    seen_folders[folder_name] = true
+                    table.insert(workspace_folders, folder_name)
                 end
             end
         end

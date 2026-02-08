@@ -21,6 +21,7 @@
 -- - active_project_root is a module-local value so it can be used as a stable "last activated" root.
 -- - Per-buffer session memory enables correct switching even when persistent cache is disabled.
 
+require("venv-selector.types")
 local path = require("venv-selector.path")
 local config = require("venv-selector.config")
 local log = require("venv-selector.logger")
@@ -173,7 +174,7 @@ end
 ---@param python_path string Absolute path to python executable
 ---@param env_type string Environment type (e.g. "venv"|"conda"|"uv")
 ---@param bufnr? integer Buffer number used for per-buffer memory + project root
----@param opts? { save_cache?: boolean, check_lsp?: boolean }
+---@param opts? { save_cache?: boolean }
 ---@return boolean activated
 function M.activate_for_buffer(python_path, env_type, bufnr, opts)
     opts = opts or {}
@@ -193,11 +194,10 @@ end
 ---
 ---@param python_path string Absolute path to python executable
 ---@param env_type string Environment type
----@param check_lsp boolean Whether to enforce "python LSP must exist" (currently not used)
 ---@return boolean activated
-function M.activate(python_path, env_type, check_lsp)
+function M.activate(python_path, env_type)
     local bufnr = vim.api.nvim_get_current_buf()
-    return M.activate_for_buffer(python_path, env_type, bufnr, { save_cache = true, check_lsp = check_lsp })
+    return M.activate_for_buffer(python_path, env_type, bufnr, { save_cache = true })
 end
 
 -- ============================================================================
@@ -272,4 +272,5 @@ function M.unset_env_variables()
     vim.env.CONDA_PREFIX = nil
 end
 
+---@cast M venv-selector.VenvModule
 return M

@@ -21,9 +21,11 @@
 
 local M = {}
 
+require("venv-selector.types")
 local uv = vim.uv
 local log = require("venv-selector.logger")
 local path_mod = require("venv-selector.path")
+
 
 ---True if `uv` is available on PATH.
 ---@type boolean
@@ -31,7 +33,7 @@ local has_uv = vim.fn.executable("uv") == 1
 
 ---Timer registry for debouncing.
 ---Keyed by "bufnr:tag" -> uv_timer.
----@type table<string, any>
+---@type table<string, venv-selector.UvTimer|nil>
 local timers = {}
 
 ---Debounce helper: run `fn` once after `ms` for a (bufnr, tag) key.
@@ -49,11 +51,16 @@ local function debounce(bufnr, tag, ms, fn)
         t:close()
         timers[key] = nil
     end
+    local nt = uv.new_timer()
+    if not nt then
+        return
+    end
 
-    t = uv.new_timer()
-    timers[key] = t
+    ---@cast nt venv-selector.UvTimer
+    timers[key] = nt
 
-    t:start(ms, 0, vim.schedule_wrap(function()
+
+    nt:start(ms, 0, vim.schedule_wrap(function()
         timers[key] = nil
         fn()
     end))
@@ -163,7 +170,7 @@ end
 ---Return the preferred output string from a vim.system result.
 ---Prefers stderr if non-empty; otherwise stdout.
 ---
----@param res table
+---@param res venv-selector.SystemResult
 ---@return string|nil out
 local function uv_out(res)
     return (res.stderr and res.stderr ~= "") and res.stderr or res.stdout
@@ -188,7 +195,7 @@ end
 ---
 ---@param cmd string[] Command argv
 ---@param opts table Options passed to vim.system (e.g. {text=true, cwd=...})
----@return table res vim.system result
+---@return venv-selector.SystemResult res vim.system result
 local function await_system(cmd, opts)
     local co = coroutine.running()
     if not co then
@@ -376,4 +383,5 @@ function M.ensure_uv_buffer_activated(bufnr)
     end)
 end
 
+---@cast M venv-selector.Uv2Module
 return M

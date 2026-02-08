@@ -12,6 +12,7 @@
 -- - These utilities are intentionally dependency-light.
 -- - Some functionality (like Windows splitting) is currently thin wrappers,
 --   but kept for future extensibility.
+require("venv-selector.types")
 
 local log = require("venv-selector.logger")
 
@@ -153,4 +154,5 @@ function M.print_table(tbl, indent)
     end
 end
 
+---@cast M venv-selector.UtilsModule
 return M

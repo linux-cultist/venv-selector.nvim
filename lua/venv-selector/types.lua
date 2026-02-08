@@ -22,19 +22,7 @@ local M = {}
 ---@field insert_result fun(self: venv-selector.Picker, result: venv-selector.SearchResult) Add a result to the picker
 ---@field search_done fun(self: venv-selector.Picker) Called when search completes
 
----@class venv-selector.SearchOpts
----@field args string Command arguments for interactive search
-
----@class venv-selector.SearchConfig
----@field command string The search command to execute (may contain $FD/$CWD/$WORKSPACE_PATH/$FILE_DIR/$CURRENT_FILE)
----@field type? string The type of environment for results produced by this search
----@field on_telescope_result_callback? fun(line: string, source: string): string
----@field on_fd_result_callback? fun(line: string, source: string): string
----@field execute_command? string Fully expanded command actually executed (computed per invocation)
----@field name? string Resolved search name (filled in when job starts)
----@field stderr_output? string[] Collected stderr output lines
-
----@class venv-selector.ActiveJobState
+---@class venv-selector.ActiveJobState venv-selector.SearchConfig
 ---@field name string Search name (e.g. "cwd", "workspace")
 ---@field type? string Env type for results from this job
 ---@field execute_command? string Final command executed
@@ -117,8 +105,6 @@ local M = {}
 ---@field cwd? venv-selector.SearchCommand
 ---@field workspace? venv-selector.SearchCommand
 ---@field file? venv-selector.SearchCommand
-
----@alias venv-selector.Hook fun(venv_python: string|nil, env_type: string|nil)
 
 ---@class venv-selector.CacheSettings
 ---@field file string Path to cache file
@@ -207,8 +193,8 @@ local M = {}
 
 ---@class venv-selector.HooksModule
 ---@field notifications_memory table<string, integer>
----@field dynamic_python_lsp_hook fun(venv_python: string|nil, env_type: venv-selector.VenvType|nil, bufnr?: integer): integer
 ---@field send_notification fun(message: string)
+---@alias venv-selector.Hook fun(python_path: string|nil, env_type: venv-selector.VenvType|nil,bufnr: integer|nil): integer|nil
 
 ---@class venv-selector.AutocmdArgs
 ---@field buf integer
@@ -289,12 +275,6 @@ local M = {}
 ---@field for_buf fun(bufnr?: integer, markers?: string[]): string|nil
 ---@field key_for_buf fun(bufnr?: integer, markers?: string[]): string|nil
 
----@class venv-selector.SearchResult
----@field path string          -- absolute path to python executable
----@field name string          -- display name
----@field icon string          -- optional icon
----@field type venv-selector.VenvType
----@field source string        -- search name/source tag
 
 ---@class venv-selector.SearchConfig
 ---@field command string
@@ -319,9 +299,6 @@ local M = {}
 ---@field on_telescope_result_callback? fun(line: string, source: string): string
 ---@field on_fd_result_callback? fun(line: string, source: string): string
 
----@class venv-selector.ActiveJobState : venv-selector.SearchConfig
----@field name string
-
 ---@class venv-selector.SearchModule
 ---@field active_jobs table<integer, venv-selector.ActiveJobState>
 ---@field search_in_progress boolean
@@ -333,6 +310,49 @@ local M = {}
 
 ---@alias venv-selector.UserCommandOpts vim.api.keyset.user_command
 
+---@class venv-selector.UtilsModule
+---@field table_has_content fun(t: table|nil): boolean
+---@field split_string fun(str: string): string[]
+---@field split_cmd_for_windows fun(str: string): string[]
+---@field try fun(tbl: table, ...: string): any|nil
+---@field print_table fun(tbl: table, indent?: integer)
 
+---@class venv-selector.UvTimer
+---@field start fun(self: venv-selector.UvTimer, timeout: integer, repeat_: integer, cb: fun())
+---@field stop fun(self: venv-selector.UvTimer)
+---@field close fun(self: venv-selector.UvTimer)
+
+---@class venv-selector.SystemResult
+---@field code integer
+---@field signal integer?
+---@field stdout string?
+---@field stderr string?
+
+---@class venv-selector.Uv2Module
+---@field is_uv_buffer fun(bufnr: integer): boolean
+---@field run_uv_flow_if_needed fun(bufnr: integer|nil)
+---@field ensure_uv_buffer_activated fun(bufnr: integer|nil)
+
+
+---@class venv-selector.VenvActivateOpts
+---@field save_cache? boolean
+---@field check_lsp? boolean
+
+---@class venv-selector.VenvModule
+---@field active_project_root fun(): string|nil
+---@field stop_lsp_servers fun()
+---@field set_source fun(source: string)
+---@field activate_for_buffer fun(python_path: string, env_type: venv-selector.VenvType, bufnr?: integer, opts?: venv-selector.VenvActivateOpts): boolean
+---@field activate fun(python_path: string, env_type: venv-selector.VenvType, check_lsp: boolean): boolean
+---@field update_paths fun(venv_path: string, env_type: venv-selector.VenvType)
+---@field set_env fun(env_variable_value: string, env_variable_name: string)
+---@field unset_env fun(env_variable_name: string)
+---@field unset_env_variables fun()
+
+
+
+---@class venv-selector.WorkspaceFolder
+---@field name? string
+---@field uri? string
 
 return M

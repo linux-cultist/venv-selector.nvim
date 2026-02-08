@@ -23,12 +23,7 @@
 
 local M = {}
 
----@alias venv-selector.VenvType "venv"|"conda"|"uv"
 
----@class venv-selector.Settings
----@field cache? { file?: string }
----@field hooks? fun(venv_python: string|nil, env_type: string|nil, bufnr?: integer)[]
----@field options? table
 
 ---@class venv-selector.AutocmdArgs
 ---@field buf integer

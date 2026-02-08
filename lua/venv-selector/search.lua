@@ -14,55 +14,19 @@
 -- - Results are emitted line-by-line from stdout callbacks.
 --
 -- Conventions:
--- - "SearchResult.path" is a path to the python executable.
--- - "SearchResult.name" is a display name (potentially transformed by callbacks).
--- - "SearchResult.type" and "SearchResult.source" identify the search origin.
+-- - SearchResult.path is a path to the python executable.
+-- - SearchResult.name is a display name (potentially transformed by callbacks).
+-- - SearchResult.type and SearchResult.source identify the search origin.
 
 local workspace = require("venv-selector.workspace")
 local path = require("venv-selector.path")
 local utils = require("venv-selector.utils")
 local log = require("venv-selector.logger")
 
+-- Load shared annotations/types (kept as a module so other files can @class reference it).
+require("venv-selector.types")
+
 local M = {}
-
--- ============================================================================
--- Types
--- ============================================================================
-
----@class SearchResult
----@field path string The file path to the python executable (selected env interpreter)
----@field name string Display name of the environment/interpreter
----@field icon string Icon to display (picker UI)
----@field type string Type of environment (e.g., "venv", "conda")
----@field source string Search source that found this result (e.g., "cwd", "workspace", ...)
-
----@class SearchCallbacks
----@field on_result fun(result: SearchResult) Called for each result found
----@field on_complete fun() Called when search completes
-
----@class Picker
----@field insert_result fun(self: Picker, result: SearchResult) Add a result to the picker
----@field search_done fun(self: Picker) Called when search completes
-
----@class SearchOpts
----@field args string Command arguments for interactive search
-
----@class SearchConfig
----@field command string The search command to execute (may contain $FD/$CWD/$WORKSPACE_PATH/$FILE_DIR/$CURRENT_FILE)
----@field type? string The type of environment for results produced by this search
----@field on_telescope_result_callback? fun(line: string, source: string): string
----@field on_fd_result_callback? fun(line: string, source: string): string
----@field execute_command? string Fully expanded command actually executed (computed per invocation)
----@field name? string Resolved search name (filled in when job starts)
----@field stderr_output? string[] Collected stderr output lines
-
----@class venv-selector.ActiveJobState
----@field name string Search name (e.g. "cwd", "workspace")
----@field type? string Env type for results from this job
----@field execute_command? string Final command executed
----@field on_telescope_result_callback? fun(line: string, source: string): string
----@field on_fd_result_callback? fun(line: string, source: string): string
----@field stderr_output? string[]
 
 -- ============================================================================
 -- Module state
@@ -77,7 +41,6 @@ M.active_jobs = M.active_jobs or {}
 M.search_in_progress = M.search_in_progress or false
 
 ---Count tracked jobs currently in M.active_jobs.
----
 ---@return integer n
 local function active_job_count()
     local n = 0
@@ -89,7 +52,6 @@ end
 
 ---Return true if a job is still running.
 ---jobwait returns -1 if still running after the given timeout (0ms here).
----
 ---@param jid integer
 ---@return boolean running
 local function job_is_running(jid)
@@ -111,8 +73,6 @@ function M.stop_search()
 
     for jid, _cfg in pairs(M.active_jobs or {}) do
         pcall(vim.fn.jobstop, jid)
-        -- Optional immediate verification (0ms): -1 means still running.
-        -- local r = vim.fn.jobwait({ jid }, 0)[1]
     end
 
     M.active_jobs = {}
@@ -125,7 +85,6 @@ end
 
 ---Get the current file path, falling back to alternate buffer if current is empty.
 ---Useful when the command is invoked from a non-file buffer.
----
 ---@return string current_file Absolute file path or "" if none
 local function get_current_file()
     local current_file = vim.fn.expand("%:p")
@@ -141,23 +100,16 @@ local function get_current_file()
 end
 
 ---Expand "~" and "$VARS" in a shell command string.
----This is applied right before execution.
----
 ---Rules:
---- - "~" is expanded only at the beginning of the string.
---- - "$VAR" is expanded using vim.env (missing vars become "").
----
+--- - "~" expanded only at start
+--- - "$VAR" expanded from vim.env (missing vars become "")
 ---@param s string
 ---@return string expanded
 local function expand_env(s)
-    -- Expand leading ~ (only when it’s a path prefix).
     s = s:gsub("^~", vim.fn.expand("~"))
-
-    -- Expand $VAR (avoid $$ special handling by matching only [%w_]+).
     s = s:gsub("%$([%w_]+)", function(k)
         return vim.env[k] or ""
     end)
-
     return s
 end
 
@@ -165,8 +117,7 @@ end
 --- - Emits results on stdout
 --- - Collects stderr
 --- - Detects completion when the last tracked job exits
----
----@param picker Picker|SearchCallbacks|nil
+---@param picker venv-selector.Picker|venv-selector.SearchCallbacks|nil
 ---@param options table User options (contains callbacks/icons)
 ---@return fun(job_id: integer, data: any, event: string)
 local function create_job_event_handler(picker, options)
@@ -177,7 +128,6 @@ local function create_job_event_handler(picker, options)
         end
 
         if event == "stdout" and data then
-            -- Resolve the display-name callback precedence.
             local callback = search_config.on_telescope_result_callback
                 or options.on_telescope_result_callback
                 or search_config.on_fd_result_callback
@@ -185,7 +135,7 @@ local function create_job_event_handler(picker, options)
 
             for _, line in ipairs(data) do
                 if line ~= "" then
-                    ---@type SearchResult
+                    ---@type venv-selector.SearchResult
                     local result = {
                         path = line,
                         name = callback and callback(line, search_config.name) or line,
@@ -196,14 +146,13 @@ local function create_job_event_handler(picker, options)
 
                     log.debug("Found " .. result.type .. " from " .. result.source .. ": " .. result.name)
 
-                    -- Support both picker object and callback table.
                     if picker then
                         local p = picker
                         if type(p.insert_result) == "function" then
-                            ---@cast p Picker
+                            ---@cast p venv-selector.Picker
                             p:insert_result(result)
                         elseif type(p.on_result) == "function" then
-                            ---@cast p SearchCallbacks
+                            ---@cast p venv-selector.SearchCallbacks
                             p.on_result(result)
                         end
                     end
@@ -232,8 +181,6 @@ local function create_job_event_handler(picker, options)
                 log.debug("Search job '" .. search_config.name .. "' completed successfully")
             end
 
-            -- Determine if this is the last running/tracked job.
-            -- At this moment, M.active_jobs still contains this job_id (it is removed in on_exit_wrapper).
             local n = active_job_count()
             local last = (n == 1) and (M.active_jobs[job_id] ~= nil)
 
@@ -243,12 +190,12 @@ local function create_job_event_handler(picker, options)
                 if picker then
                     local p = picker
                     if type(p.search_done) == "function" then
-                        ---@cast p Picker
+                        ---@cast p venv-selector.Picker
                         vim.schedule(function()
                             p:search_done()
                         end)
                     elseif type(p.on_complete) == "function" then
-                        ---@cast p SearchCallbacks
+                        ---@cast p venv-selector.SearchCallbacks
                         vim.schedule(function()
                             p.on_complete()
                         end)
@@ -267,11 +214,10 @@ end
 
 ---Start a single search job.
 ---The search_config must already contain `execute_command`.
----
 ---@param search_name string Name of the search (used as SearchResult.source)
----@param search_config SearchConfig Search configuration (copied/expanded per invocation)
+---@param search_config venv-selector.SearchConfig Search configuration (copied/expanded per invocation)
 ---@param job_event_handler fun(job_id: integer, data: any, event: string)
----@param search_timeout integer Timeout in seconds (kills job if exceeded)
+---@param search_timeout integer Timeout in seconds
 local function start_search_job(search_name, search_config, job_event_handler, search_timeout)
     if not search_config.execute_command then
         log.error("No execute_command for search '" .. search_name .. "'")
@@ -280,25 +226,26 @@ local function start_search_job(search_name, search_config, job_event_handler, s
 
     local options = require("venv-selector.config").get_user_options()
 
-    -- Expand "~" and "$VAR" immediately before execution.
     local job = search_config.execute_command
     ---@cast job string
     local expanded_job = expand_env(job)
 
-    log.debug("Executing search '" ..
-        search_name ..
-        "' (using " .. options.shell.shell .. " " .. options.shell.shellcmdflag .. "): '" .. expanded_job .. "'")
+    log.debug(
+        "Executing search '"
+            .. search_name
+            .. "' (using "
+            .. options.shell.shell
+            .. " "
+            .. options.shell.shellcmdflag
+            .. "): '"
+            .. expanded_job
+            .. "'"
+    )
 
-    -- Current behavior: always run through the configured shell.
-    -- (Windows splitting logic exists in utils but is disabled here.)
     local cmd = { options.shell.shell, options.shell.shellcmdflag, expanded_job }
 
-    ---Wrap on_exit so we can:
-    --- 1) emit "exit" through job_event_handler first (so it can compute "last job")
-    --- 2) then untrack the job id from M.active_jobs
     local function on_exit_wrapper(jid, data, event)
         job_event_handler(jid, data, event)
-
         if M.active_jobs and M.active_jobs[jid] then
             M.active_jobs[jid] = nil
         end
@@ -318,18 +265,16 @@ local function start_search_job(search_name, search_config, job_event_handler, s
         return
     end
 
-    -- Track job by id so event handlers can find search_config.
     search_config.name = search_name
     M.active_jobs[job_id] = search_config
 
-    -- Timeout watchdog: stops the job if it runs too long.
     local timer = (vim.uv or vim.loop).new_timer()
     if timer then
         timer:start(search_timeout * 1000, 0, vim.schedule_wrap(function()
             if vim.fn.jobwait({ job_id }, 0)[1] == -1 then
                 vim.fn.jobstop(job_id)
-                local msg = "Search '" .. search_name .. "' took more than " .. search_timeout ..
-                    " seconds and was stopped. Avoid using VenvSelect in $HOME directory."
+                local msg = "Search '" .. search_name .. "' took more than " .. search_timeout
+                    .. " seconds and was stopped. Avoid using VenvSelect in $HOME directory."
                 log.warning(msg)
                 vim.notify(msg, vim.log.levels.ERROR, { title = "VenvSelect" })
             end
@@ -340,15 +285,8 @@ local function start_search_job(search_name, search_config, job_event_handler, s
 end
 
 ---Process a search config and start one or more jobs based on its substitution patterns.
----Substitution rules:
---- - $FD is always replaced with options.fd_binary_name
---- - $WORKSPACE_PATH expands to one job per workspace folder
---- - $CWD expands to the current working directory
---- - $FILE_DIR expands to the current file's directory (if available)
---- - $CURRENT_FILE expands to the current (or alternate) file path (if available)
----
 ---@param search_name string
----@param search_config SearchConfig
+---@param search_config venv-selector.SearchConfig
 ---@param job_event_handler fun(job_id: integer, data: any, event: string)
 ---@param options table User options
 local function process_search(search_name, search_config, job_event_handler, options)
@@ -392,20 +330,9 @@ end
 -- ============================================================================
 
 ---Run all configured searches and stream results into a picker/callback.
----
----picker can be:
---- - A Picker object with methods: insert_result(result), search_done()
---- - A callback table with functions: on_result(result), on_complete()
---- - nil (search still runs, but results are not delivered anywhere)
----
----opts can be:
---- - nil: use configured searches
---- - { args = "..." }: interactive search; replaces configured searches entirely
----
----@param picker Picker|SearchCallbacks|nil
----@param opts SearchOpts|nil
+---@param picker venv-selector.Picker|venv-selector.SearchCallbacks|nil
+---@param opts venv-selector.SearchOpts|nil
 function M.run_search(picker, opts)
-    -- If a previous search is still running, stop it first.
     if M.search_in_progress then
         log.info("Stopping previous search before starting new one.")
         M.stop_search()
@@ -416,9 +343,8 @@ function M.run_search(picker, opts)
     local user_settings = require("venv-selector.config").user_settings
     local options = user_settings.options
 
-    -- Interactive search: replace all configured searches with a single command.
     local search_settings = user_settings
-    if opts and #opts.args > 0 then
+    if opts and type(opts.args) == "string" and #opts.args > 0 then
         ---@diagnostic disable-next-line: missing-fields
         search_settings = {
             search = {
@@ -430,7 +356,6 @@ function M.run_search(picker, opts)
         log.debug("Interactive search replaces all previous searches")
     end
 
-    -- Optionally disable default searches that the user has overridden.
     if not options.enable_default_searches then
         local default_searches = require("venv-selector.config").get_default_searches()
         for search_name, _search_config in pairs(search_settings.search) do
@@ -441,11 +366,9 @@ function M.run_search(picker, opts)
         end
     end
 
-    -- Reset active job state and create per-run event handler.
     M.active_jobs = {}
     local job_event_handler = create_job_event_handler(picker, options)
 
-    -- Start jobs for each enabled search config.
     for search_name, search_config in pairs(search_settings.search) do
         if search_config ~= true and search_config ~= false then
             process_search(search_name, search_config, job_event_handler, options)

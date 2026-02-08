@@ -20,71 +20,11 @@
 -- - fd_binary_name is computed during finalize_settings so it is always available
 --   to the search layer without repeated detection calls.
 
----@class venv-selector.SearchCommand
----@field command string The command to execute for finding python interpreters
----@field type? string Optional type identifier (e.g., "anaconda")
-
----@class venv-selector.SearchCommands
----@field virtualenvs? venv-selector.SearchCommand
----@field hatch? venv-selector.SearchCommand
----@field poetry? venv-selector.SearchCommand
----@field pyenv? venv-selector.SearchCommand
----@field pipenv? venv-selector.SearchCommand
----@field pixi? venv-selector.SearchCommand
----@field anaconda_envs? venv-selector.SearchCommand
----@field anaconda_base? venv-selector.SearchCommand
----@field miniconda_envs? venv-selector.SearchCommand
----@field miniconda_base? venv-selector.SearchCommand
----@field pipx? venv-selector.SearchCommand
----@field cwd? venv-selector.SearchCommand
----@field workspace? venv-selector.SearchCommand
----@field file? venv-selector.SearchCommand
-
----@alias venv-selector.Hook fun(venv_python: string|nil, env_type: string|nil)
-
----@class venv-selector.CacheSettings
----@field file string Path to cache file
-
----@class venv-selector.PickerOptions
----@field snacks? table Snacks picker specific options
-
----@class venv-selector.Options
----@field on_venv_activate_callback? fun()
----@field enable_default_searches boolean
----@field enable_cached_venvs boolean
----@field cached_venv_automatic_activation boolean
----@field activate_venv_in_terminal boolean
----@field set_environment_variables boolean
----@field notify_user_on_venv_activation boolean
----@field override_notify boolean
----@field search_timeout number
----@field debug boolean
----@field fd_binary_name? string
----@field require_lsp_activation boolean
----@field shell? table
----@field on_telescope_result_callback? fun(filename: string): string
----@field picker_filter_type "substring"|"character"
----@field selected_venv_marker_color string
----@field selected_venv_marker_icon string
----@field picker_icons table<string, string>
----@field picker_columns string[]
----@field picker "telescope"|"fzf-lua"|"native"|"mini-pick"|"snacks"|"auto"
----@field statusline_func table
----@field picker_options venv-selector.PickerOptions
----@field telescope_active_venv_color? string
----@field icon? string
----@field telescope_filter_type? string
-
----@class venv-selector.Settings
----@field cache venv-selector.CacheSettings
----@field hooks venv-selector.Hook[]
----@field options venv-selector.Options
----@field search venv-selector.SearchCommands
----@field detected? table
+require("venv-selector.types")
 
 local M = {}
 
-local uv = vim.uv or vim.loop
+local uv = vim.uv
 
 -- ============================================================================
 -- Helpers
@@ -441,4 +381,5 @@ function M.get_defaults()
     return finalize_settings(vim.deepcopy(default_settings))
 end
 
+---@cast M venv-selector.ConfigModule
 return M

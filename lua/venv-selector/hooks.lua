@@ -23,7 +23,6 @@ local gate = require("venv-selector.lsp_gate")
 
 local M = {}
 
----@alias venv-selector.VenvType "venv"|"conda"|"uv"
 
 ---@class venv-selector.LspCmdEnv
 ---@field cmd_env table<string, string>

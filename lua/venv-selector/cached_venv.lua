@@ -26,6 +26,8 @@
 --   - b:venv_selector_last_python / b:venv_selector_last_type
 --   - b:venv_selector_cached_applied (tracks what cache was last applied to this buffer)
 
+require("venv-selector.types")
+
 local config = require("venv-selector.config")
 local path = require("venv-selector.path")
 local log = require("venv-selector.logger")
@@ -33,16 +35,6 @@ local uv2 = require("venv-selector.uv2")
 
 local M = {}
 
----@alias venv-selector.VenvType "venv"|"conda"|"uv"
-
----@class venv-selector.CachedVenvInfo
----@field value string Absolute path to python executable
----@field type venv-selector.VenvType Environment type ("venv", "conda", or "uv")
----@field source? string Source tag used by venv-selector (e.g. "workspace", "cwd", ...)
-
----@alias venv-selector.CachedVenvTable table<string, venv-selector.CachedVenvInfo> -- keyed by project_root
-
----@type string|nil
 local cache_file
 
 if config.user_settings
@@ -365,4 +357,5 @@ function M.ensure_cached_venv_activated(bufnr)
     vim.b[bufnr].venv_selector_cached_applied = venv_info.value
 end
 
+---@cast M venv-selector.CachedVenvModule
 return M

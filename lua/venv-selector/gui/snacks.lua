@@ -22,6 +22,8 @@
 --   - :insert_result(result)
 --   - :search_done()
 
+require("venv-selector.types")
+
 local gui_utils = require("venv-selector.gui.utils")
 local config = require("venv-selector.config")
 
@@ -31,15 +33,11 @@ local Snacks = Snacks
 local M = {}
 M.__index = M
 
----@class venv-selector.SnacksPickerState
----@field results table[] Accumulated SearchResult-like items
----@field picker any|nil Active Snacks picker instance
----@field _refresh_scheduled boolean True while a refresh timer is pending
----@field _closed boolean True after on_close has fired (prevents further refresh)
 
 ---Create a new Snacks picker state object.
 ---@return venv-selector.SnacksPickerState self
 function M.new()
+    ---@type venv-selector.SnacksPickerState
     return setmetatable({
         results = {},
         picker = nil,
@@ -129,11 +127,12 @@ end
 
 ---Insert a streamed SearchResult into the picker.
 ---Opens the picker on the first result, then refreshes (debounced) as more arrive.
----@param result table SearchResult-like table produced by search.lua
+---@param result venv-selector.SearchResult SearchResult produced by search.lua
 function M:insert_result(result)
-    -- Snacks uses `text` for filtering/matching.
-    result.text = result.source .. " " .. result.name
-    table.insert(self.results, result)
+    ---@type venv-selector.SnacksItem
+    local item = result
+    item.text = item.source .. " " .. item.name
+    table.insert(self.results, item)
 
     if not self.picker then
         self.picker = self:pick()

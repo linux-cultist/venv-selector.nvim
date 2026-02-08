@@ -20,21 +20,20 @@
 local gui_utils = require("venv-selector.gui.utils")
 local config = require("venv-selector.config")
 
+require("venv-selector.types")
+
 local M = {}
 M.__index = M
 
----@class venv-selector.NativePickerState
----@field results table[] Accumulated SearchResult-like entries
-
----Create a new native picker state object.
 ---@return venv-selector.NativePickerState self
 function M.new()
+    ---@type venv-selector.NativePickerState
     local self = setmetatable({ results = {} }, M)
     return self
 end
 
 ---Insert a streamed SearchResult into the picker result list.
----@param result table SearchResult-like table produced by search.lua
+---@param result venv-selector.SearchResult
 function M:insert_result(result)
     table.insert(self.results, result)
 end

@@ -1,4 +1,3 @@
-```lua
 -- lua/venv-selector/gui/fzf-lua.lua
 --
 -- fzf-lua picker backend for venv-selector.nvim.
@@ -28,6 +27,7 @@
 -- - This module implements the Picker interface used by search.lua:
 --   - :insert_result(result)
 --   - :search_done()
+require("venv-selector.types")
 
 local gui_utils = require("venv-selector.gui.utils")
 
@@ -57,19 +57,6 @@ local function get_dynamic_winopts()
     }
 end
 
----@class venv-selector.FzfLuaState
----@field is_done boolean True after search_done() (signals final flush)
----@field queue table[] Pending SearchResult-like items to emit
----@field entries table<string, table> Map from rendered entry line to SearchResult-like item
----@field is_closed boolean True after picker closes
----@field picker_started boolean (legacy/unused) maintained for compatibility
----@field fzf_cb? fun(entry?: string) fzf feed callback (nil when closed)
----@field _started_emitting boolean True once the initial grace gate has passed
----@field _grace_ms integer Grace period to allow active item to arrive before first emission
----@field _t0 integer Start time (ms) used for grace-period measurement
----@field _flush_scheduled boolean True while a flush is scheduled
----@field _flush_ms integer Delay between flush cycles
----@field _batch_size integer Maximum items emitted per flush cycle
 
 ---Create and display an fzf-lua picker instance.
 ---`search_opts` are passed through to the search layer by the caller (not used directly here).
@@ -173,7 +160,7 @@ local function schedule_flush(self)
 end
 
 ---Return true if a list contains at least one item that is currently active.
----@param list table[]
+---@param list venv-selector.SearchResult[]
 ---@return boolean has
 local function has_active(list)
     for _, r in ipairs(list) do
@@ -289,7 +276,7 @@ function M:consume_queue()
 end
 
 ---Queue a SearchResult for emission into fzf and schedule a flush.
----@param result table SearchResult-like table produced by search.lua
+---@param result venv-selector.SearchResult
 function M:insert_result(result)
     if self.is_closed then
         return
@@ -310,4 +297,3 @@ function M:search_done()
 end
 
 return M
-```

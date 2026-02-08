@@ -70,7 +70,6 @@ function M.split_string(str)
                 in_quotes = true
                 quote_char = c
             end
-
         elseif c == " " then
             if in_quotes then
                 buffer = buffer .. c
@@ -80,7 +79,6 @@ function M.split_string(str)
                     buffer = ""
                 end
             end
-
         else
             buffer = buffer .. c
         end

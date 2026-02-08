@@ -175,10 +175,10 @@ function M.setup_syntax_highlighting()
     -- Highlight group definitions (linked to theme highlight groups).
     local highlights = {
         { name = "VenvLogTimestamp", link = M.colors.TIMESTAMP },
-        { name = "VenvLogDebug", link = M.colors.DEBUG },
-        { name = "VenvLogInfo", link = M.colors.INFO },
-        { name = "VenvLogWarning", link = M.colors.WARNING },
-        { name = "VenvLogError", link = M.colors.ERROR },
+        { name = "VenvLogDebug",     link = M.colors.DEBUG },
+        { name = "VenvLogInfo",      link = M.colors.INFO },
+        { name = "VenvLogWarning",   link = M.colors.WARNING },
+        { name = "VenvLogError",     link = M.colors.ERROR },
     }
 
     for _, hl in ipairs(highlights) do
@@ -283,7 +283,7 @@ function M.toggle()
         if prev_buf and vim.api.nvim_buf_is_valid(prev_buf) then
             vim.api.nvim_win_set_buf(0, prev_buf)
         else
-        vim.cmd("enew")
+            vim.cmd("enew")
         end
         prev_buf = nil
     else

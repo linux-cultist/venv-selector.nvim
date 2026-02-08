@@ -120,12 +120,12 @@ local function default_lsp_settings(client_name, venv_python, env_type)
         return { settings = {} }
     end
 
-    local venv_dir  = vim.fn.fnamemodify(venv_python, ":h:h")
-    local venv_name = vim.fn.fnamemodify(venv_dir, ":t")
-    local venv_path = vim.fn.fnamemodify(venv_dir, ":h")
+    local venv_dir          = vim.fn.fnamemodify(venv_python, ":h:h")
+    local venv_name         = vim.fn.fnamemodify(venv_dir, ":t")
+    local venv_path         = vim.fn.fnamemodify(venv_dir, ":h")
 
     -- Preserve existing settings for this client if one exists
-    local existing_clients = vim.lsp.get_clients({ name = client_name })
+    local existing_clients  = vim.lsp.get_clients({ name = client_name })
     local existing_settings = {}
     if #existing_clients > 0 then
         local client_config = existing_clients[1].config or {}

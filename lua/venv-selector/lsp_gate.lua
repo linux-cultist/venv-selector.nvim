@@ -15,7 +15,7 @@
 -- - We stop existing clients, poll for them to exit, optionally force-stop, then start a new one.
 -- - Buffers previously attached to the old client are re-attached to the new client.
 
-local log = require("venv-selector.logger")
+local log               = require("venv-selector.logger")
 
 -- Global timings (same for all keys/servers).
 -- POLL_INTERVAL_MS: how often we check whether old clients are gone.
@@ -27,9 +27,9 @@ local MAX_TRIES         = 3
 local START_GRACE_MS    = 250
 local FORCE_EXTRA_TRIES = 30
 
-local M = {}
+local M                 = {}
 
-local uv = vim.uv
+local uv                = vim.uv
 
 
 ---Per-key gate state (the "key" is usually "name::root").

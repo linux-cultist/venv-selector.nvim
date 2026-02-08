@@ -158,7 +158,6 @@ local function create_job_event_handler(picker, options)
                     end
                 end
             end
-
         elseif event == "stderr" and data then
             search_config.stderr_output = search_config.stderr_output or {}
             for _, line in ipairs(data) do
@@ -166,7 +165,6 @@ local function create_job_event_handler(picker, options)
                     table.insert(search_config.stderr_output, line)
                 end
             end
-
         elseif event == "exit" then
             local exit_code = data
             local has_errors = search_config.stderr_output and #search_config.stderr_output > 0
@@ -232,14 +230,14 @@ local function start_search_job(search_name, search_config, job_event_handler, s
 
     log.debug(
         "Executing search '"
-            .. search_name
-            .. "' (using "
-            .. options.shell.shell
-            .. " "
-            .. options.shell.shellcmdflag
-            .. "): '"
-            .. expanded_job
-            .. "'"
+        .. search_name
+        .. "' (using "
+        .. options.shell.shell
+        .. " "
+        .. options.shell.shellcmdflag
+        .. "): '"
+        .. expanded_job
+        .. "'"
     )
 
     local cmd = { options.shell.shell, options.shell.shellcmdflag, expanded_job }
@@ -298,18 +296,15 @@ local function process_search(search_name, search_config, job_event_handler, opt
             ws_search.execute_command = cmd:gsub("$WORKSPACE_PATH", workspace_path)
             start_search_job(search_name, ws_search, job_event_handler, options.search_timeout)
         end
-
     elseif cmd:find("$CWD") then
         search_config.execute_command = cmd:gsub("$CWD", vim.fn.getcwd())
         start_search_job(search_name, search_config, job_event_handler, options.search_timeout)
-
     elseif cmd:find("$FILE_DIR") then
         local current_dir = path.get_current_file_directory()
         if current_dir then
             search_config.execute_command = cmd:gsub("$FILE_DIR", current_dir)
             start_search_job(search_name, search_config, job_event_handler, options.search_timeout)
         end
-
     elseif cmd:find("$CURRENT_FILE") then
         local current_file = get_current_file()
         if current_file ~= "" then
@@ -318,7 +313,6 @@ local function process_search(search_name, search_config, job_event_handler, opt
         else
             log.debug("Skipping $CURRENT_FILE search - current_file is empty")
         end
-
     else
         search_config.execute_command = cmd
         start_search_job(search_name, search_config, job_event_handler, options.search_timeout)

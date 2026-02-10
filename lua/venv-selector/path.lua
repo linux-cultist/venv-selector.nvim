@@ -102,7 +102,7 @@ local function prepend_to_path(dir)
     table.insert(filtered, 1, clean)
     local updated = join_path(filtered)
     vim.fn.setenv("PATH", updated)
-    log.debug("Setting new terminal path to: " .. updated)
+    log.trace("Setting new terminal path to: " .. updated)
 end
 
 ---Remove a directory from $PATH.
@@ -112,7 +112,7 @@ end
 local function remove_from_path(dir)
     local clean = M.remove_trailing_slash(dir)
     local current = vim.fn.getenv("PATH") or ""
-    log.debug("Terminal path before venv removal: " .. current)
+    log.trace("Terminal path before venv removal: " .. current)
 
     local parts = split_path(current)
     local filtered = {}
@@ -124,7 +124,7 @@ local function remove_from_path(dir)
 
     local updated = join_path(filtered)
     vim.fn.setenv("PATH", updated)
-    log.debug("Terminal path after venv removal: " .. updated)
+    log.trace("Terminal path after venv removal: " .. updated)
 end
 
 -- ============================================================================
@@ -184,8 +184,8 @@ function M.save_selected_python(python_path)
     -- python_path: .../venv/bin/python -> venv root: .../venv
     M.current_venv_path = M.get_base(M.get_base(python_path))
 
-    log.debug('Setting require("venv-selector").python() to \'' .. tostring(M.current_python_path) .. "'")
-    log.debug('Setting require("venv-selector").venv() to \'' .. tostring(M.current_venv_path) .. "'")
+    log.trace('Setting require("venv-selector").python() to \'' .. tostring(M.current_python_path) .. "'")
+    log.trace('Setting require("venv-selector").venv() to \'' .. tostring(M.current_venv_path) .. "'")
 end
 
 -- ============================================================================
@@ -208,7 +208,7 @@ function M.add(newDir)
 
     -- If we already have this at the front from the last activation, no-op.
     if previous_dir == clean_dir then
-        log.debug("Path unchanged - already using: " .. clean_dir)
+        log.trace("Path unchanged - already using: " .. clean_dir)
         return
     end
 

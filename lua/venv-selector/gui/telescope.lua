@@ -174,10 +174,114 @@ local function get_dynamic_display_config()
     }
 end
 
+function M:update_results()
+    local bufnr = vim.api.nvim_get_current_buf()
+    local picker = require("telescope.actions.state").get_current_picker(bufnr)
+    if picker ~= nil then
+        picker.layout_config = get_dynamic_layout_config()
+        picker:full_layout_update()
+        picker:refresh(self:make_finder(), { reset_prompt = false })
+    end
+end
+
+---@param result venv-selector.SearchResult
+function M:insert_result(result)
+    table.insert(self.results, result)
+
+    if self._refresh_scheduled then
+        return
+    end
+    self._refresh_scheduled = true
+
+    vim.defer_fn(function()
+        self._refresh_scheduled = false
+        self:update_results()
+    end, 30)
+end
+
+function M:search_done()
+    self.results = gui_utils.remove_dups(self.results)
+    gui_utils.sort_results(self.results)
+    self:update_results()
+end
+
+function M:setup_resize_autocmd()
+    local group = vim.api.nvim_create_augroup("VenvSelectorTelescope", { clear = true })
+
+    vim.api.nvim_create_autocmd("VimResized", {
+        group = group,
+        callback = function()
+            if active_telescope_instance == self then
+                vim.defer_fn(function()
+                    if active_telescope_instance == self then
+                        self:update_results()
+                    end
+                end, 50)
+            else
+                vim.api.nvim_del_augroup_by_id(group)
+            end
+        end,
+    })
+end
+
+---@return any finder
+function M:make_finder()
+    local display_config = get_dynamic_display_config()
+    local displayer = require("telescope.pickers.entry_display").create(display_config)
+
+    local entry_maker = function(entry)
+        ---@cast entry venv-selector.SearchResult
+
+        entry.value = entry.name
+        local is_active = gui_utils.hl_active_venv(entry) ~= nil
+        local prefix = is_active and "0 " or "1 "
+
+        entry.ordinal = prefix .. table.concat({
+            tostring(entry.name or ""),
+            tostring(entry.source or ""),
+            tostring(entry.path or ""),
+        }, " ")
+
+        entry.display = function(e)
+            local picker_columns = gui_utils.get_picker_columns()
+
+            local hl = gui_utils.hl_active_venv(entry)
+            local marker_icon = config.user_settings.options.selected_venv_marker_icon
+                or config.user_settings.options.icon
+                or "●"
+
+            local marker_hl = hl and "VenvSelectMarker" or nil
+
+            local column_data = {
+                marker = { hl and marker_icon or " ", marker_hl },
+                search_icon = { gui_utils.draw_icons_for_types(entry.source) },
+                search_name = { e.source },
+                search_result = { e.name },
+            }
+
+            local display_items = {}
+            for _, col in ipairs(picker_columns) do
+                if column_data[col] then
+                    table.insert(display_items, column_data[col])
+                end
+            end
+
+            return displayer(display_items)
+        end
+
+        return entry
+    end
+
+    return require("telescope.finders").new_table({
+        results = self.results,
+        entry_maker = entry_maker,
+    })
+end
+
+
 ---@return any sorter
 local function get_sorter()
     local filter_type = config.get_user_options().picker_filter_type
-    require("venv-selector.logger").debug(filter_type)
 
     if filter_type == "character" then
         return make_smartcase_subsequence_sorter()
@@ -252,108 +356,6 @@ function M.new(search_opts)
     return self
 end
 
----@return any finder
-function M:make_finder()
-    local display_config = get_dynamic_display_config()
-    local displayer = require("telescope.pickers.entry_display").create(display_config)
 
-    local entry_maker = function(entry)
-        ---@cast entry venv-selector.SearchResult
-
-        entry.value = entry.name
-        local is_active = gui_utils.hl_active_venv(entry) ~= nil
-        local prefix = is_active and "0 " or "1 "
-
-        entry.ordinal = prefix .. table.concat({
-            tostring(entry.name or ""),
-            tostring(entry.source or ""),
-            tostring(entry.path or ""),
-        }, " ")
-
-        entry.display = function(e)
-            local picker_columns = gui_utils.get_picker_columns()
-
-            local hl = gui_utils.hl_active_venv(entry)
-            local marker_icon = config.user_settings.options.selected_venv_marker_icon
-                or config.user_settings.options.icon
-                or "●"
-
-            local marker_hl = hl and "VenvSelectMarker" or nil
-
-            local column_data = {
-                marker = { hl and marker_icon or " ", marker_hl },
-                search_icon = { gui_utils.draw_icons_for_types(entry.source) },
-                search_name = { e.source },
-                search_result = { e.name },
-            }
-
-            local display_items = {}
-            for _, col in ipairs(picker_columns) do
-                if column_data[col] then
-                    table.insert(display_items, column_data[col])
-                end
-            end
-
-            return displayer(display_items)
-        end
-
-        return entry
-    end
-
-    return require("telescope.finders").new_table({
-        results = self.results,
-        entry_maker = entry_maker,
-    })
-end
-
-function M:update_results()
-    local bufnr = vim.api.nvim_get_current_buf()
-    local picker = require("telescope.actions.state").get_current_picker(bufnr)
-    if picker ~= nil then
-        picker.layout_config = get_dynamic_layout_config()
-        picker:full_layout_update()
-        picker:refresh(self:make_finder(), { reset_prompt = false })
-    end
-end
-
----@param result venv-selector.SearchResult
-function M:insert_result(result)
-    table.insert(self.results, result)
-
-    if self._refresh_scheduled then
-        return
-    end
-    self._refresh_scheduled = true
-
-    vim.defer_fn(function()
-        self._refresh_scheduled = false
-        self:update_results()
-    end, 30)
-end
-
-function M:search_done()
-    self.results = gui_utils.remove_dups(self.results)
-    gui_utils.sort_results(self.results)
-    self:update_results()
-end
-
-function M:setup_resize_autocmd()
-    local group = vim.api.nvim_create_augroup("VenvSelectorTelescope", { clear = true })
-
-    vim.api.nvim_create_autocmd("VimResized", {
-        group = group,
-        callback = function()
-            if active_telescope_instance == self then
-                vim.defer_fn(function()
-                    if active_telescope_instance == self then
-                        self:update_results()
-                    end
-                end, 50)
-            else
-                vim.api.nvim_del_augroup_by_id(group)
-            end
-        end,
-    })
-end
 
 return M

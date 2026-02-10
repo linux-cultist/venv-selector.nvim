@@ -71,7 +71,7 @@ function M.list_folders(bufnr)
 
     for _, client in pairs(clients) do
         if supports_python(client) then
-            log.debug("Found Python-supporting LSP: " .. client.name)
+            log.trace("Found Python-supporting LSP: " .. client.name)
 
             for _, folder in pairs(client.workspace_folders or {}) do
                 -- Neovim represents folders as {name=..., uri=...} in many configs.

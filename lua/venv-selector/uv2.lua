@@ -358,7 +358,7 @@ function M.run_uv_flow_if_needed(bufnr)
         end
 
         vim.b[b].venv_selector_uv_running = true
-        log.debug("run_uv_flow_if_needed")
+        log.trace("run_uv_flow_if_needed")
         start_uv_flow_async(b)
     end)
 end
@@ -370,7 +370,7 @@ end
 ---@param bufnr integer|nil
 function M.ensure_uv_buffer_activated(bufnr)
     debounce_uv(bufnr, "uviens", 80, function(b)
-        log.debug("ensure_uv_buffer_activated")
+        log.trace("ensure_uv_buffer_activated")
 
         local last_python = vim.b[b].venv_selector_uv_last_python
         if last_python and last_python ~= "" then

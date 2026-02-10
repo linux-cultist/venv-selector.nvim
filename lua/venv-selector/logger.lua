@@ -27,9 +27,10 @@ local M = {}
 -- Levels + highlighting configuration
 -- ============================================================================
 
----Numeric log levels (lower = more verbose).
+-- Levels + highlighting configuration
 ---@type table<string, integer>
 M.levels = {
+    TRACE = 0,
     DEBUG = 1,
     INFO = 2,
     WARNING = 3,
@@ -40,6 +41,7 @@ M.levels = {
 ---Highlight groups to link to (theme-provided groups).
 ---@type table<string, string>
 M.colors = {
+    TRACE = "DiagnosticHint",
     DEBUG = "Comment",
     INFO = "DiagnosticInfo",
     WARNING = "DiagnosticWarn",
@@ -54,6 +56,58 @@ M.current_level = M.levels.DEBUG
 ---Global logging enable switch for this logger buffer.
 ---@type boolean
 M.enabled = false
+
+
+local function normalize_log_level(v)
+    if v == true then
+        return "DEBUG"
+    end
+    if v == false or v == nil then
+        return "INFO" -- or "NONE" if you want silence by default
+    end
+    if type(v) == "string" then
+        local up = v:upper()
+        local ok = { TRACE = true, DEBUG = true, INFO = true, WARNING = true, ERROR = true, NONE = true }
+        if ok[up] then
+            return up
+        end
+    end
+    return "INFO"
+end
+
+
+---Apply logger settings.
+---Rules:
+---  - If options.debug == false -> force log_level="none"
+---  - Else if options.log_level is set -> use it
+---  - Else if options.debug == true -> default log_level="debug"
+---@param conf venv-selector.Settings
+function M.setup_debug_logging(conf)
+    local opts = (conf and conf.options) or {}
+
+    -- Master off switch (legacy behavior): debug=false disables all logging
+    if opts.debug == false then
+        opts.log_level = "NONE"
+    else
+        -- If user explicitly set log_level, keep it
+        if opts.log_level == nil then
+            -- Legacy: debug=true enables debug logs
+            if opts.debug == true then
+                opts.log_level = "DEBUG"
+            else
+                opts.log_level = "NONE"
+            end
+        end
+    end
+
+    local lvl = normalize_log_level(opts.log_level)
+    opts.log_level = lvl
+
+    M.enabled = (lvl ~= "NONE")
+    M.set_level(lvl)
+end
+
+
 
 -- ============================================================================
 -- Level management
@@ -91,6 +145,12 @@ function M.iterate_args(level, ...)
         local msg = select(i, ...)
         M.log(level, msg, 1)
     end
+end
+
+---Convenience: DEBUG log for varargs.
+---@param ... any
+function M.trace(...)
+    M.iterate_args("TRACE", ...)
 end
 
 ---Convenience: DEBUG log for varargs.
@@ -175,6 +235,7 @@ function M.setup_syntax_highlighting()
     -- Highlight group definitions (linked to theme highlight groups).
     local highlights = {
         { name = "VenvLogTimestamp", link = M.colors.TIMESTAMP },
+        { name = "VenvLogTrace",     link = M.colors.TRACE },
         { name = "VenvLogDebug",     link = M.colors.DEBUG },
         { name = "VenvLogInfo",      link = M.colors.INFO },
         { name = "VenvLogWarning",   link = M.colors.WARNING },
@@ -189,6 +250,7 @@ function M.setup_syntax_highlighting()
     vim.api.nvim_buf_call(log_buf, function()
         vim.cmd("syntax clear")
         vim.cmd([[syntax match VenvLogTimestamp /^\d\{2\}:\d\{2\}:\d\{2\}\.\d\{3\}/]])
+        vim.cmd([[syntax match VenvLogTrace /\[TRACE\]/]])
         vim.cmd([[syntax match VenvLogDebug /\[DEBUG\]/]])
         vim.cmd([[syntax match VenvLogInfo /\[INFO\]/]])
         vim.cmd([[syntax match VenvLogWarning /\[WARNING\]/]])
@@ -378,7 +440,7 @@ function M.setup_lsp_message_forwarding()
     local function maybe_forward(message)
         for client_name, _ in pairs(M.python_lsp_clients) do
             if message:find(client_name, 1, true) then
-                M.debug("[" .. client_name .. " LSP] " .. message)
+                M.trace("[" .. client_name .. " LSP] " .. message)
                 break
             end
         end

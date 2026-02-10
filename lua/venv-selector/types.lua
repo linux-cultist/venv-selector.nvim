@@ -73,7 +73,7 @@ local M = {}
 ---@field insert_result fun(self: venv-selector.FzfLuaState, result: venv-selector.SearchResult)
 ---@field search_done fun(self: venv-selector.FzfLuaState)
 
----@alias venv-selector.VenvType "venv"|"conda"|"uv"
+---@alias venv-selector.VenvType "venv"|"anaconda"|"uv"
 ---@alias venv-selector.Hook fun(python_path: string|nil, env_type: venv-selector.VenvType|nil, bufnr: integer|nil): integer|nil
 
 ---@class venv-selector.CachedVenvInfo
@@ -120,7 +120,8 @@ local M = {}
 ---@field notify_user_on_venv_activation boolean
 ---@field override_notify boolean
 ---@field search_timeout number
----@field debug boolean
+---@field log_level? venv-selector.LogLevel
+---@field debug? boolean|venv-selector.LogLevel  -- backward compatible
 ---@field fd_binary_name? string
 ---@field require_lsp_activation boolean
 ---@field shell? table
@@ -130,7 +131,7 @@ local M = {}
 ---@field selected_venv_marker_icon string
 ---@field picker_icons table<string, string>
 ---@field picker_columns string[]
----@field picker "telescope"|"fzf-lua"|"native"|"mini-pick"|"snacks"|"auto"
+---@field picker venv-selector.PickerName
 ---@field statusline_func table
 ---@field picker_options venv-selector.PickerOptions
 ---@field telescope_active_venv_color? string
@@ -160,8 +161,9 @@ local M = {}
 ---| "snacks"
 ---| "mini-pick"
 ---| "native"
+---| "auto"
 
----@alias venv-selector.PickerSetting venv-selector.PickerName|"auto"
+---@alias venv-selector.PickerSetting venv-selector.PickerName
 
 ---@class venv-selector.GuiOpenOpts: venv-selector.SearchOpts
 ---@field icon? string Optional icon override (passed through to search layer)
@@ -206,7 +208,8 @@ local M = {}
 
 ---@alias venv-selector.ActivationReason "read"|"filetype"|"enter"
 
----@alias venv-selector.LogLevel "DEBUG"|"INFO"|"WARNING"|"ERROR"|"NONE"
+---@alias venv-selector.LogLevel "TRACE"|"DEBUG"|"INFO"|"WARNING"|"ERROR"|"NONE"
+
 
 
 ---@class venv-selector.LspBufSet

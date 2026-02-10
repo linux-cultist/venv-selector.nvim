@@ -76,7 +76,7 @@ function M.stop_search()
     end
 
     M.active_jobs = {}
-    log.debug("stop_search() cleared active_jobs (active_now=0)")
+    log.debug("All searches stopped.")
 end
 
 -- ============================================================================
@@ -144,7 +144,7 @@ local function create_job_event_handler(picker, options)
                         source = search_config.name,
                     }
 
-                    log.debug("Found " .. result.type .. " from " .. result.source .. ": " .. result.name)
+                    log.trace("Found " .. result.type .. " from " .. result.source .. ": " .. result.name)
 
                     if picker then
                         local p = picker
@@ -174,9 +174,9 @@ local function create_job_event_handler(picker, options)
                 if has_errors then
                     error_msg = error_msg .. ". Error: " .. table.concat(search_config.stderr_output, " ")
                 end
-                log.debug(error_msg)
+                log.trace(error_msg)
             else
-                log.debug("Search job '" .. search_config.name .. "' completed successfully")
+                log.trace("Search job '" .. search_config.name .. "' completed successfully")
             end
 
             local n = active_job_count()
@@ -228,7 +228,7 @@ local function start_search_job(search_name, search_config, job_event_handler, s
     ---@cast job string
     local expanded_job = expand_env(job)
 
-    log.debug(
+    log.trace(
         "Executing search '"
         .. search_name
         .. "' (using "

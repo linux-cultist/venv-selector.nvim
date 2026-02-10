@@ -151,7 +151,7 @@ end
 ---@param my_gen integer Generation captured when the restart was requested
 local function schedule_poll(key, my_gen)
     if type(key) ~= "string" or key == "" then
-        log.debug("gate.schedule_poll: nil/empty key; abort")
+        log.trace("gate.schedule_poll: nil/empty key; abort")
         return
     end
 
@@ -160,7 +160,7 @@ local function schedule_poll(key, my_gen)
 
     local t = uv.new_timer()
     if not t then
-        log.debug(("gate.schedule_poll: uv.new_timer() failed key=%s gen=%d"):format(key, my_gen))
+        log.trace(("gate.schedule_poll: uv.new_timer() failed key=%s gen=%d"):format(key, my_gen))
         st.inflight[key] = false
         st.pending[key] = nil
         st.timer[key] = nil
@@ -176,7 +176,7 @@ local function schedule_poll(key, my_gen)
         tries = tries + 1
 
         local alive = alive_count(key)
-        log.debug(("gate.poll key=%s gen=%d tries=%d alive=%d forced=%s"):format(
+        log.trace(("gate.poll key=%s gen=%d tries=%d alive=%d forced=%s"):format(
             key, my_gen, tries, alive, tostring(forced)
         ))
 
@@ -208,7 +208,7 @@ local function schedule_poll(key, my_gen)
 
         -- Still alive after force-stop grace period: abort (do not start a new client).
         if alive > 0 and forced then
-            log.debug(("gate.abort key=%s gen=%d reason=still_alive_after_force alive=%d"):format(
+            log.trace(("gate.abort key=%s gen=%d reason=still_alive_after_force alive=%d"):format(
                 key, my_gen, alive
             ))
             close_timer(key)
@@ -224,13 +224,13 @@ local function schedule_poll(key, my_gen)
         st.pending[key] = nil
 
         if not job or not job.cfg or not job.bufs then
-            log.debug(("gate.start aborted key=%s gen=%d reason=no_job"):format(key, my_gen))
+            log.trace(("gate.start aborted key=%s gen=%d reason=no_job"):format(key, my_gen))
             st.inflight[key] = false
             return
         end
 
         local first_buf = first_valid_buf(job.bufs)
-        log.debug(("gate.start key=%s gen=%d first_buf=%s"):format(key, my_gen, tostring(first_buf)))
+        log.trace(("gate.start key=%s gen=%d first_buf=%s"):format(key, my_gen, tostring(first_buf)))
 
         if not first_buf then
             log.debug(("gate.start aborted key=%s gen=%d reason=no_valid_buf"):format(key, my_gen))
@@ -238,7 +238,7 @@ local function schedule_poll(key, my_gen)
             return
         end
 
-        log.debug(("gate.start bufname=%s"):format(vim.api.nvim_buf_get_name(first_buf)))
+        log.trace(("gate.start bufname=%s"):format(vim.api.nvim_buf_get_name(first_buf)))
 
         ---Start a new LSP client for this key and attach buffers.
         local function do_start()
@@ -256,7 +256,7 @@ local function schedule_poll(key, my_gen)
                 end,
             })
 
-            log.debug(("gate.started key=%s gen=%d new_id=%s"):format(key, my_gen, tostring(new_id)))
+            log.debug(("LSP Started key=%s gen=%d new_id=%s"):format(key, my_gen, tostring(new_id)))
 
             -- Attach all remaining buffers to the newly started client.
             if new_id then

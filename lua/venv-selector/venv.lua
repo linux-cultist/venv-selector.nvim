@@ -59,7 +59,7 @@ end
 ---
 ---@param source string
 function M.set_source(source)
-    log.debug('Setting require("venv-selector").source() to \'' .. source .. "'")
+    log.trace('Setting require("venv-selector").source() to \'' .. source .. "'")
     path.current_source = source
 end
 
@@ -149,7 +149,7 @@ local function do_activate(python_path, env_type, bufnr, opts)
     if opts.save_cache ~= false then
         cache.save(python_path, env_type, bufnr)
     else
-        log.debug("Skipping cache save (activation initiated from cache)")
+        log.trace("Skipping cache save (activation initiated from cache)")
     end
 
     -- Update PATH/env/dap/etc
@@ -263,7 +263,7 @@ end
 function M.set_env(env_variable_value, env_variable_name)
     if config.user_settings.options.set_environment_variables == true then
         vim.fn.setenv(env_variable_name, env_variable_value)
-        log.debug("Shell environment variable $" .. env_variable_name .. " set to " .. env_variable_value)
+        log.trace("Shell environment variable $" .. env_variable_name .. " set to " .. env_variable_value)
     end
 end
 
@@ -274,7 +274,7 @@ function M.unset_env(env_variable_name)
     if config.user_settings.options.set_environment_variables == true then
         if vim.fn.getenv(env_variable_name) ~= nil then
             vim.env[env_variable_name] = nil
-            log.debug("Shell environment variable $" .. env_variable_name .. " has been unset.")
+            log.trace("Shell environment variable $" .. env_variable_name .. " has been unset.")
         end
     end
 end

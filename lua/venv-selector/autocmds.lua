@@ -45,13 +45,13 @@ function M.create()
             local pr = require("venv-selector.project_root").key_for_buf(bufnr)
             local venv = require("venv-selector.venv")
             if pr and type(venv.active_project_root) == "function" and venv.active_project_root() == pr then
-                require("venv-selector.logger").debug(
+                require("venv-selector.logger").trace(
                     ("cache-autocmd skip (project already active) b=%d root=%s"):format(bufnr, pr)
                 )
                 return
             end
 
-            require("venv-selector.logger").debug(
+            require("venv-selector.logger").trace(
                 ("cache-autocmd once b=%d file=%s"):format(bufnr, vim.api.nvim_buf_get_name(bufnr))
             )
 
@@ -81,7 +81,7 @@ function M.create()
         end
 
         local log = require("venv-selector.logger")
-        log.debug(("uv-autocmd %s b=%d file=%s"):format(reason, bufnr, vim.api.nvim_buf_get_name(bufnr)))
+        log.trace(("uv-autocmd %s b=%d file=%s"):format(reason, bufnr, vim.api.nvim_buf_get_name(bufnr)))
 
         local cached = require("venv-selector.cached_venv")
         local uv2 = require("venv-selector.uv2")

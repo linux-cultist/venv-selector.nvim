@@ -31,14 +31,16 @@ function M.register()
         require("venv-selector.gui").open(gui_opts)
     end, { nargs = "*", desc = "Activate venv" })
 
-    -- Toggle the VenvSelect log buffer (only works when logger.enabled is true).
+    -- Toggle the VenvSelect log buffer (requires options.log_level ~= "none").
     vim.api.nvim_create_user_command("VenvSelectLog", function()
         local log = require("venv-selector.logger")
         local rc = log.toggle()
         if rc == 1 then
-            vim.notify("Please set debug to true in options to use the logger.", vim.log.levels.INFO, {
-                title = "VenvSelect",
-            })
+            vim.notify(
+                "VenvSelect logging is disabled. Set options.log_level (e.g. 'info', 'debug', 'trace').",
+                vim.log.levels.INFO,
+                { title = "VenvSelect" }
+            )
         end
     end, { desc = "Toggle the VenvSelect log window" })
 

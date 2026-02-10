@@ -86,14 +86,14 @@ local function create_cmd_env(client_name, venv_python, env_type)
     local venv_path = vim.fn.fnamemodify(venv_python, ":h:h") -- .../venv
     local env = { cmd_env = {} }
 
-    if env_type == "conda" then
+    if env_type == "anaconda" then
         env.cmd_env.CONDA_PREFIX = venv_path
         log.debug(client_name .. ": Setting CONDA_PREFIX for conda environment: " .. venv_path)
     elseif env_type == "venv" or env_type == "uv" then
         env.cmd_env.VIRTUAL_ENV = venv_path
-        log.debug(client_name .. ": Setting VIRTUAL_ENV for environment: " .. venv_path)
+        log.trace(client_name .. ": Setting VIRTUAL_ENV for environment: " .. venv_path)
     else
-        log.debug(client_name .. ": Unknown venv type: " .. tostring(env_type))
+        log.trace(client_name .. ": Unknown venv type: " .. tostring(env_type))
     end
 
     return env
@@ -159,6 +159,59 @@ local function resolve_project_root(bufnr)
     return project_root
 end
 
+local function log_lsp_clients_aligned()
+    local clients = vim.lsp.get_clients()
+
+    -- First pass: compute dynamic widths
+    local max_id = 2 -- minimum sensible width
+    local max_name = 4
+    local max_root = 4
+
+    local rows = {}
+
+    for _, c in ipairs(clients) do
+        local id = tostring(c.id or "")
+        local name = c.name or ""
+        local root = (c.config and c.config.root_dir) or ""
+        ---@diagnostic disable-next-line: undefined-field
+        local fts_tbl = (c.config and c.config.filetypes) or {}
+        local fts = table.concat(fts_tbl, ",")
+
+        max_id = math.max(max_id, #id)
+        max_name = math.max(max_name, #name)
+        max_root = math.max(max_root, #root)
+
+        rows[#rows + 1] = {
+            id = id,
+            name = name,
+            root = root,
+            fts = fts,
+        }
+    end
+
+    -- Optional: cap root width to avoid extremely wide logs
+    max_root = math.min(max_root, 80)
+
+    -- Build dynamic format string
+    local fmt = string.format(
+        "LSP Seen id=%%-%ds name=%%-%ds root=%%-%ds fts=[%%s]",
+        max_id,
+        max_name,
+        max_root
+    )
+
+    -- Second pass: log with aligned columns
+    for _, r in ipairs(rows) do
+        local root = r.root
+        if #root > max_root then
+            root = root:sub(1, max_root - 1) .. "…"
+        end
+
+        log.debug(string.format(fmt, r.id, r.name, root, r.fts))
+    end
+end
+
+
 ---Restart python LSP clients for the given project root using the gate.
 ---Uses memoization per project_root to avoid repeating identical restarts.
 ---@param venv_python string|nil
@@ -176,7 +229,7 @@ local function restart_all_python_lsps(venv_python, env_type, bufnr)
     if project_root ~= "" then
         local last = last_restart_by_root[project_root]
         if last and last.py == py and last.ty == ty then
-            log.debug(("restart_all_python_lsps: no-op (unchanged) root=%s py=%s type=%s"):format(project_root, py, ty))
+            log.trace(("restart_all_python_lsps: no-op (unchanged) root=%s py=%s type=%s"):format(project_root, py, ty))
             return true
         end
         last_restart_by_root[project_root] = { py = py, ty = ty }
@@ -184,13 +237,15 @@ local function restart_all_python_lsps(venv_python, env_type, bufnr)
         log.debug("restart_all_python_lsps: project_root empty; not caching restart decision")
     end
 
-    -- Optional visibility for debugging
-    for _, c in ipairs(vim.lsp.get_clients()) do
-        ---@diagnostic disable-next-line: undefined-field
-        local fts = (c.config and c.config.filetypes) and table.concat(c.config.filetypes, ",") or ""
-        local root = (c.config and c.config.root_dir) or ""
-        log.debug(("lsp seen id=%d name=%s root=%s fts=[%s]"):format(c.id, c.name, root, fts))
-    end
+    
+    log_lsp_clients_aligned()
+    -- -- Optional visibility for debugging
+    -- for _, c in ipairs(vim.lsp.get_clients()) do
+    --     ---@diagnostic disable-next-line: undefined-field
+    --     local fts = (c.config and c.config.filetypes) and table.concat(c.config.filetypes, ",") or ""
+    --     local root = (c.config and c.config.root_dir) or ""
+    --     log.debug(("LSP Seen id=%d name=%s root=%s fts=[%s]"):format(c.id, c.name, root, fts))
+    -- end
 
     ---@type table<string, {client:any, bufs:table<integer,true>, name:string, root:string}>
     local by_key = {}
@@ -208,12 +263,12 @@ local function restart_all_python_lsps(venv_python, env_type, bufnr)
     end
 
     if next(by_key) == nil then
-        log.debug("restart_all_python_lsps: no python LSP clients selected for this project_root")
+        log.trace("restart_all_python_lsps: no python LSP clients selected for this project_root")
         return false, "no python LSP clients selected for this project_root"
     end
 
     if not venv_python or venv_python == "" then
-        log.debug("restart_all_python_lsps: venv_python=nil/empty, nothing to restart")
+        log.trace("restart_all_python_lsps: venv_python=nil/empty, nothing to restart")
         return true
     end
 
@@ -244,7 +299,7 @@ end
 ---@param bufnr? integer
 ---@return integer count Number of LSP restarts requested (0 or 1)
 function M.dynamic_python_lsp_hook(venv_python, env_type, bufnr)
-    log.debug(("hook dynamic_python_lsp_hook venv=%s type=%s"):format(tostring(venv_python), tostring(env_type)))
+    log.trace(("Hook dynamic_python_lsp_hook called venv=%s type=%s"):format(tostring(venv_python), tostring(env_type)))
     local ok = restart_all_python_lsps(venv_python, env_type, bufnr)
     return ok == true and 1 or 0
 end

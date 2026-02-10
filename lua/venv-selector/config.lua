@@ -277,6 +277,7 @@ local default_settings = {
     search = {},
 }
 
+
 -- ============================================================================
 -- Finalization steps (hooks, fd detection, searches)
 -- ============================================================================
@@ -333,6 +334,8 @@ local function finalize_settings(s)
 
     -- Default hooks if none provided.
     ensure_default_hooks(s)
+
+
 
     return s
 end

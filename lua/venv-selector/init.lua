@@ -114,14 +114,6 @@ local function check_nvim_version()
     return true
 end
 
----Enable debug logging if requested.
----@param conf venv-selector.Settings|nil
-local function setup_debug_logging(conf)
-    if conf and conf.options and conf.options.debug then
-        local logmod = require("venv-selector.logger")
-        logmod.enabled = true
-    end
-end
 
 ---Setup highlight group for selected venv marker.
 local function setup_highlight()
@@ -151,7 +143,7 @@ function M.setup(conf)
     end
 
     -- Run this first so we have logging enabled when we print the config
-    setup_debug_logging(conf)
+    require("venv-selector.logger").setup_debug_logging(conf)
 
     local autocmds = require("venv-selector.autocmds")
     autocmds.create()

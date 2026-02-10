@@ -1,7 +1,10 @@
+-- lua/venv-selector/autocmds.lua
+
+require("venv-selector.types")
+
 local M = {}
 
-
-M.create = function()
+function M.create()
     -- ============================================================
     -- Cached venv initial restore (one-shot per buffer)
     -- ============================================================
@@ -14,7 +17,6 @@ M.create = function()
             and vim.bo[bufnr].buftype == ""
             and vim.bo[bufnr].filetype == "python"
     end
-
 
     local group_cache = vim.api.nvim_create_augroup("VenvSelectorCachedVenv", { clear = true })
 
@@ -120,8 +122,6 @@ M.create = function()
         end,
     })
 
-
-
     -- When user edits metadata, re-run uv flow
     vim.api.nvim_create_autocmd("BufWritePost", {
         group = uv_group,
@@ -135,6 +135,5 @@ M.create = function()
         end,
     })
 end
-
 
 return M

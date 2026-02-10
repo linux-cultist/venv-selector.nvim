@@ -128,5 +128,4 @@ function M.open(opts)
     require("venv-selector.search").run_search(picker, opts)
 end
 
----@cast M venv-selector.GuiModule
 return M

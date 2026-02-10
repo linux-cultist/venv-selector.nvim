@@ -357,5 +357,4 @@ function M.ensure_cached_venv_activated(bufnr)
     vim.b[bufnr].venv_selector_cached_applied = venv_info.value
 end
 
----@cast M venv-selector.CachedVenvModule
 return M

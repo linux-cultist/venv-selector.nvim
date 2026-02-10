@@ -430,5 +430,4 @@ end
 -- Enable forwarding by default (preserved behavior).
 M.setup_lsp_message_forwarding()
 
----@cast M venv-selector.LoggerModule
 return M

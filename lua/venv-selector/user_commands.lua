@@ -24,11 +24,11 @@ local M = {}
 function M.register()
     -- Open picker UI and run configured searches (or interactive search if args provided).
     vim.api.nvim_create_user_command("VenvSelect", function(opts)
-        ---@type vim.api.keyset.user_command
-        ---@cast opts vim.api.keyset.user_command
-
-        local gui = require("venv-selector.gui")
-        gui.open(opts)
+        ---@type venv-selector.GuiOpenOpts
+        local gui_opts = {
+            args = opts.args,
+        }
+        require("venv-selector.gui").open(gui_opts)
     end, { nargs = "*", desc = "Activate venv" })
 
     -- Toggle the VenvSelect log buffer (only works when logger.enabled is true).
@@ -55,5 +55,4 @@ function M.register()
     end
 end
 
----@cast M venv-selector.UserCommandsModule
 return M

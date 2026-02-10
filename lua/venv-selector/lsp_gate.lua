@@ -159,6 +159,14 @@ local function schedule_poll(key, my_gen)
     close_timer(key)
 
     local t = uv.new_timer()
+    if not t then
+        log.debug(("gate.schedule_poll: uv.new_timer() failed key=%s gen=%d"):format(key, my_gen))
+        st.inflight[key] = false
+        st.pending[key] = nil
+        st.timer[key] = nil
+        return
+    end
+
     st.timer[key] = t
 
     local tries = 0
@@ -308,5 +316,4 @@ function M.request(key, cfg, bufs)
     schedule_poll(key, my_gen)
 end
 
----@cast M venv-selector.LspGateModule
 return M

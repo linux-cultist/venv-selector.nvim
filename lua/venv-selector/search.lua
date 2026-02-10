@@ -213,7 +213,7 @@ end
 ---Start a single search job.
 ---The search_config must already contain `execute_command`.
 ---@param search_name string Name of the search (used as SearchResult.source)
----@param search_config venv-selector.SearchConfig Search configuration (copied/expanded per invocation)
+---@param search_config venv-selector.SearchConfig
 ---@param job_event_handler fun(job_id: integer, data: any, event: string)
 ---@param search_timeout integer Timeout in seconds
 local function start_search_job(search_name, search_config, job_event_handler, search_timeout)
@@ -263,8 +263,12 @@ local function start_search_job(search_name, search_config, job_event_handler, s
         return
     end
 
-    search_config.name = search_name
-    M.active_jobs[job_id] = search_config
+    ---@type venv-selector.ActiveJobState
+    local job_state = vim.tbl_extend("force", {}, search_config, {
+        name = search_name,
+    })
+
+    M.active_jobs[job_id] = job_state
 
     local timer = vim.uv.new_timer()
     if timer then
@@ -363,12 +367,15 @@ function M.run_search(picker, opts)
     M.active_jobs = {}
     local job_event_handler = create_job_event_handler(picker, options)
 
-    for search_name, search_config in pairs(search_settings.search) do
-        if search_config ~= true and search_config ~= false then
+    for search_name, search_command in pairs(search_settings.search) do
+        if search_command ~= true and search_command ~= false then
+            ---@type venv-selector.SearchConfig
+            local search_config = vim.tbl_extend("force", {}, search_command, {
+                name = search_name,
+            })
             process_search(search_name, search_config, job_event_handler, options)
         end
     end
 end
 
----@cast M venv-selector.SearchModule
 return M

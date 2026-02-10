@@ -207,8 +207,12 @@ end
 ---@param self venv-selector.MiniPickState
 ---@param result venv-selector.SearchResult
 function M:insert_result(result)
-    result.text = result.text or item_to_text(result)
-    self.results[#self.results + 1] = result
+    ---@type venv-selector.MiniPickItem
+    local item = vim.tbl_extend("force", {}, result, {
+        text = item_to_text(result),
+    })
+
+    self.results[#self.results + 1] = item
 
     if not self.picker_started then
         self.picker_started = true

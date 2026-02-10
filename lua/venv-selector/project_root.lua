@@ -99,5 +99,4 @@ function M.key_for_buf(bufnr, markers)
     return M.for_buf(bufnr, markers)
 end
 
----@cast M venv-selector.ProjectRootModule
 return M

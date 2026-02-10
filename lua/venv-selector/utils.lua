@@ -152,5 +152,4 @@ function M.print_table(tbl, indent)
     end
 end
 
----@cast M venv-selector.UtilsModule
 return M

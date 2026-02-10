@@ -21,7 +21,6 @@
 -- - env_type values are: "venv" | "conda" | "uv".
 -- - Public status helpers reflect the current state tracked by `path.lua`.
 
-require("venv-selector.types")
 
 local M = {}
 
@@ -70,7 +69,8 @@ function M.stop_lsp_servers()
 end
 
 ---Activate an environment given an explicit python executable path.
----@param python_path string
+---@param python_path string Absolute path to python executable
+---@param env_type venv-selector.VenvType Environment type
 function M.activate_from_path(python_path, env_type)
     require("venv-selector.venv").activate(python_path, env_type)
 end

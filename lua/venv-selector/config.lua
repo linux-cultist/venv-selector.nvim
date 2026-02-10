@@ -381,5 +381,4 @@ function M.get_defaults()
     return finalize_settings(vim.deepcopy(default_settings))
 end
 
----@cast M venv-selector.ConfigModule
 return M

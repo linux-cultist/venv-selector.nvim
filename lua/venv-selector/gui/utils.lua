@@ -103,7 +103,7 @@ end
 ---@param p string
 ---@return string
 local function normalize_path(p)
-    return (p or ""):gsub("\\", "/")
+    return ((p or ""):gsub("\\", "/"))
 end
 
 ---@param p1 string

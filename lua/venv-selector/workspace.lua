@@ -31,6 +31,7 @@ local M = {}
 local function supports_python(client)
     -- Method 1: Check configured filetypes.
     -- NOTE: Some language servers / LuaLS typings don't expose config.filetypes cleanly.
+    ---@diagnostic disable-next-line: undefined-field
     local filetypes = (client.config and client.config.filetypes) or nil
     if type(filetypes) == "table" and vim.tbl_contains(filetypes, "python") then
         return true

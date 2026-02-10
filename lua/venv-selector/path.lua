@@ -284,5 +284,4 @@ function M.expand(p)
     return vim.fn.expand(p)
 end
 
----@cast M venv-selector.PathModule
 return M

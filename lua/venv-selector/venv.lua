@@ -21,6 +21,8 @@
 -- - active_project_root is a module-local value so it can be used as a stable "last activated" root.
 -- - Per-buffer session memory enables correct switching even when persistent cache is disabled.
 
+
+
 require("venv-selector.types")
 local path = require("venv-selector.path")
 local config = require("venv-selector.config")
@@ -193,7 +195,7 @@ end
 ---Uses the current buffer as the activation context.
 ---
 ---@param python_path string Absolute path to python executable
----@param env_type string Environment type
+---@param env_type venv-selector.VenvType Environment type
 ---@return boolean activated
 function M.activate(python_path, env_type)
     local bufnr = vim.api.nvim_get_current_buf()
@@ -229,17 +231,28 @@ function M.update_paths(venv_path, env_type)
         M.unset_env("CONDA_PREFIX")
     elseif env_type == "anaconda" then
         M.unset_env("VIRTUAL_ENV")
+
         local base_path
         if vim.fn.has("Win32") == 1 then
             base_path = path.get_base(venv_path)
         else
             base_path = path.get_base(path.get_base(venv_path))
         end
-        M.set_env(base_path, "CONDA_PREFIX")
+
+        if base_path then
+            M.set_env(base_path, "CONDA_PREFIX")
+        else
+            M.unset_env("CONDA_PREFIX")
+        end
     else
         local base_path = path.get_base(path.get_base(venv_path))
         M.unset_env("CONDA_PREFIX")
-        M.set_env(base_path, "VIRTUAL_ENV")
+
+        if base_path then
+            M.set_env(base_path, "VIRTUAL_ENV")
+        else
+            M.unset_env("VIRTUAL_ENV")
+        end
     end
 end
 
@@ -272,5 +285,4 @@ function M.unset_env_variables()
     vim.env.CONDA_PREFIX = nil
 end
 
----@cast M venv-selector.VenvModule
 return M

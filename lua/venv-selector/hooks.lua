@@ -197,6 +197,7 @@ local function restart_all_python_lsps(venv_python, env_type, bufnr)
 
     -- Optional visibility for debugging
     for _, c in ipairs(vim.lsp.get_clients()) do
+        ---@diagnostic disable-next-line: undefined-field
         local fts = (c.config and c.config.filetypes) and table.concat(c.config.filetypes, ",") or ""
         local root = (c.config and c.config.root_dir) or ""
         log.debug(("lsp seen id=%d name=%s root=%s fts=[%s]"):format(c.id, c.name, root, fts))
@@ -272,5 +273,4 @@ function M.send_notification(message)
     end
 end
 
----@cast M venv-selector.HooksModule
 return M

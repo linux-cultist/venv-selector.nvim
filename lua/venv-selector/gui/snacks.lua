@@ -130,8 +130,15 @@ end
 ---@param result venv-selector.SearchResult SearchResult produced by search.lua
 function M:insert_result(result)
     ---@type venv-selector.SnacksItem
-    local item = result
-    item.text = item.source .. " " .. item.name
+    local item = {
+        path = result.path,
+        name = result.name,
+        icon = result.icon,
+        type = result.type,
+        source = result.source,
+        text = result.source .. " " .. result.name,
+    }
+
     table.insert(self.results, item)
 
     if not self.picker then

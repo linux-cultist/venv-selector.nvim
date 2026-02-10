@@ -33,7 +33,7 @@ local has_uv = vim.fn.executable("uv") == 1
 
 ---Timer registry for debouncing.
 ---Keyed by "bufnr:tag" -> uv_timer.
----@type table<string, venv-selector.UvTimer|nil>
+---@type table<string, venv-selector.UvTimerHandle|nil>
 local timers = {}
 
 ---Debounce helper: run `fn` once after `ms` for a (bufnr, tag) key.
@@ -56,7 +56,6 @@ local function debounce(bufnr, tag, ms, fn)
         return
     end
 
-    ---@cast nt venv-selector.UvTimer
     timers[key] = nt
 
 
@@ -383,5 +382,4 @@ function M.ensure_uv_buffer_activated(bufnr)
     end)
 end
 
----@cast M venv-selector.Uv2Module
 return M

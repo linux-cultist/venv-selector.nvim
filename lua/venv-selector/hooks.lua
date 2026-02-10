@@ -25,22 +25,11 @@ local gate = require("venv-selector.lsp_gate")
 
 local M = {}
 
-
-
 ---@type table<string, venv-selector.RestartMemo>
 local last_restart_by_root = {}
 
 ---@type table<string, integer>
 M.notifications_memory = {}
-
--- preserved behavior (used elsewhere in plugin)
-vim.g.venv_selector_pending_lsp_apply = true
-
----@param t any
----@return string
-local function tostring1(t)
-    return tostring(t)
-end
 
 ---@param list any[]|nil
 ---@param item any
@@ -104,7 +93,7 @@ local function create_cmd_env(client_name, venv_python, env_type)
         env.cmd_env.VIRTUAL_ENV = venv_path
         log.debug(client_name .. ": Setting VIRTUAL_ENV for environment: " .. venv_path)
     else
-        log.debug(client_name .. ": Unknown venv type: " .. tostring1(env_type))
+        log.debug(client_name .. ": Unknown venv type: " .. tostring(env_type))
     end
 
     return env
@@ -255,7 +244,7 @@ end
 ---@param bufnr? integer
 ---@return integer count Number of LSP restarts requested (0 or 1)
 function M.dynamic_python_lsp_hook(venv_python, env_type, bufnr)
-    log.debug(("hook dynamic_python_lsp_hook venv=%s type=%s"):format(tostring1(venv_python), tostring1(env_type)))
+    log.debug(("hook dynamic_python_lsp_hook venv=%s type=%s"):format(tostring(venv_python), tostring(env_type)))
     local ok = restart_all_python_lsps(venv_python, env_type, bufnr)
     return ok == true and 1 or 0
 end

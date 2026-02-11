@@ -244,7 +244,7 @@ local function uv_sync(bufnr, file)
     end
 
     local cmd = { "uv", "sync", "--script", file }
-    log.debug("Running uv command: " .. table.concat(cmd, " "))
+    log.trace("Running uv command: " .. table.concat(cmd, " "))
 
     local res = await_system(cmd, { text = true, cwd = vim.fn.fnamemodify(file, ":h") })
     local out = uv_out(res)
@@ -272,7 +272,7 @@ local function uv_python_find(bufnr, file)
     end
 
     local cmd = { "uv", "python", "find", "--script", file }
-    log.debug("Running uv command: " .. table.concat(cmd, " "))
+    log.trace("Running uv command: " .. table.concat(cmd, " "))
 
     local res = await_system(cmd, { text = true, cwd = vim.fn.fnamemodify(file, ":h") })
     if res.code ~= 0 then

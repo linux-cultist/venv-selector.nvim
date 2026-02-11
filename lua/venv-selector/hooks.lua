@@ -88,7 +88,7 @@ local function create_cmd_env(client_name, venv_python, env_type)
 
     if env_type == "anaconda" then
         env.cmd_env.CONDA_PREFIX = venv_path
-        log.debug(client_name .. ": Setting CONDA_PREFIX for conda environment: " .. venv_path)
+        log.trace(client_name .. ": Setting CONDA_PREFIX for conda environment: " .. venv_path)
     elseif env_type == "venv" or env_type == "uv" then
         env.cmd_env.VIRTUAL_ENV = venv_path
         log.trace(client_name .. ": Setting VIRTUAL_ENV for environment: " .. venv_path)
@@ -226,6 +226,7 @@ local function restart_all_python_lsps(venv_python, env_type, bufnr)
     local py = venv_python or ""
     local ty = env_type or ""
 
+    -- Memoize by root when possible.
     if project_root ~= "" then
         local last = last_restart_by_root[project_root]
         if last and last.py == py and last.ty == ty then
@@ -237,15 +238,7 @@ local function restart_all_python_lsps(venv_python, env_type, bufnr)
         log.debug("restart_all_python_lsps: project_root empty; not caching restart decision")
     end
 
-    
     log_lsp_clients_aligned()
-    -- -- Optional visibility for debugging
-    -- for _, c in ipairs(vim.lsp.get_clients()) do
-    --     ---@diagnostic disable-next-line: undefined-field
-    --     local fts = (c.config and c.config.filetypes) and table.concat(c.config.filetypes, ",") or ""
-    --     local root = (c.config and c.config.root_dir) or ""
-    --     log.debug(("LSP Seen id=%d name=%s root=%s fts=[%s]"):format(c.id, c.name, root, fts))
-    -- end
 
     ---@type table<string, {client:any, bufs:table<integer,true>, name:string, root:string}>
     local by_key = {}
@@ -253,12 +246,50 @@ local function restart_all_python_lsps(venv_python, env_type, bufnr)
     for _, c in ipairs(vim.lsp.get_clients()) do
         if is_python_lsp(c) then
             local root = (c.config and c.config.root_dir) or ""
-            if project_root == "" or root == project_root then
-                local key = c.name .. "::" .. root
-                if not by_key[key] then
-                    by_key[key] = { client = c, bufs = attached_python_bufs(c), name = c.name, root = root }
-                end
-            end
+            
+                    -- only consider rootless clients if they are attached to THIS bufnr
+                    local function client_attached_to_buf(client, b)
+                        -- nvim 0.10+: client.attached_buffers exists
+                        local ab = client.attached_buffers
+                        if type(ab) == "table" then
+                            return ab[b] == true
+                        end
+            
+                        -- fallback: check via attached_python_bufs()
+                        local bufs = attached_python_bufs(client)
+                        return bufs[b] == true
+                    end
+            
+                    local include = false
+                    if root ~= "" then
+                        include = (project_root == "" or root == project_root)
+                    else
+                        -- Rootless: include only if it belongs to this buffer.
+                        -- This prevents restarting unrelated “root=nil” clients when restarting a rooted project.
+                        include = client_attached_to_buf(c, bufnr)
+                    end
+            
+                    if include then
+                        local gate_key
+                        if root ~= "" then
+                            gate_key = c.name .. "::root:" .. root
+                        else
+                            -- Rootless scope should be per-buffer (or per-buffer-dir) to avoid collisions.
+                            local bufname = vim.api.nvim_buf_get_name(bufnr)
+                            local dir = (bufname ~= "" and vim.fn.fnamemodify(bufname, ":p:h")) or ""
+                            local scope = (dir ~= "" and dir) or ("buf:%d"):format(bufnr)
+                            gate_key = c.name .. "::scope:" .. scope
+                        end
+            
+                        if not by_key[gate_key] then
+                            by_key[gate_key] = {
+                                client = c,
+                                bufs = attached_python_bufs(c),
+                                name = c.name,
+                                root = root,
+                            }
+                        end
+                    end
         end
     end
 
@@ -272,7 +303,7 @@ local function restart_all_python_lsps(venv_python, env_type, bufnr)
         return true
     end
 
-    for key, entry in pairs(by_key) do
+    for gate_key, entry in pairs(by_key) do
         local old_cfg = entry.client.config or {}
         local cfg = vim.deepcopy(old_cfg)
 
@@ -286,8 +317,8 @@ local function restart_all_python_lsps(venv_python, env_type, bufnr)
         cfg.on_attach = old_cfg.on_attach
         cfg.init_options = old_cfg.init_options
 
-        -- gate key is name::root
-        gate.request(key, cfg, entry.bufs)
+        -- Request restart through the gate.
+        gate.request(gate_key, cfg, entry.bufs)
     end
 
     return true

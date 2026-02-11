@@ -145,11 +145,12 @@ function M.setup(conf)
     -- Run this first so we have logging enabled when we print the config
     require("venv-selector.logger").setup_debug_logging(conf)
 
-    local autocmds = require("venv-selector.autocmds")
-    autocmds.create()
 
     local config = require("venv-selector.config")
     config.store(conf)
+
+    local autocmds = require("venv-selector.autocmds")
+    autocmds.create()
 
     if not valid_fd() then
         return

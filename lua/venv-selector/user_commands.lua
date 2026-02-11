@@ -46,10 +46,10 @@ function M.register()
 
     -- Read settings at registration time.
     -- This is intentionally done here to avoid config require at top-level during startup.
-    local settings = require("venv-selector.config").get_user_settings()
+    local cached_venv = require("venv-selector.cached_venv")
 
     -- If cached venv auto-activation is disabled, provide a manual command instead.
-    if settings.options.cached_venv_automatic_activation == false then
+    if not cached_venv.cache_auto_enabled() and cached_venv.cache_feature_enabled() then
         vim.api.nvim_create_user_command("VenvSelectCached", function()
             local cache = require("venv-selector.cached_venv")
             cache.retrieve()

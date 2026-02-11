@@ -15,8 +15,6 @@
 --   - options.enable_cached_venvs
 --   - cache.file configured
 --   - options.cached_venv_automatic_activation
--- - `ensure_cached_venv_activated()` is intended for frequent calls (BufEnter/BufWinEnter). It performs
---   a cheap “already active?” check before switching environments.
 -- - Writes are small JSON blobs stored as a single-line file (one JSON object).
 --
 -- Conventions:
@@ -35,73 +33,98 @@ local uv2 = require("venv-selector.uv2")
 
 local M = {}
 
-
-local cache_file
-
-if config.user_settings
-    and config.user_settings.cache
-    and config.user_settings.cache.file
-then
-    cache_file = path.expand(config.user_settings.cache.file)
-end
-
 ---@type venv-selector.CachedVenvTable|nil
 local mem_cache = nil
 
 ---@type integer|nil
 local mem_mtime = nil
 
-local function get_mtime()
-    if not cache_file or cache_file == "" then return nil end
-    local t = vim.fn.getftime(cache_file)
-    if type(t) ~= "number" or t < 0 then return nil end
+-- ============================================================================
+-- Cache file + dir helpers
+-- ============================================================================
+
+---@return string|nil cache_file
+local function cache_file_path()
+    local us = config.user_settings
+    local f = us and us.cache and us.cache.file
+    if type(f) ~= "string" or f == "" then
+        return nil
+    end
+    return path.expand(f)
+end
+
+---@param file string|nil
+---@return boolean ok
+local function cache_file_configured(file)
+    return type(file) == "string" and file ~= ""
+end
+
+---@param file string
+---@return string|nil dir
+local function cache_dir_for(file)
+    return path.get_base(file)
+end
+
+---@param file string|nil
+---@return integer|nil mtime
+local function get_mtime(file)
+    if file == nil or not cache_file_configured(file) then
+        return nil
+    end
+    local t = vim.fn.getftime(file)
+    if type(t) ~= "number" or t < 0 then
+        return nil
+    end
     return t
 end
 
+---@param file string|nil
+---@return boolean exists
+local function cache_file_exists(file)
+    return cache_file_configured(file) and file ~= nil and vim.fn.filereadable(file) == 1
+end
 
--- Ensure cache directory exists
-if cache_file and cache_file ~= "" then
-    local cache_dir = path.get_base(cache_file)
-    if cache_dir and vim.fn.isdirectory(cache_dir) == 0 then
-        vim.fn.mkdir(cache_dir, "p")
-        log.debug("Created cache directory: " .. cache_dir)
+---@param file string|nil
+local function ensure_cache_dir(file)
+    if file == nil or not cache_file_configured(file) then
+        return
+    end
+    local dir = cache_dir_for(file)
+    if dir and vim.fn.isdirectory(dir) == 0 then
+        vim.fn.mkdir(dir, "p")
+        log.debug("Created cache directory: " .. dir)
     end
 end
 
----Invoke a completion callback with a boolean `activated` value, preserving legacy behavior.
 ---@param done? fun(activated: boolean)
 ---@param ok boolean
 local function finish(done, ok)
-    if done then done(ok == true) end
+    if done then
+        done(ok == true)
+    end
 end
 
----Cache storage feature enabled (read/write allowed).
----@return boolean ok
-local function cache_feature_enabled()
-    if config.user_settings.options.enable_cached_venvs ~= true then
-        log.debug("Option 'enable_cached_venvs' is false so will not use cache.")
-        return false
-    end
-    if not cache_file or cache_file == "" then
-        log.debug("Cache disabled: cache file not configured.")
-        return false
-    end
-    return true
+-- ============================================================================
+-- Option gates
+-- ============================================================================
+
+-- Persistent read/write feature gate (manual + auto).
+function M.cache_feature_enabled()
+    local file = cache_file_path()
+    return config.user_settings.options.enable_cached_venvs == true
+        and cache_file_configured(file)
 end
 
----Automatic cache activation enabled (auto restore on events).
----@return boolean ok
-local function cache_auto_enabled()
-    if not cache_feature_enabled() then
-        return false
-    end
-    if config.user_settings.options.cached_venv_automatic_activation ~= true then
-        return false
-    end
-    return true
+-- Automatic activation gate (autocmd-driven restores).
+function M.cache_auto_enabled()
+    return M.cache_feature_enabled()
+        and config.user_settings.options.cached_venv_automatic_activation == true
 end
 
----Return true if the buffer is a normal on-disk python buffer (not a special buftype).
+-- ============================================================================
+-- Buffer helpers
+-- ============================================================================
+
 ---@param bufnr integer
 ---@return boolean ok
 local function valid_py_buf(bufnr)
@@ -110,12 +133,10 @@ local function valid_py_buf(bufnr)
         and vim.bo[bufnr].filetype == "python"
 end
 
----Ensure the last venv used in this buffer is active.
----This is session-local memory only (no disk I/O, no persistent cache dependency).
----
----Notes:
---- - Skips uv buffers; those are managed by uv2.lua.
---- - Does not write cache again (save_cache=false).
+-- ============================================================================
+-- Session-local restore (no disk)
+-- ============================================================================
+
 ---@param bufnr? integer
 function M.ensure_buffer_last_venv_activated(bufnr)
     bufnr = bufnr or vim.api.nvim_get_current_buf()
@@ -123,7 +144,6 @@ function M.ensure_buffer_last_venv_activated(bufnr)
         return
     end
 
-    -- uv buffers are handled by uv2
     if uv2.is_uv_buffer(bufnr) then
         return
     end
@@ -134,7 +154,6 @@ function M.ensure_buffer_last_venv_activated(bufnr)
         return
     end
 
-    -- If already active globally, just stop.
     if path.current_python_path == last then
         return
     end
@@ -142,51 +161,74 @@ function M.ensure_buffer_last_venv_activated(bufnr)
     require("venv-selector.venv").activate_for_buffer(last, typ, bufnr, { save_cache = false })
 end
 
----Encode and write the cache table to disk.
+-- ============================================================================
+-- Disk I/O (memoized by mtime)
+-- ============================================================================
+
+---@param file string
 ---@param tbl venv-selector.CachedVenvTable
 ---@return boolean ok
-local function write_cache(tbl)
+local function write_cache_file(file, tbl)
+    ensure_cache_dir(file)
+
     local ok, json = pcall(vim.fn.json_encode, tbl or {})
     if not ok or not json then
         return false
     end
-    vim.fn.writefile({ json }, cache_file)
+
+    vim.fn.writefile({ json }, file)
 
     mem_cache = tbl
-    mem_mtime = get_mtime()
+    mem_mtime = get_mtime(file)
 
     return true
 end
 
-
----Read and decode the cache JSON file (memoized).
----@param force? boolean
----@return venv-selector.CachedVenvTable|nil
-local function read_cache(force)
-    if not cache_file or cache_file == "" then
+---@param file string
+---@return venv-selector.CachedVenvTable|nil tbl
+local function read_cache_file(file)
+    if vim.fn.filereadable(file) ~= 1 then
         return nil
     end
 
-    local mtime = get_mtime()
-    if not force and mem_cache and mem_mtime and mtime and mtime == mem_mtime then
-        return mem_cache
-    end
-
-    if vim.fn.filereadable(cache_file) ~= 1 then
-        mem_cache = nil
-        mem_mtime = mtime
-        return nil
-    end
-
-    local content = vim.fn.readfile(cache_file)
+    local content = vim.fn.readfile(file)
     if not content or not content[1] then
-        mem_cache = nil
-        mem_mtime = mtime
         return nil
     end
 
     local ok, decoded = pcall(vim.fn.json_decode, content[1])
     if not ok or type(decoded) ~= "table" then
+        return nil
+    end
+
+    ---@cast decoded venv-selector.CachedVenvTable
+    return decoded
+end
+
+---@param file string|nil
+---@param force? boolean
+---@return venv-selector.CachedVenvTable|nil
+local function read_cache(force, file)
+    if file == nil then return nil end
+    file = file or cache_file_path()
+    if not cache_file_configured(file) then
+        return nil
+    end
+
+    local mtime = get_mtime(file)
+
+    if not force and mem_cache and mem_mtime and mtime and mtime == mem_mtime then
+        return mem_cache
+    end
+
+    if not cache_file_exists(file) then
+        mem_cache = nil
+        mem_mtime = mtime
+        return nil
+    end
+
+    local decoded = read_cache_file(file)
+    if not decoded then
         mem_cache = nil
         mem_mtime = mtime
         return nil
@@ -194,12 +236,12 @@ local function read_cache(force)
 
     mem_cache = decoded
     mem_mtime = mtime
-    log.debug("Cache retrieved from file " .. cache_file)
+    log.debug("Cache retrieved from file " .. file)
 
-    -- One-time full cleanup on load (keeps hot paths O(1) later).
+    -- One-time cleanup on load.
     local cleaned, modified = M.clean_stale_entries(mem_cache)
     if modified then
-        write_cache(cleaned) -- updates mem_cache + mem_mtime
+        write_cache_file(file, cleaned) -- updates mem_cache + mem_mtime
         log.debug("Updated cache file with cleaned entries")
     else
         mem_cache = cleaned
@@ -208,7 +250,10 @@ local function read_cache(force)
     return mem_cache
 end
 
----Remove entries that point to missing python executables.
+-- ============================================================================
+-- Cleanup
+-- ============================================================================
+
 ---@param cache_tbl venv-selector.CachedVenvTable|any
 ---@return venv-selector.CachedVenvTable cleaned
 ---@return boolean modified
@@ -237,37 +282,33 @@ function M.clean_stale_entries(cache_tbl)
     return cleaned, modified
 end
 
----Attempt automatic activation of the cached venv for the current buffer.
----Respects option: `cached_venv_automatic_activation`.
----@param done? fun(activated: boolean) Callback called when activation attempt finishes
-function M.handle_automatic_activation(done)
-    if not cache_auto_enabled() then return finish(done, false) end
 
-    local bufnr = vim.api.nvim_get_current_buf()
-    M.retrieve(bufnr, done)
-end
+-- ============================================================================
+-- Save / Retrieve
+-- ============================================================================
 
----Save the selected interpreter to cache under the project root for `bufnr`.
----No-op if caching is disabled.
----Skips saving for uv (PEP 723) environments.
----@param python_path string Absolute path to python executable
----@param venv_type venv-selector.VenvType Environment type
----@param bufnr? integer Buffer used to compute project root (defaults to current buffer)
+---@param python_path string
+---@param venv_type venv-selector.VenvType
+---@param bufnr? integer
 function M.save(python_path, venv_type, bufnr)
-    if not cache_feature_enabled() then return end
+    if not M.cache_feature_enabled() then
+        return
+    end
 
     if venv_type == "uv" then
         log.debug("Skipping cache save for UV environment: " .. python_path)
         return
     end
 
+    local file = cache_file_path()
+    if file == nil or not cache_file_configured(file) then
+        return
+    end
+
     bufnr = bufnr or vim.api.nvim_get_current_buf()
+    local project_root = require("venv-selector.project_root").key_for_buf(bufnr) or vim.fn.getcwd()
 
-    local project_root =
-        require("venv-selector.project_root").key_for_buf(bufnr)
-        or vim.fn.getcwd()
-
-    local existing = read_cache() or {}
+    local existing = read_cache(false, file) or {}
 
     ---@type venv-selector.CachedVenvInfo
     existing[project_root] = {
@@ -276,17 +317,20 @@ function M.save(python_path, venv_type, bufnr)
         source = path.current_source,
     }
 
-    if write_cache(existing) then
-        log.debug("Cache written to file " .. cache_file)
+    if write_cache_file(file, existing) then
+        log.debug("Cache written to file " .. file)
     end
 end
 
----Retrieve and activate cached venv for the given buffer's project root.
----No-op for uv (PEP 723) buffers.
----@param bufnr? integer Buffer to use for project root lookup (defaults to current buffer)
----@param done? fun(activated: boolean) Callback called after activation attempt completes
+---@param bufnr? integer
+---@param done? fun(activated: boolean)
 function M.retrieve(bufnr, done)
-    if not cache_auto_enabled() then
+    if not M.cache_feature_enabled() then
+        return finish(done, false)
+    end
+
+    local file = cache_file_path()
+    if not cache_file_configured(file) then
         return finish(done, false)
     end
 
@@ -306,7 +350,7 @@ function M.retrieve(bufnr, done)
         return finish(done, false)
     end
 
-    local cache_tbl = read_cache()
+    local cache_tbl = read_cache(false, file)
     if not cache_tbl then
         return finish(done, false)
     end
@@ -321,10 +365,10 @@ function M.retrieve(bufnr, done)
         return finish(done, false)
     end
 
-    -- Per-root stale cleanup (cheap; avoids full clean on every call).
-    if vim.fn.filereadable(py) ~= 1 then
+    -- Per-root stale cleanup.
+    if file ~= nil and vim.fn.filereadable(py) ~= 1 then
         cache_tbl[project_root] = nil
-        write_cache(cache_tbl)
+        write_cache_file(file, cache_tbl)
         log.debug("Removed stale cache entry for project_root=" .. project_root)
         return finish(done, false)
     end
@@ -342,10 +386,16 @@ function M.retrieve(bufnr, done)
     end)
 end
 
----Ensure the cached venv for this buffer is active (use on BufEnter/BufWinEnter).
 ---@param bufnr? integer
 function M.ensure_cached_venv_activated(bufnr)
-    if not cache_auto_enabled() then return end
+    if not M.cache_auto_enabled() then
+        return
+    end
+
+    local file = cache_file_path()
+    if file == nil or not cache_file_configured(file) then
+        return
+    end
 
     bufnr = bufnr or vim.api.nvim_get_current_buf()
     if not valid_py_buf(bufnr) then
@@ -361,27 +411,26 @@ function M.ensure_cached_venv_activated(bufnr)
         return
     end
 
-    local cache_tbl = read_cache()
+    local cache_tbl = read_cache(false, file)
     if not cache_tbl then
         return
     end
 
-    local cleaned = M.clean_stale_entries(cache_tbl)
-    local venv_info = cleaned[project_root]
+    local venv_info = cache_tbl[project_root]
     if not venv_info or type(venv_info.value) ~= "string" or venv_info.value == "" then
         return
     end
 
-    -- If already active globally, just mark buffer and stop.
-    if path.current_python_path == venv_info.value then
-        vim.b[bufnr].venv_selector_cached_applied = venv_info.value
+    -- Optional cheap per-root stale cleanup (keeps hot path correct without full-table clean).
+    if vim.fn.filereadable(venv_info.value) ~= 1 then
+        cache_tbl[project_root] = nil
+        write_cache_file(file, cache_tbl)
         return
     end
 
-    -- If we already applied this for this buffer, but global differs, we must switch back.
-    local applied = vim.b[bufnr].venv_selector_cached_applied
-    if applied == venv_info.value and path.current_python_path ~= venv_info.value then
-        -- fallthrough (must activate)
+    if path.current_python_path == venv_info.value then
+        vim.b[bufnr].venv_selector_cached_applied = venv_info.value
+        return
     end
 
     local venv = require("venv-selector.venv")
@@ -393,14 +442,7 @@ function M.ensure_cached_venv_activated(bufnr)
         venv_info.value, project_root
     ))
 
-    -- Do it synchronously so state is correct immediately (picker markers, etc.)
-    venv.activate_for_buffer(
-        venv_info.value,
-        venv_info.type,
-        bufnr,
-        { save_cache = false }
-    )
-
+    venv.activate_for_buffer(venv_info.value, venv_info.type, bufnr, { save_cache = false })
     vim.b[bufnr].venv_selector_cached_applied = venv_info.value
 end
 

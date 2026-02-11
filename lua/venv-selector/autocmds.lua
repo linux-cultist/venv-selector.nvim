@@ -57,7 +57,8 @@ function M.create()
 
             -- Defer: allow project root detection / session restore / filetype to settle
             vim.defer_fn(function()
-                if vim.api.nvim_buf_is_valid(bufnr) then
+                local cached_venv = require("venv-selector.cached_venv")
+                if vim.api.nvim_buf_is_valid(bufnr) and cached_venv.cache_auto_enabled() then
                     require("venv-selector.cached_venv").retrieve(bufnr)
                 end
             end, 1000)

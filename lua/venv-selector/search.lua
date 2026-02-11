@@ -238,8 +238,18 @@ local function start_search_job(search_name, search_config, job_event_handler, s
         search_name ..
         "' (using " .. options.shell.shell .. " " .. options.shell.shellcmdflag .. "): '" .. expanded_job .. "'")
 
-    cmd = { options.shell.shell, options.shell.shellcmdflag, expanded_job } -- We use a shell on linux and mac but not windows at the moment.
+    local shell_flags = options.shell.shellcmdflag
+    if type(shell_flags) == "string" then
+        shell_flags = vim.split(shell_flags, " ", { trimempty = true })
+    end
 
+    cmd = { options.shell.shell }
+    if type(shell_flags) == "table" then
+        vim.list_extend(cmd, shell_flags)
+    else
+        table.insert(cmd, shell_flags)
+    end
+    table.insert(cmd, expanded_job)
 
     local function on_exit_wrapper(jid, data, event)
         -- log.debug(string.format(

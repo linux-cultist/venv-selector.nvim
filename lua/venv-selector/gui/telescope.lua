@@ -230,9 +230,10 @@ function M:make_finder()
     local displayer = require("telescope.pickers.entry_display").create(display_config)
 
     local entry_maker = function(entry)
-        ---@cast entry venv-selector.SearchResult
+        ---@cast entry venv-selector.TelescopeEntry
 
         entry.value = entry.name
+
         local is_active = gui_utils.hl_active_venv(entry) ~= nil
         local prefix = is_active and "0 " or "1 "
 
@@ -245,7 +246,7 @@ function M:make_finder()
         entry.display = function(e)
             local picker_columns = gui_utils.get_picker_columns()
 
-            local hl = gui_utils.hl_active_venv(entry)
+            local hl = gui_utils.hl_active_venv(e)
             local marker_icon = config.user_settings.options.selected_venv_marker_icon
                 or config.user_settings.options.icon
                 or "●"
@@ -254,16 +255,15 @@ function M:make_finder()
 
             local column_data = {
                 marker = { hl and marker_icon or " ", marker_hl },
-                search_icon = { gui_utils.draw_icons_for_types(entry.source) },
+                search_icon = { gui_utils.draw_icons_for_types(e.source) },
                 search_name = { e.source },
                 search_result = { e.name },
             }
 
             local display_items = {}
             for _, col in ipairs(picker_columns) do
-                if column_data[col] then
-                    table.insert(display_items, column_data[col])
-                end
+                local item = column_data[col]
+                if item then display_items[#display_items + 1] = item end
             end
 
             return displayer(display_items)
@@ -278,7 +278,6 @@ function M:make_finder()
     })
 end
 
-
 ---@return any sorter
 local function get_sorter()
     local filter_type = config.get_user_options().picker_filter_type
@@ -292,7 +291,7 @@ end
 ---@param search_opts table
 ---@return venv-selector.Picker
 function M.new(search_opts)
-    ---@type venv-selector.Picker & { results: venv-selector.SearchResult[], _refresh_scheduled?: boolean }
+    ---@type venv-selector.TelescopePicker
     local self = setmetatable({ results = {} }, M)
 
     active_telescope_instance = self
@@ -355,7 +354,5 @@ function M.new(search_opts)
 
     return self
 end
-
-
 
 return M

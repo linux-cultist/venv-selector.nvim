@@ -270,5 +270,15 @@ local M = {}
 ---@field name? string
 ---@field uri? string
 
+---@class venv-selector.TelescopeEntry : venv-selector.SearchResult
+---@field value any
+---@field ordinal string
+---@field display fun(e: venv-selector.TelescopeEntry): any
+
+---@class venv-selector.TelescopePicker : venv-selector.Picker
+---@field results venv-selector.SearchResult[]
+---@field _refresh_scheduled? boolean
+---@field make_finder fun(self: venv-selector.TelescopePicker): any
+---@field setup_resize_autocmd fun(self: venv-selector.TelescopePicker)
 
 return M

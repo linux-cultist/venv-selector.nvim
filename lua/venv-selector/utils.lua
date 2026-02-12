@@ -81,6 +81,19 @@ function M.split_cmd_for_windows(str)
     return M.split_string(str)
 end
 
+--- Extend a list with multiple other tables.
+--- Note that the list is modified in place
+--- but also returned for convenience.
+--- @param dst table the list to extend
+--- @param ... table lists of items to extend dst with
+--- @return table the extended list
+function M.extend(dst, ...)
+    for _, t in ipairs({ ... }) do
+        vim.list_extend(dst, t)
+    end
+    return dst
+end
+
 ---Safely access nested table keys
 ---@param tbl table The table to access
 ---@param ... string The keys to follow

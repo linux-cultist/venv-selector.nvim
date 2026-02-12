@@ -26,6 +26,9 @@ local gui_utils = require("venv-selector.gui.utils")
 -- Load shared annotations/types.
 require("venv-selector.types")
 
+---@class venv-selector.TelescopePicker : venv-selector.Picker
+---@field results venv-selector.SearchResult[]
+---@field _refresh_scheduled? boolean
 local M = {}
 M.__index = M
 
@@ -291,9 +294,8 @@ end
 ---@param search_opts table
 ---@return venv-selector.Picker
 function M.new(search_opts)
-    ---@type venv-selector.TelescopePicker
     local self = setmetatable({ results = {} }, M)
-
+    ---@cast self venv-selector.TelescopePicker
     active_telescope_instance = self
 
     local marker_color = config.user_settings.options.selected_venv_marker_color

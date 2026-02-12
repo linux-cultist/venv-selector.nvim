@@ -47,11 +47,24 @@ end
 ---@param item venv-selector.SearchResult
 ---@return string text
 local function item_to_text(item)
+    local columns = gui_utils.get_picker_columns()
     local icon = marker_icon()
-    local marker = gui_utils.hl_active_venv(item) and icon or " "
-    local src_icon = gui_utils.draw_icons_for_types(item.source)
-    local src_name = string.format("%-15s", item.source)
-    return table.concat({ marker, src_icon, src_name, item.name }, "  ")
+
+    local column_data = {
+        marker = gui_utils.hl_active_venv(item) and icon or " ",
+        search_icon = gui_utils.draw_icons_for_types(item.source),
+        search_name = string.format("%-15s", item.source),
+        search_result = item.name,
+    }
+
+    local parts = {}
+    for _, col in ipairs(columns) do
+        local v = column_data[col]
+        if v then
+            parts[#parts + 1] = v
+        end
+    end
+    return table.concat(parts, "  ")
 end
 
 -- ============================================================================

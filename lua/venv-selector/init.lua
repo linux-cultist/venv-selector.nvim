@@ -142,6 +142,8 @@ function M.setup(conf)
         return
     end
 
+    conf = conf or {}
+
     -- Run this first so we have logging enabled when we print the config
     require("venv-selector.logger").setup_debug_logging(conf)
 

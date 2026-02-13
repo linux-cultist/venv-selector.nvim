@@ -36,18 +36,6 @@
       Discover and activate Python virtual environments inside Neovim — no restart required.
     </text>
 
-    <!-- Badges drawn as rounded rects -->
-    <g transform="translate(80,84)">
-      <rect x="0" y="0" rx="8" ry="8" width="150" height="30" fill="#ffffff" opacity="0.08"/>
-      <text class="badge" x="12" y="20">Neovim ≥ 0.11</text>
-
-      <rect x="170" y="0" rx="8" ry="8" width="90" height="30" fill="#ffffff" opacity="0.08"/>
-      <text class="badge" x="182" y="20">MIT</text>
-
-      <rect x="270" y="0" rx="8" ry="8" width="120" height="30" fill="#ffffff" opacity="0.08"/>
-      <text class="badge" x="282" y="20">telescope · fzf-lua</text>
-    </g>
-  </g>
 
   <!-- Right column: embedded screenshot box -->
   <g transform="translate(760,48)">

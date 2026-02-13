@@ -76,7 +76,7 @@ Once your fd search is working, you add it to your plugin config.
 <summary>🐧 Linux and macOS</summary>
 <br>
 You can use relative paths here to specify search location, but make sure to use `fd --full-path` so `fd` always gives you back an absolute path to the results.
-<br>
+    
 ```lua
 search = {
   my_project_venvs = {

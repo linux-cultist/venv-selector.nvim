@@ -24,7 +24,7 @@
 
 The plugin configures your lsp to use the selected venv and also sets `VIRTUAL_ENV` or `CONDA_PREFIX` for use in terminals started from neovim.
 
-If you don't see your expected venvs in the picker, you can add your own searches. See [Creating your own search](docs/USAGE.md#creating-your-own-search) for examples.
+If you don't see your expected venvs in the picker, you can add your own searches. See [Creating your own search](docs/USAGE.md#-creating-your-own-search) for examples.
 
 <br>
 

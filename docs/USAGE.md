@@ -29,8 +29,7 @@ When creating a new search, make sure it gives the expected results in your term
 
 <details>
 <summary>🐧 Linux and macOS — fd in terminal</summary>
-
-
+<br>
 Here we search for all pythons under the `~/Code` directory. We need the result to be the full paths to the python interpreters.
 
 ```
@@ -57,8 +56,7 @@ $ `fd '/bin/python$' ~/Code --no-ignore-vcs --full-path`
 
 <details>
 <summary>🪟 Windows — fd in terminal</summary>
-
-
+<br>
 Here we search for all pythons under the home directory. We want to match on all paths ending in `Scripts\\python.exe` since those are the venvs on Windows.
 
 ```
@@ -76,7 +74,7 @@ The docs are split into two different sections.
 
 <details>
 <summary>🐧 Linux and macOS config example</summary>
-
+<br>
 You can use relative paths here to specify search location, but make sure to use `--full-path` so `fd` always gives you back an absolute path to the results.
 
 ```lua
@@ -103,7 +101,7 @@ Have a look at [config.lua](../lua/venv-selector/config.lua) to see the built-in
 
 <details>
 <summary>🪟 Windows config example</summary>
-
+<br>
 VenvSelect doesn't understand Windows shell variables like `%USERPROFILE%`, but you can use `$HOME`. Its also important to escape backslashes on windows, see below.
 
 NOTE:

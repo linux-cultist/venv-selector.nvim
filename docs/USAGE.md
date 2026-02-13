@@ -11,7 +11,7 @@ Refer to `docs/OPTIONS.md` for the complete reference.
 
 ---
 
-## 🔎 Creating your own search
+## 🔎 Creating your own searches
 
 - Start in the terminal and create your fd command.
 - Prefer narrow, explicit commands that target known locations.

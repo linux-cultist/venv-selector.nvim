@@ -30,17 +30,18 @@ If you don't see your expected venvs in the picker, you can add your own searche
 
 ## ⚡️ Features
 
-- [Creating your own searches](docs/USAGE.md#-creating-your-own-search) 
+- [Creating your own searches](docs/USAGE.md#-creating-your-own-searches) 
 - Switch virtual environments without restarting Neovim.
 - Switch between multiple python files using multiple LSPs in different buffers.
 - [PEP-723 (`uv`) integration](docs/USAGE.md#-pep-723-uv-integration).
-- Discover venvs automatically in common places and your workspace.
+- Discover venvs automatically in common places and your workspaces.
 - Terminals start with selected venv active (sets `VIRTUAL_ENV` or `CONDA_PREFIX`).
 - Re-activates selected venv for the same workspace when you open a Python file.
 - Integrates with debuggers (nvim-dap / nvim-dap-python + debugpy), statuslines, and many pickers.
 - Add your own custom searches (fd/find/ls/any command) and regex/template variable support.
 - Picker backends: `telescope`, `fzf-lua`, `snacks`, `mini-pick`, `vim.ui.select`
 - Integrations: Lualine, NvChad, optional DAP support
+- [Many options to control behavior](docs/OPTIONS.md).
 
 <br>
 
@@ -117,7 +118,3 @@ See if you can understand the problem from the log. If you still have issues, op
 - Public API: `docs/API.md`
 - Changelog: `CHANGELOG.md`
 - License: `LICENSE`
-
-```
-
-```

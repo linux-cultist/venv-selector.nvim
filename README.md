@@ -1,61 +1,76 @@
 <div align="center">
-  <h1>🎉 Python Venv Selector</h1>
-  <p>A simple Neovim plugin to let you choose what virtual environment to activate in Neovim.</p>
-
-  <!-- Badges (use HTML so they remain centered) -->
-  <p>
-    <a href="https://neovim.io"><img alt="Neovim >=0.11" src="https://img.shields.io/badge/Neovim-%3E%3D0.11-blue"></a>
-    <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-brightgreen"></a>
-  </p>
-
-  <!-- Screenshot -->
-  <p>
-    <img src="venvselect.png" alt="venv-selector screenshot" style="max-width:720px; width:100%; height:auto;">
-  </p>
+  <img src="assets/banner.svg" alt="venv-selector.nvim banner" width="100%" style="max-width:1200px;">
 </div>
 
 <br>
 
-## 🚀 Quick start
+<h1 align="center">🎉 venv-selector.nvim</h1>
 
-1. Add the plugin to your plugin manager (example below for `lazy.nvim`).
-2. Open any Python file.
-3. Trigger `:VenvSelect` or your mapped key (example `,v`).
-4. Choose a virtual environment — the plugin sets `VIRTUAL_ENV` or `CONDA_PREFIX` and updates terminals opened afterward.
+<p align="center">
+  Discover and activate Python virtual environments from inside Neovim — no restart required.
+</p>
 
-If you don't see your expected venvs in the picker, you can add your own searches. See `docs/USAGE.md` for examples.
+<p align="center">
+  <a href="https://neovim.io"><img alt="Neovim >=0.11" src="https://img.shields.io/badge/Neovim-%3E%3D0.11-61dafb"></a>
+  <a href="LICENCE.md"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-brightgreen"></a>
+  <a href="https://github.com/linux-cultist/venv-selector.nvim/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/linux-cultist/venv-selector.nvim/ci.yml?branch=main"></a>
+</p>
 
-<br>
+---
 
-## ⚡️ Features
+## What is this?
 
-- Switch virtual environments without restarting Neovim.
-- Switch between multiple python files using multiple LSPs in different buffers.
-- PEP-723 metadata support (via `uv`).
-- Discover venvs automatically in common places and your workspace.
-- Terminals start with selected venv active (sets `VIRTUAL_ENV` or `CONDA_PREFIX`).
-- Re-activates selected venv for the same workspace when you open a Python file.
-- Integrates with debuggers (nvim-dap / nvim-dap-python + debugpy), statuslines, and many pickers.
-- Add your own custom searches (fd/find/ls/any command) and regex/template variable support.
-- Picker backends: `telescope`, `fzf-lua`, `snacks`, `mini-pick`, `vim.ui.select`
-- Integrations: Lualine, NvChad, optional DAP support
+`venv-selector.nvim` is a small Neovim plugin that helps you find, choose, and activate Python virtual environments (venvs/conda envs) for the current workspace. It sets `VIRTUAL_ENV` or `CONDA_PREFIX` for Neovim and processes spawned from it, and aims to integrate nicely with pickers (Telescope, fzf-lua, etc.), statuslines, and debuggers.
 
-<br>
+The plugin focuses on:
+- fast discovery of venvs in common locations and the workspace,
+- seamless activation without restarting Neovim,
+- easy integration with existing pickers and statuslines,
+- reliable handling across buffers and terminals.
 
-## 🧩 Requirements
+---
+
+## Demo
+
+![screenshot](venvselect.png)
+
+---
+
+## Quick start
+
+1. Install the plugin with your plugin manager (examples below).
+2. Open any Python file or your project root.
+3. Run `:VenvSelect` (or your mapped shortcut).
+4. Pick a virtual environment — the plugin activates it without restarting Neovim.
+
+New terminals opened after selection inherit the selected environment.
+
+---
+
+## Features
+
+- Switch virtual environments in-process (no Neovim restart).
+- Per-workspace caching of the last selected venv; optional automatic activation when opening files in that workspace.
+- Search strategies: workspace scans, common manager directories, manual paths, and customizable commands.
+- PEP-723 metadata support where available.
+- Integrations: Telescope, fzf-lua, `mini-pick`, `vim.ui.select`, lualine/NvChad statusline components, nvim-dap / debugpy compatibility.
+- Multiple picker backends supported so the plugin adapts to your workflow.
+
+---
+
+## Requirements
 
 - Neovim >= 0.11
-- `fd` or `fdfind` required for default searches
-- A picker plugin (Telescope is shown in picture)
-- `nvim-dap`, `nvim-dap-python`, `debugpy` — for debugger integration (optional)
-- `nvim-notify` — for nicer notifications (optional)
-- Nerd Font — for icons in certain pickers/statuslines (optional)
+- `fd` (or `fdfind`) recommended for fast searching (configurable)
+- A picker plugin (Telescope, fzf-lua, etc.) for nicer interactive selection (optional but recommended)
+- Optional: `nvim-dap`, `nvim-dap-python`, `debugpy` for debugger integration
+- Optional: Nerd Font for statusline/picker icons
 
-<br>
+---
 
-## 🛠️ Install (example: lazy.nvim)
+## Installation
 
-Add this to your plugin specs (example):
+Example for `lazy.nvim`:
 
 ```lua
 {
@@ -72,38 +87,84 @@ Add this to your plugin specs (example):
 }
 ```
 
-Notes:
-- The plugin creates the `:VenvSelect` command and lazy-loading it by `ft = "python"` is recommended.
-- The `:VenvSelectLog` command is available if you set the `log_level` option to `DEBUG` or `TRACE`.
-- There is also the `:VenvSelectCache` command, only available if the `cached_venv_automatic_activation` option is `false` (default is `true`).
+Example for `packer.nvim`:
 
-<br>
+```lua
+use {
+  "linux-cultist/venv-selector.nvim",
+  requires = { "nvim-lua/plenary.nvim" },
+  ft = "python",
+  config = function()
+    require("venv-selector").setup {}
+  end
+}
+```
 
-## 🛟 Troubleshooting
+---
 
-Start with setting the `log_level` option to `TRACE` or `DEBUG` and then use the `:VenvSelectLog` command after using `:VenvSelect`.
+## Basic usage
 
-See if you can understand the problem from the log. If you still have issues, open an issue with `:VenvSelectLog` output and your search config.
+- `:VenvSelect` — open the picker to choose a virtual environment.
+- `:VenvSelectCache` — view/clear the cached workspace selection (availability depends on options).
+- `:VenvSelectLog` — dump plugin logs (useful when `log_level = "DEBUG"` or `"TRACE"`).
 
-<br>
+Configuration is done by calling `require("venv-selector").setup(opts)`. See `docs/OPTIONS.md` for all available options and their defaults.
 
-## ❓ FAQ
+---
 
-- **Do I need to restart Neovim after switching venvs?** No — activation is done in-process; new terminals opened after selection inherit the environment.
+## Example config snippet
 
-- **Will this change my system Python?** No — it only sets environment variables within Neovim and spawned child processes.
+```lua
+require("venv-selector").setup {
+  options = {
+    -- Automatically re-apply the last used venv for a workspace
+    cached_venv_automatic_activation = true,
+    -- Log level: "ERROR", "WARN", "INFO", "DEBUG", "TRACE"
+    log_level = "INFO",
+  },
+  search = {
+    -- Add or override searches (fd/find or custom shell commands)
+  },
+}
+```
 
-- **Can I automatically activate venvs per-project?** The plugin caches the last selected venv per workspace and can re-activate it when you open files in the same workspace.
+---
 
-- **How does the plugin detect venvs?** By searching for interpreter binaries and recognizing common venv manager locations. PEP-723 metadata is supported if `uv` is available.
+## Customization & integrations
 
+- Statusline: there is a lualine component at `lua/lualine/components/venv-selector.lua`.
+- Picker backends: `telescope`, `fzf-lua`, `mini-pick`, `snacks`, and native `vim.ui.select` are supported. See `docs/USAGE.md` for examples on integrating with each picker.
+- Debugger: `nvim-dap` / `nvim-dap-python` users can configure their adapter to use the selected interpreter.
 
-<br>
+---
 
-## 🔗 Links & docs
+## Troubleshooting
+
+- If you don't see expected venvs in the picker, check:
+  - your `search` configuration,
+  - that `fd` is installed (if you're relying on it).
+- Increase `log_level` to `DEBUG` or `TRACE`, reproduce the issue, then run `:VenvSelectLog` and include that output when opening issues.
+
+---
+
+## Links & docs
 
 - Usage & examples: `docs/USAGE.md`
 - Options reference: `docs/OPTIONS.md`
 - Public API: `docs/API.md`
 - Changelog: `CHANGELOG.md`
-- License: `LICENSE`
+- License: `LICENCE.md`
+
+---
+
+## Contributing
+
+Contributions, bug reports, and feature requests are welcome. Please follow the guidelines in `CONTRIBUTING.md`. When opening issues, include `:VenvSelectLog` output if applicable and a short reproduction.
+
+---
+
+## License
+
+MIT — see `LICENCE.md` for details.
+
+---

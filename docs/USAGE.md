@@ -28,7 +28,8 @@ Refer to `docs/OPTIONS.md` for the complete reference.
 When creating a new search, make sure it gives the expected results in your terminal first.
 
 <details>
-<summary>🐧 Linux and macOS — terminal example output</summary>
+<summary>🐧 Linux and macOS — fd in terminal</summary>
+
 
 Here we search for all pythons under the `~/Code` directory. We need the result to be the full paths to the python interpreters.
 
@@ -55,7 +56,8 @@ $ `fd '/bin/python$' ~/Code --no-ignore-vcs --full-path`
 </details>
 
 <details>
-<summary>🪟 Windows — terminal example output</summary>
+<summary>🪟 Windows — fd in terminal</summary>
+
 
 Here we search for all pythons under the home directory. We want to match on all paths ending in `Scripts\\python.exe` since those are the venvs on Windows.
 

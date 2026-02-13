@@ -1,6 +1,6 @@
-# Options of venv-selector.nvim
+# ⚙️ Options of venv-selector.nvim
 
-## How options are applied
+## 🔧 How options are applied
 
 Options are passed via your plugin configuration. Example location for `lazy.nvim`:
 
@@ -19,7 +19,7 @@ Options are passed via your plugin configuration. Example location for `lazy.nvi
 
 ---
 
-## Global options reference
+## 🧭 Global options reference
 
 Key | Default | Type | Description
 --- | --- | --- | ---
@@ -48,7 +48,7 @@ Key | Default | Type | Description
 
 ---
 
-## Examples
+## 💡 Examples
 
 Minimal: change the selected marker and enable debug:
 
@@ -93,11 +93,3 @@ Disable all built-in searches:
 ```
 
 ---
-
-## Notes and best practices
-
-- If you rely on conda/anaconda environments, set search entries that return `type = "anaconda"` for the search so the plugin sets `CONDA_PREFIX` and other conda-specific vars correctly.
-- The plugin uses `fd` (or `fdfind`) for the default searches. If `fd` is not available, provide alternate `search` entries that use other commands (for example `find` or a custom script).
-- Be careful when calling `activate_from_path` with the system Python — that function expects a path to a virtual environment and may set environment variables incorrectly for system-wide interpreters.
-- If you need very fast searches, limit the scope of your `fd` queries (avoid searching your entire home directory with `-H` unless necessary). See `lua/venv-selector/config.lua` for default search definitions and flags.
-

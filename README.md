@@ -1,6 +1,7 @@
-<div align="center">
-  <img src="assets/banner-compact.svg" alt="venv-selector.nvim banner" width="100%" style="max-width:1200px;">
-</div>
+<p align="center">
+  ![venv-selector.nvim banner](assets/banner.svg)
+</p>
+
 
 <div align="center">
   <h1>🎉 Python Venv Selector</h1>

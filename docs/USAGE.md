@@ -1,232 +1,142 @@
+
 # Usage — venv-selector.nvim
 
-How to use different features of the plugin.
-
-## Table of contents
-
-- [Searches: default behavior and custom searches](#searches-default-behavior-and-custom-searches)
-  - [Example: add a custom search](#example-add-a-custom-search)
-  - [Override or disable default searches](#override-or-disable-default-searches)
-- [Special notes (Anaconda/Miniconda, UV PEP-723)](#special-notes-anacondaminiconda-uv-pep-723)
-- [Performance tips](#performance-tips)
-- [Callbacks](#callbacks)
-  - [on_telescope_result_callback](#on_telescope_result_callback)
-  - [on_venv_activate_callback](#on_venv_activate_callback)
-- [Statusline integrations](#statusline-integrations)
-- [Troubleshooting](#troubleshooting)
-- [Where to find more examples and reference](#where-to-find-more-examples-and-reference)
+Table of contents
+- Configuration structure
+- Creating your own searches
+- PEP-723 (`uv`) integration
 
 ---
 
-## Searches: default behavior and custom searches
+## Configuration structure
 
-The plugin runs a set of "searches" to discover Python interpreter binaries. Defaults are provided for common venv managers and locations; the search templates are defined in `lua/venv-selector/config.lua`.
+Top-level plugin configuration has two primary tables:
 
-You can add or override searches in your plugin configuration using the top-level `search` table.
+- `options` — global behavior & callbacks (picker choice, misc flags, integrations)
+- `search` — your own custom searches if venvs are not found automatically
 
-Special search variables available in commands:
+Refer to `docs/OPTIONS.md` for the complete reference.
 
-- `$CWD` — Neovim current working directory
-- `$WORKSPACE_PATH` — workspace roots reported by LSP
-- `$FILE_DIR` — directory of the current buffer
-- `$CURRENT_FILE` — absolute path to the current buffer file
+---
 
-### Example: add a custom search
+## Creating your own search
 
-If your venvs live in `~/Code`, add:
+- Start in the terminal and create your fd command.
+- Prefer narrow, explicit commands that target known locations.
+- Only search hidden files/directories (like `$HOME/Code`) in a specific location, not your home directory.
+- Template variables available in command:
+  - `$CWD` — current working directory
+  - `$WORKSPACE_PATH` — workspace root
+  - `$FILE_DIR` — directory of current file
+  - `$CURRENT_FILE` — currently open file
 
-```lua
-{
-  options = {}, -- your options here
-  search = {
-    my_venvs = {
-      command = "fd '/bin/python$' ~/Code --full-path -a -L",
-    },
-  },
-}
+
+### Examples
+
+When creating a new search, make sure it gives the expected results in your terminal first.
+
+#### Linux and Mac
+
+Here we search for all pythons under the ~/Code directory. We need the result to be the full paths to the python interpreters.
+
+```
+$ `fd '/bin/python$' ~/Code --no-ignore-vcs --full-path`
+/home/cado/Code/Personal/new_env/infrastructure/venv/bin/python
+/home/cado/Code/Personal/play_with_python/venv/bin/python
+/home/cado/Code/Personal/python_test/venv/bin/python
+/home/cado/Code/Personal/test_venvsel/env/bin/python
+/home/cado/Code/Personal/test_space/my folder/venv/bin/python
+/home/cado/Code/Personal/playing/venv/bin/python
+/home/cado/Code/Personal/parse_manifest/venv/bin/python
+/home/cado/Code/Personal/fastapi_learning/venv/bin/python
+/home/cado/Code/Personal/snowflake-conn/venv/bin/python
+/home/cado/Code/Personal/dbt/venv/bin/python
+/home/cado/Code/Personal/pulse_jinja/venv/bin/python
+/home/cado/Code/Personal/databricks-cli/venv/bin/python
+/home/cado/Code/Personal/exercise/venv/bin/python
+/home/cado/Code/Personal/test_python/venv/bin/python
+/home/cado/Code/Personal/helix/venv/bin/python
+/home/cado/Code/Personal/fleet_python/venv/bin/python
 ```
 
-Notes:
+#### Windows
 
-- Use `python.exe$` on Windows where executables end with `.exe`.
-- Shell quoting rules vary: `fish` often requires quoting regexes (e.g. `'/bin/python$'`). Test in your environment.
+Here we search for all pythons under the home directory. We want to match on all paths ending in `Scripts\\python.exe` since those are the venvs on Windows.
 
-### Override or disable default searches
+```
+tameb@WIN11 C:\Users\tameb>fd Scripts\\python.exe$ %USERPROFILE%\Code --full-path -I -a  
+C:\Users\tameb\Code\another_project\venv\Scripts\python.exe
+C:\Users\tameb\Code\manual\venv\Scripts\python.exe
+C:\Users\tameb\Code\sample_project\venv\Scripts\python.exe
+```
 
-- Override: define a `search` entry with the same name to replace the default.
-- Disable a specific default search: set it to `false`.
-- Disable all built-in searches: set `options.enable_default_searches = false`.
+### Adding the fd search to VenvSelect config
 
-```lua
-{
-  options = { enable_default_searches = false },
-  search = {
-    custom = { command = "fd /bin/python$ ~/Programming/Python --full-path -a -L" },
+#### Linux and Mac
+
+```
+search = {
+  my_project_venvs = {
+    command = "fd '/bin/python$' ~/Code --full-path --color never",
   }
 }
 ```
 
----
+#### Windows
 
-## Special notes (Anaconda/Miniconda, UV PEP-723)
+VenvSelect doesnt understand windows-specific variables like `%USERPROFILE%` but it does understand `$HOME`.
 
-### Anaconda / Miniconda
+IMPORTANT: You need to put single quotes around the regexp and also escape the two slashes.
 
-When creating a custom search that finds conda/anaconda interpreters, set `type = "anaconda"` for that search. This ensures the plugin sets `CONDA_PREFIX` and other conda-specific environment variables.
-
-```lua
-{
-  options = {}, -- your options here
-  search = {
-    anaconda_local = {
-      command = "fd /python$ /opt/anaconda/bin --full-path --color never -E /proc",
-      type = "anaconda",
-    }
+```
+search = {
+  my_project_venvs = {
+    command = "fd 'Scripts\\\\python.exe$' $HOME/Code --full-path --color never -a",
   }
 }
 ```
 
-### UV PEP-723 script support
 
-The `uv_script` search runs `uv python find --script '$CURRENT_FILE'` when the current file contains inline PEP-723 metadata and shows the resolved interpreter in the picker.
+---
 
-Example PEP-723 script header (for reference):
 
-```python
-#!/usr/bin/env python3
+## PEP-723 (`uv`) integration
+
+If you use PEP-723 style scripts, the plugin will read the metadata at the top of the file and create/activate the uv environment for you.
+
+Example of metadata header in your python file:
+
+```
 # /// script
+# requires-python = "~=3.13.0"
 # dependencies = [
-#   "requests",
-#   "rich",
+#     "click>=7.0.0,<9.0.0", 
+#     "colorama>=0.4.0",
+#     "urllib3>=1.26.0,<2.0.0",
+#     "pip",
+#     "requests"
 # ]
 # ///
 ```
 
----
+When you open a python file with this metadata, you will see this in the `VenvSelectLog` (if `log_level` is set to `TRACE` or `DEBUG`):
 
-## Performance tips
-
-Search speed depends on the `fd` command and flags. To improve performance:
-
-- Narrow the search scope (e.g., search `~/Code` instead of `~`).
-- Avoid `-H` (hidden) unless you need to detect dot-prefixed venvs.
-- Use `-I` instead of `-HI` if you want to include files ignored by `.gitignore`, etc.
-- Disable default searches you don't need and add targeted ones.
-
-Example `fd` usage:
-
-```sh
-fd '/bin/python$' $CWD --full-path --color never -E /proc -I -a -L
+```
+2026-02-13 10:39:04 [DEBUG]: uv sync: Updating script environment at: /home/cado/.cache/uv/environments-v2/uvtest3-d4fa1d9bee5f848f
+2026-02-13 10:39:04 [DEBUG]: uv sync: Resolved 8 packages in 53ms
+2026-02-13 10:39:04 [DEBUG]: uv sync: Prepared 1 package in 12ms
+2026-02-13 10:39:04 [DEBUG]: uv sync: Installed 8 packages in 11ms
+2026-02-13 10:39:04 [DEBUG]: uv sync:  + certifi==2026.1.4
+2026-02-13 10:39:04 [DEBUG]: uv sync:  + charset-normalizer==3.4.4
+2026-02-13 10:39:04 [DEBUG]: uv sync:  + click==8.3.1
+2026-02-13 10:39:04 [DEBUG]: uv sync:  + colorama==0.4.6
+2026-02-13 10:39:04 [DEBUG]: uv sync:  + idna==3.11
+2026-02-13 10:39:04 [DEBUG]: uv sync:  + pip==26.0.1
+2026-02-13 10:39:04 [DEBUG]: uv sync:  + requests==2.32.5
+2026-02-13 10:39:04 [DEBUG]: uv sync:  + urllib3==1.26.20
 ```
 
-Common flags:
+Your uv environment is activated and will use the dependencies you have specified. If you add or remove dependencies, or change python version, the plugin will again update the active uv environment for you.
 
-- `-I` / `--no-ignore`
-- `-L` / `--follow`
-- `-H` / `--hidden`
-- `-E` / `--exclude`
+NOTE: You *dont use the picker* to select a venv for uv environments. The plugin activates the venv when you open a file with metadata automatically.
 
----
-
-## Callbacks
-
-The plugin supports callbacks to customize displayed results and to run code on activation.
-
-### on_telescope_result_callback
-
-Use this to modify the displayed string for each result in the picker (useful to shorten long interpreter paths).
-
-Example (shorten display):
-
-```lua
--- In your opts:
-local function shorter_name(filename)
-  return filename:gsub(os.getenv("HOME"), "~"):gsub("/bin/python", "")
-end
-
-options = {
-  on_telescope_result_callback = shorter_name,
-},
-```
-
-You can also use the helper in `examples/statusline.lua`.
-
-### on_venv_activate_callback
-
-Run custom logic when a venv activates (e.g., instruct `poetry` to use the selected Python in a newly opened terminal).
-
-Example pattern — use the robust helpers in `examples/callbacks.lua` for production use:
-
-```lua
-  options = {
-    on_venv_activate_callback = function()
-      local command_run = false
-      local function run_shell_command()
-        local source = require("venv-selector").source()
-        local python = require("venv-selector").python()
-        if source == "poetry" and not command_run then
-          local cmd = "poetry env use " .. vim.fn.shellescape(python) .. "\n"
-          vim.api.nvim_feedkeys(cmd, "n", false)
-          command_run = true
-        end
-      end
-      vim.api.nvim_create_augroup("VenvSelectorTerminalCommands", { clear = true })
-      vim.api.nvim_create_autocmd("TermEnter", {
-        group = "VenvSelectorTerminalCommands",
-        pattern = "*",
-        callback = run_shell_command,
-      })
-    end
-  }
-```
-
----
-
-## Statusline integrations
-
-The plugin exposes `options.statusline_func` for integrating with `lualine` and `nvchad`. See `examples/statusline.lua` for ready-to-use functions.
-
-Example lualine snippet:
-
-```lua
-options = {
-  statusline_func = {
-    lualine = function()
-      local venv_path = require("venv-selector").venv()
-      if not venv_path or venv_path == "" then return "" end
-      local venv_name = vim.fn.fnamemodify(venv_path, ":t")
-      return "🐍 " .. (venv_name or "") .. " "
-    end,
-  },
-}
-```
-
----
-
-## Troubleshooting
-
-### My venvs don't show up
-
-- Add a custom search targeting where your venvs live.
-- Ensure your `fd` regex matches the interpreter name (e.g., `python$` vs `python.exe$`).
-- If relying on `$WORKSPACE_PATH`, ensure LSP has attached.
-
-### VenvSelect is slow
-
-- Restrict `fd` scope, avoid unnecessary `-H`, and disable unused default searches.
-
-### Conda environments behave oddly
-
-- Make sure searches returning conda envs include `type = "anaconda"`.
-
----
-
-## Where to find more examples and reference
-
-- Configuration reference: `docs/OPTIONS.md`
-- Public API: `docs/API.md`
-- Examples: `examples/` (`statusline.lua`, `callbacks.lua`)
-- Changelog & releases: `CHANGELOG.md`
-- Default search templates: `lua/venv-selector/config.lua`
-
----

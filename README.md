@@ -14,7 +14,7 @@
   </p>
 </div>
 
----
+<br>
 
 ## 🚀 Quick start
 
@@ -25,7 +25,7 @@
 
 If you don't see your expected venvs in the picker, you can add your own searches. See `docs/USAGE.md` for examples.
 
----
+<br>
 
 ## ⚡️ Features
 
@@ -40,7 +40,7 @@ If you don't see your expected venvs in the picker, you can add your own searche
 - Picker backends: `telescope`, `fzf-lua`, `snacks`, `mini-pick`, `vim.ui.select`
 - Integrations: Lualine, NvChad, optional DAP support
 
----
+<br>
 
 ## 🧩 Requirements
 
@@ -54,7 +54,7 @@ If you don't see your expected venvs in the picker, you can add your own searche
 - `nvim-notify` — for nicer notifications
 - Nerd Font — for icons in certain pickers/statuslines
 
----
+<br>
 
 ## 🛠️ Install (example: lazy.nvim)
 
@@ -80,7 +80,7 @@ Notes:
 - The `:VenvSelectLog` command is available if you set the `log_level` option to `DEBUG` or `TRACE`.
 - There is also the `:VenvSelectCache` command, only available if the `cached_venv_automatic_activation` option is `false` (default is `true`).
 
----
+<br>
 
 ## 🛟 Troubleshooting
 
@@ -88,7 +88,7 @@ Start with setting the `log_level` option to `TRACE` or `DEBUG` and then use the
 
 See if you can understand the problem from the log. If you still have issues, open an issue with `:VenvSelectLog` output and your search config.
 
----
+<br>
 
 ## ❓ FAQ
 
@@ -101,7 +101,7 @@ See if you can understand the problem from the log. If you still have issues, op
 - **How does the plugin detect venvs?** By searching for interpreter binaries and recognizing common venv manager locations. PEP-723 metadata is supported if `uv` is available.
 
 
----
+<br>
 
 ## 🔗 Links & docs
 

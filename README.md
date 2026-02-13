@@ -1,6 +1,6 @@
-# 🎉 venv-selector.nvim
+# 🎉 Python Venv Selector
 
-A lightweight Neovim plugin to discover, browse, and activate Python virtual environments from inside Neovim — no restart required.
+ A simple neovim plugin to let you choose what virtual environment to activate in neovim. 
 
 [![Neovim >=0.11](https://img.shields.io/badge/Neovim-%3E%3D0.11-blue)](https://neovim.io) [![License: MIT](https://img.shields.io/badge/license-MIT-brightgreen)](LICENSE)
 
@@ -8,7 +8,7 @@ A lightweight Neovim plugin to discover, browse, and activate Python virtual env
 
 ---
 
-## Quick start
+## 🚀 Quick start
 
 1. Add the plugin to your plugin manager (example below for `lazy.nvim`).
 2. Open any Python file.
@@ -19,7 +19,7 @@ If you dont see your expected venvs in the picker, you can add your own searches
 
 ---
 
-## Features
+## ⚡️ Features
 
 - Switch virtual environments without restarting Neovim.
 - Switch between multiple python files using multiple lsps in different buffers.
@@ -34,20 +34,20 @@ If you dont see your expected venvs in the picker, you can add your own searches
 ---
 
 
-## Requirements
+## 🧩 Requirements
 
 - Neovim >= 0.11
 - `fd` or `fdfind` required for default searches
 - A picker plugin (Telescope is shown in picture)
 
-## Optional
+## ⚙️ Optional
 - `nvim-dap`, `nvim-dap-python`, `debugpy` — for debugger integration
 - `nvim-notify` — for nicer notifications
 - Nerd Font — for icons in certain pickers/statuslines
 
 ---
 
-## Install (example: lazy.nvim)
+## 🛠️ Install (example: lazy.nvim)
 
 Add this to your plugin specs (example):
 
@@ -73,7 +73,7 @@ Notes:
 
 ---
 
-## Troubleshooting
+## 🛟 Troubleshooting
 
 Start with setting the `log_level` option to `TRACE` or `DEBUG` and then use the `:VenvSelectLog` command after using `:VenvSelect`.
 
@@ -81,7 +81,7 @@ See if you can understand the problem from the log. If you still have issues, op
 
 ---
 
-## FAQ
+## ❓ FAQ
 
 - Q: Do I need to restart Neovim after switching venvs?
 - A: No. Activation is done in-process; new terminals opened after selection inherit the environment.
@@ -97,7 +97,7 @@ See if you can understand the problem from the log. If you still have issues, op
 
 ---
 
-## Links & docs
+## 🔗 Links & docs
 
 - Usage & examples: `docs/USAGE.md`
 - Options reference: `docs/OPTIONS.md`

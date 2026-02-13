@@ -1,14 +1,13 @@
-
-# Usage — venv-selector.nvim
+# 🧰 Usage — venv-selector.nvim
 
 Table of contents
-- Configuration structure
-- Creating your own searches
-- PEP-723 (`uv`) integration
+- ⚙️ Configuration structure
+- 🔎 Creating your own searches
+- 🧾 PEP-723 (`uv`) integration
 
 ---
 
-## Configuration structure
+## ⚙️ Configuration structure
 
 Top-level plugin configuration has two primary tables:
 
@@ -19,7 +18,7 @@ Refer to `docs/OPTIONS.md` for the complete reference.
 
 ---
 
-## Creating your own search
+## 🔎 Creating your own search
 
 - Start in the terminal and create your fd command.
 - Prefer narrow, explicit commands that target known locations.
@@ -31,11 +30,11 @@ Refer to `docs/OPTIONS.md` for the complete reference.
   - `$CURRENT_FILE` — currently open file
 
 
-### Examples
+### 🧪 Examples
 
 When creating a new search, make sure it gives the expected results in your terminal first.
 
-#### Linux and Mac
+#### 🐧 Linux and Mac
 
 Here we search for all pythons under the ~/Code directory. We need the result to be the full paths to the python interpreters.
 
@@ -59,20 +58,20 @@ $ `fd '/bin/python$' ~/Code --no-ignore-vcs --full-path`
 /home/cado/Code/Personal/fleet_python/venv/bin/python
 ```
 
-#### Windows
+#### 🪟 Windows
 
-Here we search for all pythons under the home directory. We want to match on all paths ending in `Scripts\\python.exe` since those are the venvs on Windows.
+Here we search for all pythons under the home directory. We want to match on all paths ending in `Scripts\\\\python.exe` since those are the venvs on Windows.
 
 ```
-tameb@WIN11 C:\Users\tameb>fd Scripts\\python.exe$ %USERPROFILE%\Code --full-path -I -a  
+tameb@WIN11 C:\Users\tameb>fd Scripts\\\\python.exe$ %USERPROFILE%\Code --full-path -I -a  
 C:\Users\tameb\Code\another_project\venv\Scripts\python.exe
 C:\Users\tameb\Code\manual\venv\Scripts\python.exe
 C:\Users\tameb\Code\sample_project\venv\Scripts\python.exe
 ```
 
-### Adding the fd search to VenvSelect config
+### ➕ Adding the fd search to VenvSelect config
 
-#### Linux and Mac
+#### 🐧 Linux and Mac
 
 ```
 search = {
@@ -82,7 +81,7 @@ search = {
 }
 ```
 
-#### Windows
+#### 🪟 Windows
 
 VenvSelect doesnt understand windows-specific variables like `%USERPROFILE%` but it does understand `$HOME`.
 
@@ -91,7 +90,7 @@ IMPORTANT: You need to put single quotes around the regexp and also escape the t
 ```
 search = {
   my_project_venvs = {
-    command = "fd 'Scripts\\\\python.exe$' $HOME/Code --full-path --color never -a",
+    command = "fd 'Scripts\\\\\\\\python.exe$' $HOME/Code --full-path --color never -a",
   }
 }
 ```
@@ -99,8 +98,7 @@ search = {
 
 ---
 
-
-## PEP-723 (`uv`) integration
+## 🧾 PEP-723 (`uv`) integration
 
 If you use PEP-723 style scripts, the plugin will read the metadata at the top of the file and create/activate the uv environment for you.
 
@@ -139,4 +137,3 @@ When you open a python file with this metadata, you will see this in the `VenvSe
 Your uv environment is activated and will use the dependencies you have specified. If you add or remove dependencies, or change python version, the plugin will again update the active uv environment for you.
 
 NOTE: You *dont use the picker* to select a venv for uv environments. The plugin activates the venv when you open a file with metadata automatically.
-

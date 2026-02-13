@@ -109,10 +109,3 @@ See if you can understand the problem from the log. If you still have issues, op
 
 <br>
 
-## 🔗 Links & docs
-
-- Usage & examples: `docs/USAGE.md`
-- Options reference: `docs/OPTIONS.md`
-- Public API: `docs/API.md`
-- Changelog: `CHANGELOG.md`
-- License: `LICENSE`

@@ -1,10 +1,6 @@
-# venv-selector.nvim — consolidated options example
-#
-# Paste the `options = { ... }` block below into your plugin config (inside
-# your plugin manager spec or wherever you call `require("venv-selector").setup`).
-# Each option line has an inline comment describing the default and what it does.
-#
-# Note: replace placeholder/example values with the settings you actually want.
+# Options to venv-selector.nvim
+
+## Full listing
 
 ```lua
 options = {
@@ -96,9 +92,38 @@ options = {
   -- Provide functions for statusline integrations that return a string.
   statusline_func = { nvchad = nil, lualine = nil },
 }
+```
 
--- Example `search` table placeholder: supply your own searches if you disabled defaults.
--- search = {
---   my_project_venvs = { command = "fd '/bin/python$' ~/Code --full-path --color never" },
---   my_conda = { command = "$FD 'python.exe$' $HOME/anaconda3 --full-path --color never", type = "anaconda" },
--- }
+## Examples
+
+Minimal callback examples (copy these into your `options = { ... }` table).
+
+```lua
+-- Example 1: show only the venv folder name in picker results
+options = {
+  -- on_telescope_result_callback: function(path) -> string
+  on_telescope_result_callback = function(path)
+    return vim.fn.fnamemodify(path, ":t")
+  end,
+}
+```
+
+```lua
+-- Example 2: do a tiny action when a venv is activated
+options = {
+  -- on_venv_activate_callback: function(venv_path, env_type)
+  on_venv_activate_callback = function(venv_path, _)
+    -- store a short name for statuslines or other UI
+    vim.g.venv_selector_status = venv_path and vim.fn.fnamemodify(venv_path, ":t") or ""
+    -- non-blocking user feedback
+    if venv_path and venv_path ~= "" then
+      vim.notify("Activated venv: " .. vim.g.venv_selector_status, vim.log.levels.INFO)
+    else
+      vim.notify("Deactivated venv", vim.log.levels.INFO)
+    end
+  end,
+}
+```
+
+These examples are intentionally minimal and safe to paste. If you want a combined full example (picker + statusline + callback) I can add one next.
+

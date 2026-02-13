@@ -96,7 +96,6 @@ options = {
 
 ## Examples
 
-Minimal callback examples (copy these into your `options = { ... }` table).
 
 ```lua
 -- Example 1: show only the venv folder name in picker results
@@ -109,18 +108,12 @@ options = {
 ```
 
 ```lua
--- Example 2: do a tiny action when a venv is activated
 options = {
   -- on_venv_activate_callback: function(venv_path, env_type)
   on_venv_activate_callback = function(venv_path, _)
     -- store a short name for statuslines or other UI
-    vim.g.venv_selector_status = venv_path and vim.fn.fnamemodify(venv_path, ":t") or ""
-    -- non-blocking user feedback
-    if venv_path and venv_path ~= "" then
-      vim.notify("Activated venv: " .. vim.g.venv_selector_status, vim.log.levels.INFO)
-    else
-      vim.notify("Deactivated venv", vim.log.levels.INFO)
-    end
+    local path = venv_path
+    vim.notify("Activated venv: " .. path, vim.log.levels.INFO)
   end,
 }
 ```

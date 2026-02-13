@@ -64,7 +64,7 @@ function M.activate(python_path, type, check_lsp)
     local on_venv_activate_callback = config.user_settings.options.on_venv_activate_callback
     if on_venv_activate_callback ~= nil then
         log.debug("Calling on_venv_activate_callback() function")
-        on_venv_activate_callback()
+        on_venv_activate_callback(python_path, type)
     end
 
     vim.g.venv_selector_activated = true

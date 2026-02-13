@@ -53,7 +53,7 @@ $ `fd '/bin/python$' ~/Code --no-ignore-vcs --full-path`
 
 #### 🪟 For Windows
 
-Here we search for all pythons under the home directory. We want to match on all paths ending in `Scripts\\\\python.exe` since those are the venvs on Windows.
+Here we search for all pythons under the home directory. We want to match on all paths ending in `Scripts\\python.exe` since those are the venvs on Windows.
 
 ```
 tameb@WIN11 C:\Users\tameb>fd Scripts\\python.exe$ %USERPROFILE%\Code --full-path -I -a  
@@ -74,6 +74,20 @@ search = {
 }
 ```
 
+If its a search for a conda-type environment, set the type to "anaconda" so the plugin sets the environment variable `CONDA_PREFIX` and not `VIRTUAL_ENV`.
+
+
+```
+search = {
+  my_conda_base = {
+    command = "fd '/bin/python$' /opt/anaconda3 --full-path --color never -E pkgs", -- exclude path with pkgs
+    type = "anaconda" -- its always anaconda, also for miniconda and similar envs
+  }
+}
+```
+
+Have a look at [config.lua](../lua/venv-selector/config.lua) to see the build-in searches and how they look.
+
 #### 🪟 Windows
 
 VenvSelect doesnt understand windows-specific variables like `%USERPROFILE%` but it does understand `$HOME`.
@@ -87,6 +101,21 @@ search = {
   }
 }
 ```
+
+If its a search for a conda-type environment, set the type to "anaconda" so the plugin sets the environment variable `CONDA_PREFIX` and not `VIRTUAL_ENV`.
+
+
+```
+search = {
+  my_conda_base = {
+    command = "$FD anaconda3//python.exe $HOME/anaconda3 --full-path -a",
+    type = "anaconda" -- its always anaconda, also for miniconda and similar envs
+  }
+}
+```
+
+Have a look at [config.lua](../lua/venv-selector/config.lua) to see the build-in searches and how they look.
+
 
 
 ---

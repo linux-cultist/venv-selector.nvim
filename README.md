@@ -38,7 +38,6 @@ If you don't see your expected venvs in the picker, you can add your own searche
 - Terminals start with selected venv active (sets `VIRTUAL_ENV` or `CONDA_PREFIX`).
 - Re-activates selected venv for the same workspace when you open a Python file.
 - Integrates with debuggers (nvim-dap / nvim-dap-python + debugpy), statuslines, and many pickers.
-- Add your own custom searches (fd/find/ls/any command) and regex/template variable support.
 - Picker backends: `telescope`, `fzf-lua`, `snacks`, `mini-pick`, `vim.ui.select`
 - Integrations: Lualine, NvChad, optional DAP support
 - [Many options to control behavior](docs/OPTIONS.md).

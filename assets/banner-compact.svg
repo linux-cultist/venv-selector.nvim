@@ -41,16 +41,6 @@
     <text class="title" x="0" y="14">venv-selector.nvim</text>
     <text class="tag" x="0" y="36">Discover & activate Python virtual environments inside Neovim</text>
 
-    <!-- compact badges -->
-    <g transform="translate(0,48)" aria-hidden="true">
-      <rect x="0" y="0" rx="8" ry="8" width="120" height="22" fill="#ffffff" opacity="0.06"/>
-      <text class="badge" x="12" y="16">Neovim ≥ 0.11</text>
-
-      <rect x="136" y="0" rx="8" ry="8" width="80" height="22" fill="#ffffff" opacity="0.06"/>
-      <text class="badge" x="148" y="16">MIT</text>
-    </g>
-  </g>
-
   <!-- Right: small preview frame (decorative) -->
   <g transform="translate(880,18)" aria-hidden="true">
     <rect x="0" y="0" rx="8" ry="8" width="280" height="84" fill="#071227" opacity="0.12"/>

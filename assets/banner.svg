@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg"
+     width="1200" height="240" viewBox="0 0 1200 240" role="img" aria-label="venv-selector banner">
+  <title>venv-selector.nvim</title>
+  <defs>
+    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#0f172a" />
+      <stop offset="100%" stop-color="#0b1220" />
+    </linearGradient>
+
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+
+    <style type="text/css"><![CDATA[
+      .title { font: 700 36px/1.1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial; fill: #fff; }
+      .subtitle { font: 400 16px/1.3 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial; fill: #cbd5e1; }
+      .badge { font: 600 13px/1 "Segoe UI", Roboto, "Helvetica Neue", Arial; fill: #0b1220; }
+    ]]></style>
+  </defs>
+
+  <!-- Background -->
+  <rect x="20" y="20" rx="16" ry="16" width="1160" height="200" fill="url(#bg)" filter="url(#shadow)"/>
+
+  <!-- Left column: title + subtitle -->
+  <g transform="translate(60,70)">
+    <!-- Emoji circle background (optional subtle visual) -->
+    <circle cx="28" cy="28" r="28" fill="#10b981" opacity="0.95"/>
+    <text x="18" y="36" font-size="26" text-anchor="middle" fill="#062017" style="font-weight:700">🐍</text>
+
+    <!-- Title -->
+    <text class="title" x="80" y="24">🎉 venv-selector.nvim</text>
+
+    <!-- Subtitle (wrap manually across two lines to avoid relying on external wrapping) -->
+    <text class="subtitle" x="80" y="56">
+      Discover and activate Python virtual environments inside Neovim — no restart required.
+    </text>
+
+    <!-- Badges drawn as rounded rects -->
+    <g transform="translate(80,84)">
+      <rect x="0" y="0" rx="8" ry="8" width="150" height="30" fill="#ffffff" opacity="0.08"/>
+      <text class="badge" x="12" y="20">Neovim ≥ 0.11</text>
+
+      <rect x="170" y="0" rx="8" ry="8" width="90" height="30" fill="#ffffff" opacity="0.08"/>
+      <text class="badge" x="182" y="20">MIT</text>
+
+      <rect x="270" y="0" rx="8" ry="8" width="120" height="30" fill="#ffffff" opacity="0.08"/>
+      <text class="badge" x="282" y="20">telescope · fzf-lua</text>
+    </g>
+  </g>
+
+  <!-- Right column: optional placeholder for a small screenshot box -->
+  <g transform="translate(760,48)">
+    <rect x="0" y="0" rx="8" ry="8" width="336" height="144" fill="#0b1220" opacity="0.12"/>
+    <rect x="8" y="8" rx="4" ry="4" width="320" height="128" fill="#071226" opacity="0.20"/>
+    <text x="168" y="78" text-anchor="middle" fill="#94a3b8" style="font: 400 12px/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;">
+      Screenshot preview (replace with venvselect.png in README)
+    </text>
+  </g>
+
+  <!-- Footer thin dividing line -->
+  <line x1="60" x2="1140" y1="220" y2="220" stroke="#ffffff" stroke-opacity="0.04" stroke-width="1"/>
+</svg>

@@ -30,9 +30,10 @@ If you don't see your expected venvs in the picker, you can add your own searche
 
 ## ⚡️ Features
 
+- [Creating your own searches](docs/USAGE.md#-creating-your-own-search) 
 - Switch virtual environments without restarting Neovim.
 - Switch between multiple python files using multiple LSPs in different buffers.
-- PEP-723 metadata support (via `uv`).
+- [PEP-723 (`uv`) integration](docs/USAGE.md#-pep-723-uv-integration).
 - Discover venvs automatically in common places and your workspace.
 - Terminals start with selected venv active (sets `VIRTUAL_ENV` or `CONDA_PREFIX`).
 - Re-activates selected venv for the same workspace when you open a Python file.

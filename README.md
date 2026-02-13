@@ -1,10 +1,18 @@
-# 🎉 Python Venv Selector
+<div align="center">
+  <h1>🎉 Python Venv Selector</h1>
+  <p>A simple Neovim plugin to let you choose what virtual environment to activate in Neovim.</p>
 
- A simple neovim plugin to let you choose what virtual environment to activate in neovim. 
+  <!-- Badges (use HTML so they remain centered) -->
+  <p>
+    <a href="https://neovim.io"><img alt="Neovim >=0.11" src="https://img.shields.io/badge/Neovim-%3E%3D0.11-blue"></a>
+    <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-brightgreen"></a>
+  </p>
 
-[![Neovim >=0.11](https://img.shields.io/badge/Neovim-%3E%3D0.11-blue)](https://neovim.io) [![License: MIT](https://img.shields.io/badge/license-MIT-brightgreen)](LICENSE)
-
-![venv-selector screenshot](venvselect.png)
+  <!-- Screenshot -->
+  <p>
+    <img src="venvselect.png" alt="venv-selector screenshot" style="max-width:720px; width:100%; height:auto;">
+  </p>
+</div>
 
 ---
 
@@ -15,24 +23,24 @@
 3. Trigger `:VenvSelect` or your mapped key (example `,v`).
 4. Choose a virtual environment — the plugin sets `VIRTUAL_ENV` or `CONDA_PREFIX` and updates terminals opened afterward.
 
-If you dont see your expected venvs in the picker, you can add your own searches. See `docs/USAGE.md` for examples.
+If you don't see your expected venvs in the picker, you can add your own searches. See `docs/USAGE.md` for examples.
 
 ---
 
 ## ⚡️ Features
 
 - Switch virtual environments without restarting Neovim.
-- Switch between multiple python files using multiple lsps in different buffers.
+- Switch between multiple python files using multiple LSPs in different buffers.
 - PEP-723 metadata support (via `uv`).
 - Discover venvs automatically in common places and your workspace.
-- Terminals start with selected venv active (sets `VIRTUAL_ENV` or `CONDA_PREFIX`)
-- Re-activates selected venv for the same workspace when you open a python file.
+- Terminals start with selected venv active (sets `VIRTUAL_ENV` or `CONDA_PREFIX`).
+- Re-activates selected venv for the same workspace when you open a Python file.
 - Integrates with debuggers (nvim-dap / nvim-dap-python + debugpy), statuslines, and many pickers.
 - Add your own custom searches (fd/find/ls/any command) and regex/template variable support.
 - Picker backends: `telescope`, `fzf-lua`, `snacks`, `mini-pick`, `vim.ui.select`
 - Integrations: Lualine, NvChad, optional DAP support
----
 
+---
 
 ## 🧩 Requirements
 
@@ -41,6 +49,7 @@ If you dont see your expected venvs in the picker, you can add your own searches
 - A picker plugin (Telescope is shown in picture)
 
 ## ⚙️ Optional
+
 - `nvim-dap`, `nvim-dap-python`, `debugpy` — for debugger integration
 - `nvim-notify` — for nicer notifications
 - Nerd Font — for icons in certain pickers/statuslines
@@ -51,19 +60,19 @@ If you dont see your expected venvs in the picker, you can add your own searches
 
 Add this to your plugin specs (example):
 
-```
-    {
-      "linux-cultist/venv-selector.nvim",
-      dependencies = {
-        { "nvim-telescope/telescope.nvim", version = "*", dependencies = { "nvim-lua/plenary.nvim" } },
-      },
-      ft = "python",
-      keys = { { ",v", "<cmd>VenvSelect<cr>" } }, -- example keybind
-      opts = {
-        options = {}, -- plugin-wide options
-        search = {}   -- custom search definitions
-      },
-    }
+```lua
+{
+  "linux-cultist/venv-selector.nvim",
+  dependencies = {
+    { "nvim-telescope/telescope.nvim", version = "*", dependencies = { "nvim-lua/plenary.nvim" } },
+  },
+  ft = "python",
+  keys = { { ",v", "<cmd>VenvSelect<cr>" } }, -- example keybind
+  opts = {
+    options = {}, -- plugin-wide options
+    search = {}   -- custom search definitions
+  },
+}
 ```
 
 Notes:
@@ -104,4 +113,3 @@ See if you can understand the problem from the log. If you still have issues, op
 - Public API: `docs/API.md`
 - Changelog: `CHANGELOG.md`
 - License: `LICENSE`
-

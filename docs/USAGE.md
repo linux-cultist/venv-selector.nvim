@@ -75,7 +75,7 @@ The docs are split into two different sections.
 <details>
 <summary>🐧 Linux and macOS config example</summary>
 <br>
-You can use relative paths here to specify search location, but make sure to use `--full-path` so `fd` always gives you back an absolute path to the results.
+You can use relative paths here to specify search location, but make sure to use `fd --full-path` so `fd` always gives you back an absolute path to the results.
 
 ```lua
 search = {
@@ -85,7 +85,7 @@ search = {
 }
 ```
 
-If it's a search for a conda-type environment, set the type to `\"anaconda\"` so the plugin sets the environment variable `CONDA_PREFIX` and not `VIRTUAL_ENV`:
+If it's a search for a conda-type environment, set the type to `anaconda` so the plugin sets the environment variable `CONDA_PREFIX` and not `VIRTUAL_ENV`:
 
 ```lua
 search = {

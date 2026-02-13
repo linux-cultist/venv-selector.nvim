@@ -28,7 +28,7 @@ Refer to `docs/OPTIONS.md` for the complete reference.
 When creating a new search, make sure it gives the expected results in your terminal first.
 
 <details>
-<summary>🐧 Linux and macOS</summary>
+<summary>🐧 Linux/macOS</summary>
 <br>
 Here we search for all pythons under the `~/Code` directory. We need the result to be the full paths to the python interpreters.
 
@@ -73,7 +73,7 @@ C:\Users\tameb\Code\sample_project\venv\Scripts\python.exe
 Once your fd search is working, you add it to your plugin config.
 
 <details>
-<summary>🐧 Linux and macOS</summary>
+<summary>🐧 Linux/macOS</summary>
 <br>
 You can use relative paths here to specify search location, but make sure to use `fd --full-path` so `fd` always gives you back an absolute path to the results.
     

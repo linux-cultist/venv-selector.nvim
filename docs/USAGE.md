@@ -27,9 +27,10 @@ Refer to `docs/OPTIONS.md` for the complete reference.
 
 When creating a new search, make sure it gives the expected results in your terminal first.
 
-#### 🐧 For Linux and Mac
+<details>
+<summary>🐧 Linux and macOS — terminal example output</summary>
 
-Here we search for all pythons under the ~/Code directory. We need the result to be the full paths to the python interpreters.
+Here we search for all pythons under the `~/Code` directory. We need the result to be the full paths to the python interpreters.
 
 ```
 $ `fd '/bin/python$' ~/Code --no-ignore-vcs --full-path`
@@ -51,7 +52,10 @@ $ `fd '/bin/python$' ~/Code --no-ignore-vcs --full-path`
 /home/cado/Code/Personal/fleet_python/venv/bin/python
 ```
 
-#### 🪟 For Windows
+</details>
+
+<details>
+<summary>🪟 Windows — terminal example output</summary>
 
 Here we search for all pythons under the home directory. We want to match on all paths ending in `Scripts\\python.exe` since those are the venvs on Windows.
 
@@ -61,6 +65,8 @@ C:\Users\tameb\Code\another_project\venv\Scripts\python.exe
 C:\Users\tameb\Code\manual\venv\Scripts\python.exe
 C:\Users\tameb\Code\sample_project\venv\Scripts\python.exe
 ```
+
+</details>
 
 ### ➕ Adding the fd search to VenvSelect config
 
@@ -77,7 +83,7 @@ search = {
 }
 ```
 
-If it's a search for a conda-type environment, set the type to `"anaconda"` so the plugin sets the environment variable `CONDA_PREFIX` and not `VIRTUAL_ENV`:
+If it's a search for a conda-type environment, set the type to `\"anaconda\"` so the plugin sets the environment variable `CONDA_PREFIX` and not `VIRTUAL_ENV`:
 
 ```lua
 search = {
@@ -99,7 +105,7 @@ VenvSelect doesn't understand Windows shell variables like `%USERPROFILE%` in th
 ```lua
 search = {
   my_project_venvs = {
-    command = "fd 'Scripts\\\\python.exe$' $HOME/Code --full-path --color never -a",
+    command = "fd 'Scripts\\\\\\\\python.exe$' $HOME/Code --full-path --color never -a",
   }
 }
 ```

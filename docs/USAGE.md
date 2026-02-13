@@ -23,7 +23,7 @@ Refer to `docs/OPTIONS.md` for the complete reference.
   - `$CURRENT_FILE` — currently open file
 
 
-### 🧪 Search examples
+### 🧪 1. Creating a fd search
 
 When creating a new search, make sure it gives the expected results in your terminal first.
 
@@ -68,7 +68,7 @@ C:\Users\tameb\Code\sample_project\venv\Scripts\python.exe
 
 </details>
 
-### ➕ Adding the fd search to VenvSelect config
+### ➕ 2. Adding the fd search to VenvSelect config
 
 Once your fd search is working, you add it to your plugin config.
 

@@ -1,10 +1,7 @@
-<div align="center">
-  <img src="assets/banner.svg" alt="venv-selector.nvim banner" width="100%" style="max-width:1200px;">
-</div>
 
+  <div align="center">
   <h1>🎉 venv-selector.nvim</h1>
 <p>Discover and activate Python virtual environments inside Neovim - no restart required.</p>
-  <div align="center">
   <p>
     <a href="https://neovim.io"><img alt="Neovim >=0.11" src="https://img.shields.io/badge/Neovim-%3E%3D0.11-blue"></a>
     <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-brightgreen"></a>

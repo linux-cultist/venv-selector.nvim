@@ -39,7 +39,8 @@ If you dont see your expected venvs in the picker, you can add your own searches
 - Neovim >= 0.11
 - `fd` or `fdfind` required for default searches
 - A picker plugin (Telescope is shown in picture)
-Optional:
+
+## Optional
 - `nvim-dap`, `nvim-dap-python`, `debugpy` — for debugger integration
 - `nvim-notify` — for nicer notifications
 - Nerd Font — for icons in certain pickers/statuslines
@@ -49,6 +50,8 @@ Optional:
 ## Install (example: lazy.nvim)
 
 Add this to your plugin specs (example):
+
+```
     {
       "linux-cultist/venv-selector.nvim",
       dependencies = {
@@ -61,6 +64,7 @@ Add this to your plugin specs (example):
         search = {}   -- custom search definitions
       },
     }
+```
 
 Notes:
 - The plugin creates the `:VenvSelect` command and lazy-loading it by `ft = "python"` is recommended.
@@ -71,25 +75,25 @@ Notes:
 
 ## Troubleshooting
 
-Start with setting the `log_level` option to `TRACE` or `DEBUG` and then use the `VenvSelectLog` command after using `VenvSelect`. You will see a lot of information about what the plugin is doing. You may be able to understand what the problem is just from looking at the log.
+Start with setting the `log_level` option to `TRACE` or `DEBUG` and then use the `:VenvSelectLog` command after using `:VenvSelect`.
 
-If you still have issues, consult `docs/USAGE.md` or open an issue with `:VenvSelect` output and your search config.
+See if you can understand the problem from the log. If you still have issues, open an issue with `:VenvSelectLog` output and your search config.
 
 ---
 
 ## FAQ
 
-Q: Do I need to restart Neovim after switching venvs?
-A: No. Activation is done in-process; new terminals opened after selection inherit the environment.
+- Q: Do I need to restart Neovim after switching venvs?
+- A: No. Activation is done in-process; new terminals opened after selection inherit the environment.
 
-Q: Will this change my system Python?
-A: No. It only sets environment variables within Neovim and spawned child processes.
+- Q: Will this change my system Python?
+- A: No. It only sets environment variables within Neovim and spawned child processes.
 
-Q: Can I automatically activate venvs per-project?
-A: The plugin caches the last selected venv per workspace and can re-activate it when you open files in the same workspace.
+- Q: Can I automatically activate venvs per-project?
+- A: The plugin caches the last selected venv per workspace and can re-activate it when you open files in the same workspace.
 
-Q: How does the plugin detect venvs?
-A: By searching for interpreter binaries and recognizing common venv manager locations. PEP-723 metadata is supported if `uv` is available.
+- Q: How does the plugin detect venvs?
+- A: By searching for interpreter binaries and recognizing common venv manager locations. PEP-723 metadata is supported if `uv` is available.
 
 ---
 

@@ -25,7 +25,7 @@
 
 If you don't see your expected venvs in the picker, you can add your own searches. See `docs/USAGE.md` for examples.
 
-<p align="center">· · ·</p>
+<br>
 
 ## ⚡️ Features
 

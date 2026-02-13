@@ -92,17 +92,14 @@ See if you can understand the problem from the log. If you still have issues, op
 
 ## ❓ FAQ
 
-- Q: Do I need to restart Neovim after switching venvs?
-- A: No. Activation is done in-process; new terminals opened after selection inherit the environment.
+- **Do I need to restart Neovim after switching venvs?** No — activation is done in-process; new terminals opened after selection inherit the environment.
 
-- Q: Will this change my system Python?
-- A: No. It only sets environment variables within Neovim and spawned child processes.
+- **Will this change my system Python?** No — it only sets environment variables within Neovim and spawned child processes.
 
-- Q: Can I automatically activate venvs per-project?
-- A: The plugin caches the last selected venv per workspace and can re-activate it when you open files in the same workspace.
+- **Can I automatically activate venvs per-project?** The plugin caches the last selected venv per workspace and can re-activate it when you open files in the same workspace.
 
-- Q: How does the plugin detect venvs?
-- A: By searching for interpreter binaries and recognizing common venv manager locations. PEP-723 metadata is supported if `uv` is available.
+- **How does the plugin detect venvs?** By searching for interpreter binaries and recognizing common venv manager locations. PEP-723 metadata is supported if `uv` is available.
+
 
 ---
 

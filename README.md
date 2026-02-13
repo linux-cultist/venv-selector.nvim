@@ -18,9 +18,13 @@
 1. Add the plugin to your plugin manager (example below for `lazy.nvim`).
 2. Open any Python file.
 3. Trigger `:VenvSelect` or your mapped key (example `,v`).
-4. Choose a virtual environment — the plugin sets `VIRTUAL_ENV` or `CONDA_PREFIX` and updates terminals opened afterward.
+4. Choose a virtual environment.
+5. Optionally open other python files in other projects and do steps 2-4 again.
+6. You can now switch between their buffers and the plugin remembers the selected venv for each project.
 
-If you don't see your expected venvs in the picker, you can add your own searches. See [docs/USAGE.md](docs/USAGE.md) for examples.
+The plugin configures your lsp to use the selected venv and also sets `VIRTUAL_ENV` or `CONDA_PREFIX` for use in terminals started from neovim.
+
+If you don't see your expected venvs in the picker, you can add your own searches. See [Creating your own search](docs/USAGE.md#creating-your-own-search) for examples.
 
 <br>
 
@@ -46,11 +50,11 @@ If you don't see your expected venvs in the picker, you can add your own searche
 - A picker plugin (Telescope is shown in picture)
 - `nvim-dap`, `nvim-dap-python`, `debugpy` — for debugger integration (optional)
 - `nvim-notify` — for nicer notifications (optional)
-- Nerd Font — for icons in certain pickers/statuslines
+- Nerd Font — for icons in certain pickers/statuslines (optional)
 
 <br>
 
-## 🛠️ Install (example: lazy.nvim)
+## 🛠️ Installation (example: lazy.nvim)
 
 Add this to your plugin specs (example):
 
@@ -69,7 +73,7 @@ Add this to your plugin specs (example):
 }
 ```
 
-Notes:
+Note:
 
 - The plugin creates the `:VenvSelect` command and lazy-loading it by `ft = "python"` is recommended.
 - The `:VenvSelectLog` command is available if you set the `log_level` option to `DEBUG` or `TRACE`.

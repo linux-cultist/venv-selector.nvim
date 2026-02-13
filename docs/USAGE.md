@@ -28,7 +28,7 @@ Refer to `docs/OPTIONS.md` for the complete reference.
 When creating a new search, make sure it gives the expected results in your terminal first.
 
 <details>
-<summary>🐧 Linux and macOS — fd in terminal</summary>
+<summary>🐧 Linux and macOS</summary>
 <br>
 Here we search for all pythons under the `~/Code` directory. We need the result to be the full paths to the python interpreters.
 
@@ -55,7 +55,7 @@ $ `fd '/bin/python$' ~/Code --no-ignore-vcs --full-path`
 </details>
 
 <details>
-<summary>🪟 Windows — fd in terminal</summary>
+<summary>🪟 Windows</summary>
 <br>
 Here we search for all pythons under the home directory. We want to match on all paths ending in `Scripts\\python.exe` since those are the venvs on Windows.
 
@@ -70,13 +70,13 @@ C:\Users\tameb\Code\sample_project\venv\Scripts\python.exe
 
 ### ➕ Adding the fd search to VenvSelect config
 
-The docs are split into two different sections.
+Once your fd search is working, you add it to your plugin config.
 
 <details>
-<summary>🐧 Linux and macOS config example</summary>
+<summary>🐧 Linux and macOS</summary>
 <br>
 You can use relative paths here to specify search location, but make sure to use `fd --full-path` so `fd` always gives you back an absolute path to the results.
-
+<br>
 ```lua
 search = {
   my_project_venvs = {
@@ -97,13 +97,15 @@ search = {
 ```
 
 Have a look at [config.lua](../lua/venv-selector/config.lua) to see the built-in searches and how they look.
+
 </details>
 
 <details>
-<summary>🪟 Windows config example</summary>
+<summary>🪟 Windows</summary>
 <br>
 VenvSelect doesn't understand Windows shell variables like `%USERPROFILE%`, but you can use `$HOME`. Its also important to escape backslashes on windows, see below.
-
+<br>
+    
 NOTE:
 - You *have to* escape each backslash in the regexp with another backslash.
 - 'Scripts\\python.exe' from the fd example becomes 'Scripts\\\\python.exe' in the plugin config.

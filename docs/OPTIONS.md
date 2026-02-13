@@ -4,7 +4,7 @@
 
 Options are passed via your plugin configuration. Example location for `lazy.nvim`:
 
-```lua
+```/dev/null/lazy-example.lua#L1-12
 {
   "linux-cultist/venv-selector.nvim",
   opts = {
@@ -21,30 +21,95 @@ Options are passed via your plugin configuration. Example location for `lazy.nvi
 
 ## 🧭 Global options reference
 
-Key | Default | Type | Description
---- | --- | --- | ---
-`on_venv_activate_callback` | `nil` | function or nil | Callback invoked after a venv activates. Useful to run autocommands or custom shell commands after activation.
-`enable_default_searches` | `true` | boolean | Enable/disable built-in default searches. Set to `false` to disable all built-in searches; or override individual searches in `search`.
-`enable_cached_venvs` | `true` | boolean | Use cached venvs that are reactivated automatically for known working directories.
-`cached_venv_automatic_activation` | `true` | boolean | If `false`, cached venvs won't activate automatically; the `VenvSelectCached` command can be used to activate them manually.
-`activate_venv_in_terminal` | `true` | boolean | If `true`, the plugin attempts to activate the selected interpreter inside terminals created from Neovim.
-`set_environment_variables` | `true` | boolean | Control whether the plugin sets environment variables like `VIRTUAL_ENV` or `CONDA_PREFIX` when activating a venv.
-`notify_user_on_venv_activation` | `false` | boolean | Display a notification when a venv is activated.
-`override_notify` | `true` | boolean | If `true` use `nvim-notify` (if installed) for notifications; otherwise use default `vim.notify`.
-`search_timeout` | `5` | number (seconds) | Timeout for individual search commands. If a search takes longer, it will be stopped.
-`debug` | `false` | boolean | Enable debug logging; when true you can use `:VenvSelectLog` to inspect debug output.
-`fd_binary_name` | `M.find_fd_command_name()` | string | The executable name used to run `fd`. Automatically detects `fd` or `fdfind`, override if needed.
-`require_lsp_activation` | `true` | boolean | If `true`, plugin waits for LSP workspace detection before setting environment variables.
-`shell` | `{ shell = vim.o.shell, shellcmdflag = vim.o.shellcmdflag }` | table | Override the shell and shell flags used when running search commands.
-`on_telescope_result_callback` | `nil` | function or nil | Callback used to transform/format each search result shown in the picker. Receives the raw filename and should return a display string.
-`picker_filter_type` | `"substring"` | string (`"substring"` or `"character"`) | How picker input filters results.
-`selected_venv_marker_color` | `"#00FF00"` | string | Hex color used for the selected venv marker in pickers that support colors.
-`selected_venv_marker_icon` | `"✔"` | string | Icon used to mark the selected venv in pickers.
-`picker_icons` | `{}` | table | Map of icons per venv type, e.g. `{ poetry = "📝", hatch = "🔨", default = "🐍" }`.
-`picker_columns` | `{ "marker", "search_icon", "search_name", "search_result" }` | array | Column order in pickers; omit columns to hide them.
-`picker_options` | `{}` | table | Picker-specific options (currently used by some pickers like snacks). Format varies by picker.
-`picker` | `"auto"` | string | Default picker to use: `"telescope"`, `"fzf-lua"`, `"snacks"`, `"native"`, `"mini-pick"`, or `"auto"`.
-`statusline_func` | `{ nvchad = nil, lualine = nil }` | table | Functions to customize statusline output. Provide `nvchad` and/or `lualine` keys with functions returning a string to display.
+Below each option is listed with its default value and type inline in the description for easier scanning. Use these in `require("venv-selector").setup({ options = { ... }, search = { ... } })`.
+
+### `on_venv_activate_callback`
+- Default: `nil` | Type: function or nil  
+Callback invoked after a venv activates. Useful to run autocommands, update statuslines or run custom shell commands after activation.
+
+### `enable_default_searches`
+- Default: `true` | Type: boolean  
+Enable/disable all built-in default searches. Set to `false` to disable the packaged searches and provide your own `search` table instead.
+
+### `enable_cached_venvs`
+- Default: `true` | Type: boolean  
+Use cached venvs that are reactivated automatically for known working directories.
+
+### `cached_venv_automatic_activation`
+- Default: `true` | Type: boolean  
+If `false`, cached venvs won't activate automatically; use the `:VenvSelectCached` command to manually activate cached entries.
+
+### `activate_venv_in_terminal`
+- Default: `true` | Type: boolean  
+When `true`, the plugin attempts to activate the selected interpreter inside terminals created from Neovim so new terminals inherit the venv.
+
+### `set_environment_variables`
+- Default: `true` | Type: boolean  
+Controls whether the plugin sets environment variables like `VIRTUAL_ENV` or `CONDA_PREFIX` when activating a venv.
+
+### `notify_user_on_venv_activation`
+- Default: `false` | Type: boolean  
+If `true`, show a user notification when a venv is activated.
+
+### `override_notify`
+- Default: `true` | Type: boolean  
+If `true`, and `nvim-notify` is installed, the plugin will use it; otherwise it falls back to `vim.notify`.
+
+### `search_timeout`
+- Default: `5` | Type: number (seconds)  
+Timeout (seconds) for individual search commands. Searches exceeding this duration will be stopped.
+
+### `debug`
+- Default: `false` | Type: boolean  
+Enable debug logging. When `true` you can use `:VenvSelectLog` to inspect verbose plugin output.
+
+### `fd_binary_name`
+- Default: result of `M.find_fd_command_name()` | Type: string  
+Executable name used to run `fd` (`fd`, `fdfind`, etc.). Auto-detected by default; override to force a specific binary.
+
+### `require_lsp_activation`
+- Default: `true` | Type: boolean  
+If `true`, the plugin waits for LSP workspace detection before setting environment variables (helps avoid activating wrong interpreter early).
+
+### `shell`
+- Default: `{ shell = vim.o.shell, shellcmdflag = vim.o.shellcmdflag }` | Type: table  
+Override the shell and shell flags used when running search commands. Example: `{ shell = "/usr/bin/fish", shellcmdflag = "-c" }`.
+
+### `on_telescope_result_callback`
+- Default: `nil` | Type: function or nil  
+Callback used to transform/format each search result shown in pickers like Telescope. Receives the raw filename and should return a display string.
+
+### `picker_filter_type`
+- Default: `"substring"` | Type: string (`"substring"` or `"character"`)  
+How picker input filters results. Use `"substring"` for normal substring matching or `"character"` for character-scoped filtering.
+
+### `selected_venv_marker_color`
+- Default: `"#00FF00"` | Type: string  
+Hex color used for the selected venv marker in pickers that support color rendering.
+
+### `selected_venv_marker_icon`
+- Default: `"✔"` | Type: string  
+Icon used to mark the selected venv in pickers. Can be emoji or plain text.
+
+### `picker_icons`
+- Default: `{}` | Type: table  
+Map of icons per venv type, e.g. `{ poetry = "📝", hatch = "🔨", default = "🐍" }`. Use this to customize per-search icons shown in pickers.
+
+### `picker_columns`
+- Default: `{ "marker", "search_icon", "search_name", "search_result" }` | Type: array  
+Column order in pickers; omit entries to hide columns. Columns control the picker's displayed fields.
+
+### `picker_options`
+- Default: `{}` | Type: table  
+Picker-specific options (used by some backends like `snacks`). Format varies by picker — see the picker's docs for details.
+
+### `picker`
+- Default: `"auto"` | Type: string  
+Default picker to use. Options: `"telescope"`, `"fzf-lua"`, `"snacks"`, `"native"`, `"mini-pick"`, or `"auto"` (auto-detect).
+
+### `statusline_func`
+- Default: `{ nvchad = nil, lualine = nil }` | Type: table  
+Functions to customize statusline output. Provide `nvchad` and/or `lualine` keys with functions returning a string to display in the statusline.
 
 ---
 
@@ -52,7 +117,7 @@ Key | Default | Type | Description
 
 Minimal: change the selected marker and enable debug:
 
-```lua
+```/dev/null/example1.lua#L1-8
 {
   options = {
     selected_venv_marker_icon = "🐍",
@@ -61,9 +126,9 @@ Minimal: change the selected marker and enable debug:
 }
 ```
 
-Customizing shell used for searches:
+Customizing the shell used for searches:
 
-```lua
+```/dev/null/example2.lua#L1-6
 {
   options = {
     shell = { shell = "/usr/bin/fish", shellcmdflag = "-c" }
@@ -71,25 +136,43 @@ Customizing shell used for searches:
 }
 ```
 
-Disabling a single default search (example: disable `workspace` search) — configure the top-level `search` table:
+Disable a single built-in search (example: disable `workspace`):
 
-```lua
+```/dev/null/example3.lua#L1-8
 {
   options = {},
   search = {
-    workspace = false,
+    workspace = false
   }
 }
 ```
 
-Disable all built-in searches:
+Disable all built-in searches and provide your own:
 
-```lua
+```/dev/null/example4.lua#L1-10
 {
-  options = {
-    enable_default_searches = false
-  },
+  options = { enable_default_searches = false },
+  search = {
+    my_project_venvs = {
+      command = "fd '/bin/python$' ~/Code --full-path --color never"
+    }
+  }
 }
 ```
 
 ---
+
+## 📝 Notes and best practices
+
+- Conda/anaconda: If you rely on conda-style environments, set your search entries to return `type = "anaconda"` so the plugin sets `CONDA_PREFIX` and other conda-specific variables correctly.
+- fd dependency: The plugin prefers `fd` (or `fdfind`) for default searches. If `fd` is not available on the user's system, provide alternative `search` entries (for example using `find` or a small custom script).
+- System Python caution: Be careful when calling activation helpers (e.g., `activate_from_path`) with the system Python path — these functions expect a venv path and may set environment variables incorrectly if used with a system-wide interpreter.
+- Performance: For very fast searches, limit the scope of your `fd` queries (avoid searching the entire home directory unless necessary; use `-HI`/directory arguments to narrow).
+- Defaults & code: For the annotated defaults and behavior, see `lua/venv-selector/config.lua` — the file contains the canonical defaults and search definitions.
+
+If you'd like, I can:
+- Group options into topical subsections (Search, Cache, UI, Debug, Picker) with icons for even clearer structure.
+- Add a compact "cheat-sheet" with the 6 most commonly tweaked options at the top.
+- Convert this list into a collapsible reference (so readers can expand only the sections they want).
+
+Tell me which follow-up you'd like and I'll update only the docs accordingly.

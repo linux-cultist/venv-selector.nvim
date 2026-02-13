@@ -1,17 +1,20 @@
 <div align="center">
-  <!-- Banner image (with background color) -->
-  <p>
-    <img src="assets/banner.svg" alt="venv-selector banner" style="max-width:100%; height:auto;">
-  </p>
+  <h1>🎉 Python Venv Selector</h1>
+  <p>A simple Neovim plugin to let you choose what virtual environment to activate in Neovim.</p>
 
-  <!-- Badges kept centered beneath the banner -->
+  <!-- Badges (use HTML so they remain centered) -->
   <p>
     <a href="https://neovim.io"><img alt="Neovim >=0.11" src="https://img.shields.io/badge/Neovim-%3E%3D0.11-blue"></a>
     <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-brightgreen"></a>
   </p>
+
+  <!-- Screenshot -->
+  <p>
+    <img src="venvselect.png" alt="venv-selector screenshot" style="max-width:720px; width:100%; height:auto;">
+  </p>
 </div>
 
-<p align="center">· · ·</p>
+---
 
 ## 🚀 Quick start
 
@@ -22,7 +25,7 @@
 
 If you don't see your expected venvs in the picker, you can add your own searches. See `docs/USAGE.md` for examples.
 
-<br>
+---
 
 ## ⚡️ Features
 
@@ -37,7 +40,7 @@ If you don't see your expected venvs in the picker, you can add your own searche
 - Picker backends: `telescope`, `fzf-lua`, `snacks`, `mini-pick`, `vim.ui.select`
 - Integrations: Lualine, NvChad, optional DAP support
 
-<p align="center">· · ·</p>
+---
 
 ## 🧩 Requirements
 
@@ -51,7 +54,7 @@ If you don't see your expected venvs in the picker, you can add your own searche
 - `nvim-notify` — for nicer notifications
 - Nerd Font — for icons in certain pickers/statuslines
 
-<p align="center">· · ·</p>
+---
 
 ## 🛠️ Install (example: lazy.nvim)
 
@@ -77,7 +80,7 @@ Notes:
 - The `:VenvSelectLog` command is available if you set the `log_level` option to `DEBUG` or `TRACE`.
 - There is also the `:VenvSelectCache` command, only available if the `cached_venv_automatic_activation` option is `false` (default is `true`).
 
-<p align="center">· · ·</p>
+---
 
 ## 🛟 Troubleshooting
 
@@ -85,7 +88,7 @@ Start with setting the `log_level` option to `TRACE` or `DEBUG` and then use the
 
 See if you can understand the problem from the log. If you still have issues, open an issue with `:VenvSelectLog` output and your search config.
 
-<p align="center">· · ·</p>
+---
 
 ## ❓ FAQ
 
@@ -98,7 +101,7 @@ See if you can understand the problem from the log. If you still have issues, op
 - **How does the plugin detect venvs?** By searching for interpreter binaries and recognizing common venv manager locations. PEP-723 metadata is supported if `uv` is available.
 
 
-<p align="center">· · ·</p>
+---
 
 ## 🔗 Links & docs
 

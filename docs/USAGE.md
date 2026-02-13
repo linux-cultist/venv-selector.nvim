@@ -64,9 +64,12 @@ C:\Users\tameb\Code\sample_project\venv\Scripts\python.exe
 
 ### ➕ Adding the fd search to VenvSelect config
 
-#### 🐧 Linux and Mac
+To keep the README/docs concise for different platforms, the examples below are placed inside collapsible sections — expand the section for your platform to copy the exact configuration.
 
-```
+<details>
+<summary>🐧 Linux and macOS examples</summary>
+
+```lua
 search = {
   my_project_venvs = {
     command = "fd '/bin/python$' ~/Code --full-path --color never",
@@ -74,27 +77,26 @@ search = {
 }
 ```
 
-If its a search for a conda-type environment, set the type to "anaconda" so the plugin sets the environment variable `CONDA_PREFIX` and not `VIRTUAL_ENV`.
+If it's a search for a conda-type environment, set the type to `"anaconda"` so the plugin sets the environment variable `CONDA_PREFIX` and not `VIRTUAL_ENV`:
 
-
-```
+```lua
 search = {
   my_conda_base = {
     command = "fd '/bin/python$' /opt/anaconda3 --full-path --color never -E pkgs", -- exclude path with pkgs
-    type = "anaconda" -- its always anaconda, also for miniconda and similar envs
+    type = "anaconda" -- it's anaconda-style environment (also for miniconda)
   }
 }
 ```
 
-Have a look at [config.lua](../lua/venv-selector/config.lua) to see the build-in searches and how they look.
+Have a look at [config.lua](../lua/venv-selector/config.lua) to see the built-in searches and how they look.
+</details>
 
-#### 🪟 Windows
+<details>
+<summary>🪟 Windows examples</summary>
 
-VenvSelect doesnt understand windows-specific variables like `%USERPROFILE%` but it does understand `$HOME`.
+VenvSelect doesn't understand Windows shell variables like `%USERPROFILE%` in the same way; prefer `$HOME`. IMPORTANT: you need single quotes around regexps and escape backslashes as shown.
 
-IMPORTANT: You need to put single quotes around the regexp and also escape the two slashes.
-
-```
+```lua
 search = {
   my_project_venvs = {
     command = "fd 'Scripts\\\\python.exe$' $HOME/Code --full-path --color never -a",
@@ -102,21 +104,19 @@ search = {
 }
 ```
 
-If its a search for a conda-type environment, set the type to "anaconda" so the plugin sets the environment variable `CONDA_PREFIX` and not `VIRTUAL_ENV`.
+For conda-style environments on Windows:
 
-
-```
+```lua
 search = {
   my_conda_base = {
     command = "$FD anaconda3//python.exe $HOME/anaconda3 --full-path -a",
-    type = "anaconda" -- its always anaconda, also for miniconda and similar envs
+    type = "anaconda" -- anaconda-style environment
   }
 }
 ```
 
-Have a look at [config.lua](../lua/venv-selector/config.lua) to see the build-in searches and how they look.
-
-
+Have a look at [config.lua](../lua/venv-selector/config.lua) to see the built-in searches and how they look.
+</details>
 
 ---
 
@@ -158,4 +158,4 @@ When you open a python file with this metadata, you will see this in the `VenvSe
 
 Your uv environment is activated and will use the dependencies you have specified. If you add or remove dependencies, or change python version, the plugin will again update the active uv environment for you.
 
-NOTE: You *dont use the picker* to select a venv for uv environments. The plugin activates the venv when you open a file with metadata automatically.
+NOTE: You *don't use the picker* to select a venv for uv environments. The plugin activates the venv when you open a file with metadata automatically.

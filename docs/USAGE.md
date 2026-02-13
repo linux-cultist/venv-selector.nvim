@@ -1,4 +1,4 @@
-# 🧰 Usage — venv-selector.nvim
+# 🧰 Usage of venv-selector.nvim
 
 ## ⚙️ Configuration structure
 
@@ -7,7 +7,7 @@ Top-level plugin configuration has two primary tables:
 - `options` — global behavior & callbacks (picker choice, misc flags, integrations)
 - `search` — your own custom searches if venvs are not found automatically
 
-Refer to [docs/OPTIONS.md](OPTIONS.md) for complete reference.
+Refer to [docs/OPTIONS.md](OPTIONS.md) for complete reference of options you can set.
 
 ---
 
@@ -154,7 +154,7 @@ Example of metadata header in your python file:
 # ///
 ```
 
-When you open a python file with this metadata, you will see this in the `VenvSelectLog` (if `log_level` is set to `TRACE` or `DEBUG`):
+When you open a python file with this metadata, you will see this in the `VenvSelectLog` (if `log_level` option is set to `TRACE` or `DEBUG`):
 
 ```
 2026-02-13 10:39:04 [DEBUG]: uv sync: Updating script environment at: /home/cado/.cache/uv/environments-v2/uvtest3-d4fa1d9bee5f848f
@@ -171,6 +171,11 @@ When you open a python file with this metadata, you will see this in the `VenvSe
 2026-02-13 10:39:04 [DEBUG]: uv sync:  + urllib3==1.26.20
 ```
 
-Your uv environment is activated and will use the dependencies you have specified. If you add or remove dependencies, or change python version, the plugin will again update the active uv environment for you.
+Your uv environment is activated and will use the dependencies you have specified.
+
+If you add or remove dependencies, or change python version, the plugin will update the environment for you when you save the file.
+
+You can work with multiple uv files in different neovim buffers and switch between them. New terminals will also use the uv environment.
 
 NOTE: You *don't use the picker* to select a venv for uv environments. The plugin activates the venv when you open a file with metadata automatically.
+

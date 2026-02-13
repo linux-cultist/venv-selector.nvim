@@ -1,16 +1,4 @@
-# Plugin options — venv-selector.nvim
-
-This document describes the global configuration options available for `venv-selector.nvim`.
-Place these options in your plugin setup (for example in the `opts` table for `lazy.nvim`
-or when calling the plugin setup function) to customize behavior.
-
-Quick links:
-- For custom searches, callbacks etc, see `docs/USAGE.md`.
-- For exposed functions and API usage see `docs/API.md`.
-- Default searches and search-related configuration are in `lua/venv-selector/config.lua`.
-- For examples (statusline, callbacks, picker customizations) check `examples/`
-
----
+# Options of venv-selector.nvim
 
 ## How options are applied
 

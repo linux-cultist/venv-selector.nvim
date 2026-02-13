@@ -2,17 +2,14 @@
   <img src="assets/banner.svg" alt="venv-selector.nvim banner" width="100%" style="max-width:1200px;">
 </div>
 
-<div align="center">
-  <h1>🎉 Python Venv Selector</h1>
-  <p>A simple Neovim plugin to let you choose what virtual environment to activate in Neovim.</p>
-
-  <!-- Badges (use HTML so they remain centered) -->
+  <h1>🎉 venv-selector.nvim</h1>
+<p>Discover and activate Python virtual environments inside Neovim - no restart required.</p>
+  <div align="center">
   <p>
     <a href="https://neovim.io"><img alt="Neovim >=0.11" src="https://img.shields.io/badge/Neovim-%3E%3D0.11-blue"></a>
     <a href="LICENSE"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-brightgreen"></a>
   </p>
 
-  <!-- Screenshot -->
   <p>
     <img src="venvselect.png" alt="venv-selector screenshot" style="max-width:720px; width:100%; height:auto;">
   </p>

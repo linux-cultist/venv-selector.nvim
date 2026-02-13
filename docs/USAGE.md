@@ -1,12 +1,5 @@
 # 🧰 Usage — venv-selector.nvim
 
-Table of contents
-- ⚙️ Configuration structure
-- 🔎 Creating your own searches
-- 🧾 PEP-723 (`uv`) integration
-
----
-
 ## ⚙️ Configuration structure
 
 Top-level plugin configuration has two primary tables:
@@ -30,11 +23,11 @@ Refer to `docs/OPTIONS.md` for the complete reference.
   - `$CURRENT_FILE` — currently open file
 
 
-### 🧪 Examples
+### 🧪 Search examples
 
 When creating a new search, make sure it gives the expected results in your terminal first.
 
-#### 🐧 Linux and Mac
+#### 🐧 For Linux and Mac
 
 Here we search for all pythons under the ~/Code directory. We need the result to be the full paths to the python interpreters.
 
@@ -58,7 +51,7 @@ $ `fd '/bin/python$' ~/Code --no-ignore-vcs --full-path`
 /home/cado/Code/Personal/fleet_python/venv/bin/python
 ```
 
-#### 🪟 Windows
+#### 🪟 For Windows
 
 Here we search for all pythons under the home directory. We want to match on all paths ending in `Scripts\\\\python.exe` since those are the venvs on Windows.
 
@@ -90,7 +83,7 @@ IMPORTANT: You need to put single quotes around the regexp and also escape the t
 ```
 search = {
   my_project_venvs = {
-    command = "fd 'Scripts\\\\\\\\python.exe$' $HOME/Code --full-path --color never -a",
+    command = "fd 'Scripts\\\\python.exe$' $HOME/Code --full-path --color never -a",
   }
 }
 ```

@@ -37,13 +37,4 @@
     </text>
 
 
-  <!-- Right column: embedded screenshot box -->
-  <g transform="translate(760,48)">
-    <rect x="0" y="0" rx="8" ry="8" width="336" height="144" fill="#0b1220" opacity="0.12"/>
-    <rect x="8" y="8" rx="4" ry="4" width="320" height="128" fill="#071226" opacity="0.20"/>
-    <image href="../venvselect.png" x="8" y="8" width="320" height="128" preserveAspectRatio="xMidYMid slice" />
-  </g>
-
-  <!-- Footer thin dividing line -->
-  <line x1="60" x2="1140" y1="220" y2="220" stroke="#ffffff" stroke-opacity="0.04" stroke-width="1"/>
 </svg>

@@ -1,40 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg"
-     width="1200" height="240" viewBox="0 0 1200 240" role="img" aria-label="venv-selector banner">
-  <title>venv-selector.nvim</title>
+     width="1200" height="240" viewBox="0 0 1200 240" role="img" aria-labelledby="title desc">
+  <title id="title">venv-selector.nvim — header</title>
+  <desc id="desc">Compact header showing a green circle with a python emoji, the project title and a short subtitle.</desc>
+
   <defs>
-    <linearGradient id="bg" x1="0" x2="1" y1="0" y2="1">
-      <stop offset="0%" stop-color="#0f172a" />
-      <stop offset="100%" stop-color="#0b1220" />
+    <linearGradient id="bgGrad" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#071029" />
+      <stop offset="100%" stop-color="#081427" />
     </linearGradient>
 
     <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#000" flood-opacity="0.35"/>
+      <feDropShadow dx="0" dy="8" stdDeviation="14" flood-color="#000" flood-opacity="0.35"/>
     </filter>
 
     <style type="text/css"><![CDATA[
-      .title { font: 700 36px/1.1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial; fill: #fff; }
-      .subtitle { font: 400 16px/1.3 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial; fill: #cbd5e1; }
-      .badge { font: 600 13px/1 "Segoe UI", Roboto, "Helvetica Neue", Arial; fill: #0b1220; }
+      .panel { fill: url(#bgGrad); }
+      .title { font: 700 40px/1.1 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial; fill: #ffffff; }
+      .subtitle { font: 400 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial; fill: #cbd5e1; }
     ]]></style>
   </defs>
 
-  <!-- Background -->
-  <rect x="20" y="20" rx="16" ry="16" width="1160" height="200" fill="url(#bg)" filter="url(#shadow)"/>
+  <!-- Background panel -->
+  <rect x="24" y="24" rx="16" ry="16" width="1152" height="192" class="panel" filter="url(#shadow)"/>
 
-  <!-- Left column: title + subtitle -->
-  <g transform="translate(60,70)">
-    <!-- Emoji circle background (optional subtle visual) -->
-    <circle cx="28" cy="28" r="28" fill="#10b981" opacity="0.95"/>
-    <text x="18" y="36" font-size="26" text-anchor="middle" fill="#062017" style="font-weight:700">🐍</text>
+  <!-- Left: green circle with emoji -->
+  <g transform="translate(72,60)" aria-hidden="true">
+    <circle cx="36" cy="36" r="36" fill="#10b981" />
+    <text x="36" y="46" text-anchor="middle" font-size="32" fill="#042118" style="font-weight:700">🐍</text>
+  </g>
 
-    <!-- Title -->
-    <text class="title" x="80" y="24">🎉 venv-selector.nvim</text>
-
-    <!-- Subtitle (wrap manually across two lines to avoid relying on external wrapping) -->
-    <text class="subtitle" x="80" y="56">
-      Discover and activate Python virtual environments inside Neovim — no restart required.
-    </text>
-
-
+  <!-- Title + subtitle -->
+  <g transform="translate(140,74)">
+    <text class="title" x="0" y="28">venv-selector.nvim</text>
+    <text class="subtitle" x="0" y="60">Discover and activate Python virtual environments inside Neovim — no restart required.</text>
+  </g>
 </svg>

@@ -7,8 +7,7 @@ Top-level plugin configuration has two primary tables:
 - `options` — global behavior & callbacks (picker choice, misc flags, integrations)
 - `search` — your own custom searches if venvs are not found automatically
 
-Refer to `docs/OPTIONS.md` for the complete reference.
-
+- [Refer to `docs/OPTIONS.md` for complete reference.](docs/OPTIONS.md).
 ---
 
 ## 🔎 Creating your own searches

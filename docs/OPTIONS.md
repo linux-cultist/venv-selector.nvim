@@ -1,11 +1,9 @@
 # ⚙️ venv-selector.nvim — Options reference
 
-This file groups plugin options into topical collapsible sections with short descriptions and ready-to-copy Lua examples. Expand the section for the options you need.
+This document lists plugin options grouped by topic. Each option shows its default value and type inline next to the name. Expand the section you need and copy the short, ready-to-use Lua snippet (shown as `options = { ... }`) into your plugin configuration.
 
-Use these options inside your plugin configuration, e.g.:
-
-```lua
--- in your plugin manager or init.lua
+Use these options inside your plugin configuration, for example:
+```/dev/null/usage-quickstart.lua#L1-4
 options = {
   -- set plugin options here
 }
@@ -16,37 +14,33 @@ options = {
 <details>
 <summary>🔎 Search & discovery options</summary>
 
-- 🔍 `enable_default_searches`  
-  Default: `true` — Type: boolean  
-  Enable/disable the built-in packaged searches. Set to `false` if you want to provide your own `search` table.
+🔹 `enable_default_searches` (default: `true`, type: boolean)  
+Enable or disable the built-in packaged searches. Set to `false` to provide your own `search` table.
 
-  ```lua
-  options = { enable_default_searches = false }
-  ```
+```/dev/null/options-examples.lua#L1-1
+options = { enable_default_searches = false }
+```
 
-- ⏱️ `search_timeout`  
-  Default: `5` — Type: number (seconds)  
-  Stop individual search commands after this many seconds.
+🔹 `search_timeout` (default: `5`, type: number)  
+Timeout in seconds to stop an individual search command if it runs too long.
 
-  ```lua
-  options = { search_timeout = 8 }
-  ```
+```/dev/null/options-examples.lua#L2-2
+options = { search_timeout = 8 }
+```
 
-- 🧭 `fd_binary_name`  
-  Default: auto-detected (e.g. `fd` / `fdfind`) — Type: string  
-  Force which `fd` binary is called. Useful on distros where the binary name differs.
+🔹 `fd_binary_name` (default: auto-detected, type: string)  
+Force which `fd` binary to call (e.g. `"fd"` or `"fdfind"`). Useful for distributions with different binary names.
 
-  ```lua
-  options = { fd_binary_name = "fdfind" }
-  ```
+```/dev/null/options-examples.lua#L3-3
+options = { fd_binary_name = "fdfind" }
+```
 
-- 🏷️ `picker_icons`  
-  Default: `{}` — Type: table  
-  Map icons per search/venv type shown in pickers: `{ poetry = "📝", hatch = "🔨", default = "🐍" }`.
+🔹 `picker_icons` (default: `{}`, type: table)  
+Map of icons to show per venv/search type in pickers. Example: `{ poetry = "📝", hatch = "🔨", default = "🐍" }`.
 
-  ```lua
-  options = { picker_icons = { poetry = "📝", hatch = "🔨", default = "🐍" } }
-  ```
+```/dev/null/options-examples.lua#L4-4
+options = { picker_icons = { poetry = "📝", default = "🐍" } }
+```
 
 </details>
 
@@ -55,31 +49,28 @@ options = {
 <details>
 <summary>🗃️ Cache & workspace activation</summary>
 
-- 🗄️ `enable_cached_venvs`  
-  Default: `true` — Type: boolean  
-  Save & re-apply the last-selected venv per workspace.
+🔹 `enable_cached_venvs` (default: `true`, type: boolean)  
+Enable saving the last-selected venv per workspace and re-applying it automatically when you reopen the workspace.
 
-  ```lua
-  options = { enable_cached_venvs = true }
-  ```
+```/dev/null/options-examples.lua#L5-5
+options = { enable_cached_venvs = true }
+```
 
-- ⚙️ `cached_venv_automatic_activation`  
-  Default: `true` — Type: boolean  
-  If `false`, cached venvs won't activate automatically; use `:VenvSelectCached` to apply them manually.
+🔹 `cached_venv_automatic_activation` (default: `true`, type: boolean)  
+If `false`, cached venvs won't be activated automatically; use `:VenvSelectCached` to activate cached entries manually.
 
-  ```lua
-  options = { cached_venv_automatic_activation = false }
-  ```
+```/dev/null/options-examples.lua#L6-6
+options = { cached_venv_automatic_activation = false }
+```
 
-- 📁 `cache.file` (advanced)  
-  Default: `~/.cache/venv-selector/venvs2.json` — Type: string  
-  Path to on-disk cache; advanced override.
+🔹 `cache.file` (default: `~/.cache/venv-selector/venvs2.json`, type: string) — advanced  
+Path to the on-disk cache file (advanced override).
 
-  ```lua
-  -- advanced / not common
-  options = {}
-  settings = { cache = { file = vim.fn.expand("~/.cache/my-venv-cache.json") } }
-  ```
+```/dev/null/options-examples.lua#L7-8
+-- advanced override (not commonly needed)
+options = {}
+settings = { cache = { file = vim.fn.expand("~/.cache/my-venv-cache.json") } }
+```
 
 </details>
 
@@ -88,29 +79,26 @@ options = {
 <details>
 <summary>🖥️ Terminal, environment & shell</summary>
 
-- 🧪 `activate_venv_in_terminal`  
-  Default: `true` — Type: boolean  
-  Try to activate the selected venv in new terminals opened from Neovim so they inherit the environment.
+🔹 `activate_venv_in_terminal` (default: `true`, type: boolean)  
+Attempt to activate the selected venv in terminals spawned from Neovim so new terminals inherit the environment.
 
-  ```lua
-  options = { activate_venv_in_terminal = true }
-  ```
+```/dev/null/options-examples.lua#L9-9
+options = { activate_venv_in_terminal = true }
+```
 
-- 🌐 `set_environment_variables`  
-  Default: `true` — Type: boolean  
-  Whether the plugin sets `VIRTUAL_ENV` or `CONDA_PREFIX` on activation.
+🔹 `set_environment_variables` (default: `true`, type: boolean)  
+Whether to set `VIRTUAL_ENV` or `CONDA_PREFIX` when activating a venv.
 
-  ```lua
-  options = { set_environment_variables = true }
-  ```
+```/dev/null/options-examples.lua#L10-10
+options = { set_environment_variables = true }
+```
 
-- 🐚 `shell`  
-  Default: `{ shell = vim.o.shell, shellcmdflag = vim.o.shellcmdflag }` — Type: table  
-  Override the shell and shell flags used when running search commands (useful for Fish, etc.).
+🔹 `shell` (default: `{ shell = vim.o.shell, shellcmdflag = vim.o.shellcmdflag }`, type: table)  
+Override the shell and shell flags used when running search commands (useful for Fish or custom shells).
 
-  ```lua
-  options = { shell = { shell = "/usr/bin/fish", shellcmdflag = "-c" } }
-  ```
+```/dev/null/options-examples.lua#L11-11
+options = { shell = { shell = "/usr/bin/fish", shellcmdflag = "-c" } }
+```
 
 </details>
 
@@ -119,53 +107,47 @@ options = {
 <details>
 <summary>🧭 Picker & UI options</summary>
 
-- 🧰 `picker`  
-  Default: `"auto"` — Type: string  
-  Which picker backend to use: `"telescope"`, `"fzf-lua"`, `"snacks"`, `"native"`, `"mini-pick"`, or `"auto"`.
+🔹 `picker` (default: `"auto"`, type: string)  
+Which picker backend to use: `"telescope"`, `"fzf-lua"`, `"snacks"`, `"native"`, `"mini-pick"`, or `"auto"` (auto-detect).
 
-  ```lua
-  options = { picker = "telescope" }
-  ```
+```/dev/null/options-examples.lua#L12-12
+options = { picker = "telescope" }
+```
 
-- 🔎 `picker_filter_type`  
-  Default: `"substring"` — Type: string (`"substring"` or `"character"`)  
-  How typed input filters picker results.
+🔹 `picker_filter_type` (default: `"substring"`, type: string)  
+Mode for filtering input in pickers: `"substring"` or `"character"`.
 
-  ```lua
-  options = { picker_filter_type = "character" }
-  ```
+```/dev/null/options-examples.lua#L13-13
+options = { picker_filter_type = "character" }
+```
 
-- ✅ `selected_venv_marker_icon`  
-  Default: `"✔"` — Type: string  
-  Icon used to mark the selected venv in pickers (emoji or text).
+🔹 `selected_venv_marker_icon` (default: `"✔"`, type: string)  
+Icon used in pickers to mark the currently selected venv (emoji or plain text).
 
-  ```lua
-  options = { selected_venv_marker_icon = "🐍" }
-  ```
+```/dev/null/options-examples.lua#L14-14
+options = { selected_venv_marker_icon = "🐍" }
+```
 
-- 🎨 `selected_venv_marker_color`  
-  Default: `"#00FF00"` — Type: string  
-  Hex color used for the selected marker (pickers supporting color).
+🔹 `selected_venv_marker_color` (default: `"#00FF00"`, type: string)  
+Hex color used for the selected marker in pickers that support color rendering.
 
-  ```lua
-  options = { selected_venv_marker_color = "#10B981" }
-  ```
+```/dev/null/options-examples.lua#L15-15
+options = { selected_venv_marker_color = "#10B981" }
+```
 
-- 📐 `picker_columns`  
-  Default: `{ "marker", "search_icon", "search_name", "search_result" }` — Type: array  
-  Column order in pickers; remove entries to hide columns.
+🔹 `picker_columns` (default: `{ "marker", "search_icon", "search_name", "search_result" }`, type: array)  
+Define which columns appear and their order in pickers; remove entries to hide columns.
 
-  ```lua
-  options = { picker_columns = { "marker", "search_name", "search_result" } }
-  ```
+```/dev/null/options-examples.lua#L16-16
+options = { picker_columns = { "marker", "search_name", "search_result" } }
+```
 
-- ⚙️ `picker_options`  
-  Default: `{}` — Type: table  
-  Backend-specific picker options (e.g., snacks layout presets).
+🔹 `picker_options` (default: `{}`, type: table)  
+Pass backend-specific options (e.g., `snacks` layout presets).
 
-  ```lua
-  options = { picker_options = { snacks = { layout = { preset = "select" } } } }
-  ```
+```/dev/null/options-examples.lua#L17-17
+options = { picker_options = { snacks = { layout = { preset = "select" } } } }
+```
 
 </details>
 
@@ -174,33 +156,28 @@ options = {
 <details>
 <summary>🔔 Notifications & hooks</summary>
 
-- 🔔 `notify_user_on_venv_activation`  
-  Default: `false` — Type: boolean  
-  Show a user notification when a venv is activated.
+🔹 `notify_user_on_venv_activation` (default: `false`, type: boolean)  
+Show a notification when a venv is activated.
 
-  ```lua
-  options = { notify_user_on_venv_activation = true }
-  ```
+```/dev/null/options-examples.lua#L18-18
+options = { notify_user_on_venv_activation = true }
+```
 
-- 🔁 `override_notify`  
-  Default: `true` — Type: boolean  
-  Use `nvim-notify` (if installed) instead of `vim.notify` for nicer notifications.
+🔹 `override_notify` (default: `true`, type: boolean)  
+If `true` and `nvim-notify` is installed, use it instead of `vim.notify` for nicer notifications.
 
-  ```lua
-  options = { override_notify = true }
-  ```
+```/dev/null/options-examples.lua#L19-19
+options = { override_notify = true }
+```
 
-- 🪝 `on_venv_activate_callback`  
-  Default: `nil` — Type: function or nil  
-  Callback invoked after activation. Receives `(venv_path, env_type)`.
+🔹 `on_venv_activate_callback` (default: `nil`, type: function or nil)  
+Callback invoked after activation. Receives `(venv_path, env_type)`.
 
-  ```lua
-  options = {
-    on_venv_activate_callback = function(venv_path, env_type)
-      print("Activated venv:", venv_path, "type:", env_type)
-    end
-  }
-  ```
+```/dev/null/options-examples.lua#L20-20
+options = {
+  on_venv_activate_callback = function(venv_path, env_type) print("Activated:", venv_path, env_type) end
+}
+```
 
 </details>
 
@@ -209,46 +186,33 @@ options = {
 <details>
 <summary>🐞 Debugging & advanced</summary>
 
-- 🐛 `debug`  
-  Default: `false` — Type: boolean  
-  Enable verbose plugin logging. Use `:VenvSelectLog` to inspect logs.
+🔹 `debug` (default: `false`, type: boolean)  
+Enable verbose plugin logging. Use `:VenvSelectLog` to inspect logs.
 
-  ```lua
-  options = { debug = true }
-  ```
+```/dev/null/options-examples.lua#L21-21
+options = { debug = true }
+```
 
-- 🧩 `on_telescope_result_callback`  
-  Default: `nil` — Type: function or nil  
-  Transform picker results (e.g., shorten displayed path). Receives the raw filename and returns a display string.
+🔹 `on_telescope_result_callback` (default: `nil`, type: function or nil)  
+Transform picker results for display (e.g., shorten paths). Receives raw filename and returns display string.
 
-  ```lua
-  options = {
-    on_telescope_result_callback = function(path)
-      return vim.fn.fnamemodify(path, ":~")
-    end
-  }
-  ```
+```/dev/null/options-examples.lua#L22-22
+options = { on_telescope_result_callback = function(path) return vim.fn.fnamemodify(path, ":~") end }
+```
 
-- 🧭 `require_lsp_activation`  
-  Default: `true` — Type: boolean  
-  Wait for LSP workspace detection before setting environment variables (helps avoid premature activation).
+🔹 `require_lsp_activation` (default: `true`, type: boolean)  
+Wait for LSP workspace detection before setting environment variables to avoid premature activation.
 
-  ```lua
-  options = { require_lsp_activation = true }
-  ```
+```/dev/null/options-examples.lua#L23-23
+options = { require_lsp_activation = true }
+```
 
-- 📊 `statusline_func`  
-  Default: `{ nvchad = nil, lualine = nil }` — Type: table  
-  Provide functions to return statusline text for supported statusline plugins.
+🔹 `statusline_func` (default: `{ nvchad = nil, lualine = nil }`, type: table)  
+Provide functions that return status text for supported statusline integrations.
 
-  ```lua
-  options = {
-    statusline_func = {
-      lualine = function() return require("venv-selector").get_status() end,
-      nvchad = function() return require("venv-selector").get_status() end
-    }
-  }
-  ```
+```/dev/null/options-examples.lua#L24-24
+options = { statusline_func = { lualine = function() return require("venv-selector").get_status() end } }
+```
 
 </details>
 
@@ -258,22 +222,22 @@ options = {
 
 - Minimal commonly-used tweaks:
 
-```lua
+```/dev/null/examples/minimal.lua#L1-1
 options = { debug = true, picker = "auto", selected_venv_marker_icon = "🐍" }
 ```
 
 - Disable built-ins and add a custom `fd` search:
 
-```lua
+```/dev/null/examples/custom_search.lua#L1-3
 options = { enable_default_searches = false }
-search = {
-  my_project_venvs = { command = "fd '/bin/python$' ~/Code --full-path --color never" }
-}
+search = { my_project_venvs = { command = "fd '/bin/python$' ~/Code --full-path --color never" } }
 ```
 
 ---
 
-If you want I can:
-- Re-group to fewer high-level categories (Search / Picker / Notifications / Cache) and collapse each by default.
-- Add a short "cheat-sheet" showing the 6 most commonly customized options at the top.
-- Provide ready-to-drop config examples for common setups (Telescope + lualine, fzf-lua + nvchad, etc.).
+If you'd like, I can:
+- Re-group to fewer, higher-level categories (Search / Picker / Notifications / Cache) and collapse each group by default.
+- Add a compact "cheat-sheet" at the top listing the 6 most commonly tweaked options.
+- Provide ready-to-drop full configs for popular setups (Telescope + lualine, fzf-lua + nvchad, etc.).
+
+Tell me which follow-up you prefer and I will update only the docs accordingly.

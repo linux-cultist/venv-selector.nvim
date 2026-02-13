@@ -49,13 +49,11 @@
     </g>
   </g>
 
-  <!-- Right column: optional placeholder for a small screenshot box -->
+  <!-- Right column: embedded screenshot box -->
   <g transform="translate(760,48)">
     <rect x="0" y="0" rx="8" ry="8" width="336" height="144" fill="#0b1220" opacity="0.12"/>
     <rect x="8" y="8" rx="4" ry="4" width="320" height="128" fill="#071226" opacity="0.20"/>
-    <text x="168" y="78" text-anchor="middle" fill="#94a3b8" style="font: 400 12px/1 -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;">
-      Screenshot preview (replace with venvselect.png in README)
-    </text>
+    <image href="../venvselect.png" x="8" y="8" width="320" height="128" preserveAspectRatio="xMidYMid slice" />
   </g>
 
   <!-- Footer thin dividing line -->

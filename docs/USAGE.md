@@ -56,7 +56,7 @@ $ `fd '/bin/python$' ~/Code --no-ignore-vcs --full-path`
 Here we search for all pythons under the home directory. We want to match on all paths ending in `Scripts\\\\python.exe` since those are the venvs on Windows.
 
 ```
-tameb@WIN11 C:\Users\tameb>fd Scripts\\\\python.exe$ %USERPROFILE%\Code --full-path -I -a  
+tameb@WIN11 C:\Users\tameb>fd Scripts\\python.exe$ %USERPROFILE%\Code --full-path -I -a  
 C:\Users\tameb\Code\another_project\venv\Scripts\python.exe
 C:\Users\tameb\Code\manual\venv\Scripts\python.exe
 C:\Users\tameb\Code\sample_project\venv\Scripts\python.exe

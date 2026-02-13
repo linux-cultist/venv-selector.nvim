@@ -1,4 +1,3 @@
-
   <div align="center">
   <h1>🎉 venv-selector.nvim</h1>
 <p>Discover and activate Python virtual environments inside Neovim - no restart required.</p>
@@ -21,7 +20,7 @@
 3. Trigger `:VenvSelect` or your mapped key (example `,v`).
 4. Choose a virtual environment — the plugin sets `VIRTUAL_ENV` or `CONDA_PREFIX` and updates terminals opened afterward.
 
-If you don't see your expected venvs in the picker, you can add your own searches. See `docs/USAGE.md` for examples.
+If you don't see your expected venvs in the picker, you can add your own searches. See [docs/USAGE.md](docs/USAGE.md) for examples.
 
 <br>
 
@@ -47,7 +46,7 @@ If you don't see your expected venvs in the picker, you can add your own searche
 - A picker plugin (Telescope is shown in picture)
 - `nvim-dap`, `nvim-dap-python`, `debugpy` — for debugger integration (optional)
 - `nvim-notify` — for nicer notifications (optional)
-- Nerd Font — for icons in certain pickers/statuslines 
+- Nerd Font — for icons in certain pickers/statuslines
 
 <br>
 
@@ -71,6 +70,7 @@ Add this to your plugin specs (example):
 ```
 
 Notes:
+
 - The plugin creates the `:VenvSelect` command and lazy-loading it by `ft = "python"` is recommended.
 - The `:VenvSelectLog` command is available if you set the `log_level` option to `DEBUG` or `TRACE`.
 - There is also the `:VenvSelectCache` command, only available if the `cached_venv_automatic_activation` option is `false` (default is `true`).
@@ -80,6 +80,14 @@ Notes:
 ## 🛟 Troubleshooting
 
 Start with setting the `log_level` option to `TRACE` or `DEBUG` and then use the `:VenvSelectLog` command after using `:VenvSelect`.
+
+```lua
+{
+  options = {
+    log_level = "TRACE" -- enable VenvSelectLog command
+  }
+}
+```
 
 See if you can understand the problem from the log. If you still have issues, open an issue with `:VenvSelectLog` output and your search config.
 
@@ -95,7 +103,6 @@ See if you can understand the problem from the log. If you still have issues, op
 
 - **How does the plugin detect venvs?** By searching for interpreter binaries and recognizing common venv manager locations. PEP-723 metadata is supported if `uv` is available.
 
-
 <br>
 
 ## 🔗 Links & docs
@@ -105,3 +112,7 @@ See if you can understand the problem from the log. If you still have issues, op
 - Public API: `docs/API.md`
 - Changelog: `CHANGELOG.md`
 - License: `LICENSE`
+
+```
+
+```

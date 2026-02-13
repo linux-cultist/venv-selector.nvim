@@ -70,10 +70,12 @@ C:\Users\tameb\Code\sample_project\venv\Scripts\python.exe
 
 ### ➕ Adding the fd search to VenvSelect config
 
-To keep the README/docs concise for different platforms, the examples below are placed inside collapsible sections — expand the section for your platform to copy the exact configuration.
+The docs are split into two different sections.
 
 <details>
-<summary>🐧 Linux and macOS examples</summary>
+<summary>🐧 Linux and macOS config example</summary>
+
+You can use relative paths here to specify search location, but make sure to use `--full-path` so `fd` always gives you back an absolute path to the results.
 
 ```lua
 search = {
@@ -98,14 +100,18 @@ Have a look at [config.lua](../lua/venv-selector/config.lua) to see the built-in
 </details>
 
 <details>
-<summary>🪟 Windows examples</summary>
+<summary>🪟 Windows config example</summary>
 
-VenvSelect doesn't understand Windows shell variables like `%USERPROFILE%` in the same way; prefer `$HOME`. IMPORTANT: you need single quotes around regexps and escape backslashes as shown.
+VenvSelect doesn't understand Windows shell variables like `%USERPROFILE%`, but you can use `$HOME`. Its also important to escape backslashes on windows, see below.
+
+NOTE:
+- You *have to* escape each backslash in the regexp with another backslash. So 'Scripts\\python.exe` from the fd example becomes `Scripts\\\\python.exe` in the plugin config.
+- Use single quotes around regexps.
 
 ```lua
 search = {
   my_project_venvs = {
-    command = "fd 'Scripts\\\\\\\\python.exe$' $HOME/Code --full-path --color never -a",
+      command = "fd 'Scripts\\\\python.exe$' $HOME/Code --full-path --color never -a",
   }
 }
 ```
@@ -115,7 +121,7 @@ For conda-style environments on Windows:
 ```lua
 search = {
   my_conda_base = {
-    command = "$FD anaconda3//python.exe $HOME/anaconda3 --full-path -a",
+    command = "$FD anaconda3\\\\python.exe$ $HOME/anaconda3 --full-path -a",
     type = "anaconda" -- anaconda-style environment
   }
 }

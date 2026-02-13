@@ -47,12 +47,9 @@ If you don't see your expected venvs in the picker, you can add your own searche
 - Neovim >= 0.11
 - `fd` or `fdfind` required for default searches
 - A picker plugin (Telescope is shown in picture)
-
-## ⚙️ Optional
-
-- `nvim-dap`, `nvim-dap-python`, `debugpy` — for debugger integration
-- `nvim-notify` — for nicer notifications
-- Nerd Font — for icons in certain pickers/statuslines
+- `nvim-dap`, `nvim-dap-python`, `debugpy` — for debugger integration (optional)
+- `nvim-notify` — for nicer notifications (optional)
+- Nerd Font — for icons in certain pickers/statuslines (optional)
 
 <br>
 

@@ -110,7 +110,7 @@ options = {
 ```lua
 options = {
   -- on_venv_activate_callback: function(venv_path, env_type)
-  on_venv_activate_callback = function(venv_path, _)
+  on_venv_activate_callback = function(venv_path, venv_type)
     -- store a short name for statuslines or other UI
     local path = venv_path
     vim.notify("Activated venv: " .. path, vim.log.levels.INFO)
@@ -118,5 +118,4 @@ options = {
 }
 ```
 
-These examples are intentionally minimal and safe to paste. If you want a combined full example (picker + statusline + callback) I can add one next.
 

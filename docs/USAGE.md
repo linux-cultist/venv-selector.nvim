@@ -9,7 +9,8 @@ Top-level plugin configuration has two primary tables:
 
 Refer to [docs/OPTIONS.md](OPTIONS.md) for complete reference of options you can set.
 
----
+<br>
+
 
 ## 🔎 Creating your own searches
 

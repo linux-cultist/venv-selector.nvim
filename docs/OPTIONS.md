@@ -95,8 +95,8 @@ options = {
 ```
 
 ## Examples
-
-### on_venv_activate_callback
+<details>
+<summary>🪟 on_venv_activate_callback</summary>
 
 Use this if you want your own code to get notified when a venv is activated.
 
@@ -136,8 +136,11 @@ The function `on_venv_activate_callback` sets up a neovim autocommand to run the
   },
 }
 ```
+</details>
 
-## on telescope_result_callback
+
+<details>
+<summary>🪟 on_telescope_result_callback</summary>
 
 This is for telescope picker only.
 
@@ -175,6 +178,8 @@ return {
   },
 },
 ```
+<details>
+
 
 ##  shell
 

@@ -198,7 +198,7 @@ shell = {
 
 ## statusline_func
 
-Lualine or nvchad will call this function if you have [configured your neovim to do so](USAGE.md#-creating-your-own-search).
+Lualine or nvchad will call this function if you have [configured your neovim to do so](USAGE.md#support-for-lualine-and-nvchad-statusbars).
 
 ```lua
 options = {

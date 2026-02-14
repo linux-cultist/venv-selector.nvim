@@ -96,26 +96,141 @@ options = {
 
 ## Examples
 
+### on_venv_activate_callback
+
+Use this if you want your own code to get notified when a venv is activated.
+
+In this case, we want to run `poetry env use <python_path>` when these conditions are met:
+
+1. A virtual environment found by the poetry search was activated by the user (its `source` is `poetry`)
+2. A terminal was opened afterwards.
+
+The function `on_venv_activate_callback` sets up a neovim autocommand to run the function `run_shell_command` when the terminal opens.
 
 ```lua
--- Example 1: show only the venv folder name in picker results
-options = {
-  -- on_telescope_result_callback: function(path) -> string
-  on_telescope_result_callback = function(path)
-    return vim.fn.fnamemodify(path, ":t")
-  end,
+{
+  options = {
+    on_venv_activate_callback = function()
+      local command_run = false
+
+      local function run_shell_command()
+        local source = require("venv-selector").source()
+        local python = require("venv-selector").python()
+
+        if source == "poetry" and command_run == false then
+          local command = "poetry env use " .. python
+          vim.api.nvim_feedkeys(command .. "\n", "n", false)
+          command_run = true
+        end
+
+      end
+
+      vim.api.nvim_create_augroup("TerminalCommands", { clear = true })
+
+      vim.api.nvim_create_autocmd("TermEnter", {
+        group = "TerminalCommands",
+        pattern = "*",
+        callback = run_shell_command,
+      })
+    end
+  },
 }
 ```
 
+## on telescope_result_callback
+
+This is for telescope picker only.
+
+The example below shows how to shorten the results shown in telescope. The picker still knows the full path, but it can display a shorter version for convenience.
+
 ```lua
-options = {
-  -- on_venv_activate_callback: function(venv_path, env_type)
-  on_venv_activate_callback = function(venv_path, venv_type)
-    -- store a short name for statuslines or other UI
-    local path = venv_path
-    vim.notify("Activated venv: " .. path, vim.log.levels.INFO)
-  end,
+-- This function gets called by the plugin when a new result from fd is received
+-- You can change the filename displayed here to what you like.
+-- Here in the example for linux/mac we replace the home directory with '~' and remove the /bin/python part.
+local function shorter_name(filename)
+   return filename:gsub(os.getenv("HOME"), "~"):gsub("/bin/python", "")
+end
+
+return {
+  "linux-cultist/venv-selector.nvim",
+  dependencies = {
+    { "nvim-telescope/telescope.nvim", version = "*", dependencies = { "nvim-lua/plenary.nvim" } }, -- optional: you can also use fzf-lua, snacks, mini-pick instead.
+  },
+  ft = "python", -- Load when opening Python files
+  keys = {
+    { ",v", "<cmd>VenvSelect<cr>" }, -- Open picker on keymap
+  },
+  opts = {
+    options = {
+      -- If you put the callback here as a global option, its used for all searches (including the default ones by the plugin)
+      on_telescope_result_callback = shorter_name
+    },
+    search = {
+      my_venvs = {
+        command = "fd python$ ~/Code", -- Sample command, need to be changed for your own venvs
+        -- If you put the callback here, its only called for your "my_venvs" search
+        on_telescope_result_callback = shorter_name
+      },
+    },
+  },
+},
+```
+
+##  shell
+
+This is useful for running searches using a different shell and different parameters.
+
+```lua
+shell = {
+  shell = "bash", -- name of your shell
+  shellcmdflag = "-i -c" -- parameters to your shell
 }
 ```
 
+Perhaps you want to use powershell on windows:
 
+```lua
+shell = {
+  shell = "powershell", -- name of your shell
+  shellcmdflag = "-NoLogo -Command" -- parameters to your shell
+}
+```
+
+## statusline_func
+
+Lualine or nvchad will call this function if you have [configured your neovim to do so](USAGE.md#-creating-your-own-search).
+
+```lua
+options = {
+  statusline_func = {
+    lualine = function() -- called by lualine
+      local venv_path = require("venv-selector").venv()
+      if not venv_path or venv_path == "" then
+        return ""
+      end
+    
+      local venv_name = vim.fn.fnamemodify(venv_path, ":t")
+      if not venv_name then
+        return ""
+      end
+    
+      local output = "🐍 " .. venv_name .. " " -- Changes only the icon but you can change colors or use powerline symbols here.
+      return output
+    end,
+    nvchad = function() -- called by nvchad
+      local venv_path = require("venv-selector").venv()
+      if not venv_path or venv_path == "" then
+        return ""
+      end
+        
+      local venv_name = vim.fn.fnamemodify(venv_path, ":t")
+      if not venv_name then
+        return ""
+      end
+        
+      local output = "🐍 " .. venv_name .. " " -- Changes only the icon but you can change colors or use powerline symbols here.
+        return output
+      end,
+  }
+}
+```

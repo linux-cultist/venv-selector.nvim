@@ -29,7 +29,7 @@ local hooks = require("venv-selector.hooks")
 ---@field snacks? table Snacks picker specific options (default: { layout = { preset = "select" } })
 
 ---@class venv-selector.Options
----@field on_venv_activate_callback? fun(venv_python: string|nil, env_type: string|nil) Callback function for after a venv activates (default: nil)
+---@field on_venv_activate_callback? fun() Callback function for after a venv activates (default: nil)
 ---@field enable_default_searches boolean Switches all default searches on/off (default: true)
 ---@field enable_cached_venvs boolean Use cached venvs that are activated automatically (default: true)
 ---@field cached_venv_automatic_activation boolean If false, VenvSelectCached command becomes available for manual activation (default: true)

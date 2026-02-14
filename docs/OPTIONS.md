@@ -97,6 +97,7 @@ options = {
 ## Examples
 <details>
 <summary>🪟 on_venv_activate_callback</summary>
+<br>
 
 Use this if you want your own code to get notified when a venv is activated.
 

@@ -142,6 +142,7 @@ The function `on_venv_activate_callback` sets up a neovim autocommand to run the
 
 <details>
 <summary>🪟 on_telescope_result_callback</summary>
+<br>
 
 This is for telescope picker only.
 
@@ -179,10 +180,12 @@ return {
   },
 },
 ```
+</details>
+
+
 <details>
-
-
-##  shell
+<summary>🪟 shell</summary>
+<br>
 
 This is useful for running searches using a different shell and different parameters.
 
@@ -201,8 +204,12 @@ shell = {
   shellcmdflag = "-NoLogo -Command" -- parameters to your shell
 }
 ```
+</details>
 
-## statusline_func
+
+<details>
+<summary>🪟 statusline_func</summary>
+<br>
 
 Lualine or nvchad will call this function if you have [configured your neovim to do so](USAGE.md#support-for-lualine-and-nvchad-statusbars).
 
@@ -240,3 +247,4 @@ options = {
   }
 }
 ```
+</details>

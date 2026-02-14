@@ -208,7 +208,7 @@ shell = {
 
 
 <details>
-<summary>🪟 statusline_func</summary>
+<summary>⚙️ statusline_func</summary>
 <br>
 
 Lualine or nvchad will call this function if you have [configured your neovim to do so](USAGE.md#support-for-lualine-and-nvchad-statusbars).

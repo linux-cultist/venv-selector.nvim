@@ -25,8 +25,14 @@ local gate = require("venv-selector.lsp_gate")
 
 local M = {}
 
----@type table<string, venv-selector.RestartMemo>
+
+---@type table<string, { py: string, ty: string }>
 local last_restart_by_root = {}
+
+-- Snapshot of original LSP configs before venv-selector first replaces them.
+-- Keyed by the same gate key used for restarts.
+---@type table<string, any>
+local original_cfg_by_key = {}
 
 ---@type table<string, integer>
 M.notifications_memory = {}
@@ -58,6 +64,8 @@ local function is_python_lsp(client)
     return contains(fts, "python") and not is_generic_or_multi(client)
 end
 
+M.is_python_lsp = is_python_lsp
+
 ---Collect python buffers currently attached to an LSP client.
 ---Returned set is keyed by bufnr: { [bufnr]=true, ... }
 ---@param client any
@@ -73,11 +81,82 @@ local function attached_python_bufs(client)
     return bufs
 end
 
+---Compute the stable gate key used to scope restarts.
+---Rooted clients use name::root:<root_dir>.
+---Rootless clients use name::scope:<dir|buf:N> based on the current buffer.
+---@param client any
+---@param bufnr integer
+---@return string gate_key
+local function gate_key_for_client(client, bufnr)
+    local root = (client.config and client.config.root_dir) or ""
+    if root ~= "" then
+        return client.name .. "::root:" .. root
+    end
+
+    local bufname = vim.api.nvim_buf_get_name(bufnr)
+    local dir = (bufname ~= "" and vim.fn.fnamemodify(bufname, ":p:h")) or ""
+    local scope = (dir ~= "" and dir) or ("buf:%d"):format(bufnr)
+    return client.name .. "::scope:" .. scope
+end
+
+---Snapshot an original client config once (only before the plugin first replaces it).
+---@param gate_key string
+---@param cfg any
+local function snapshot_original_cfg(gate_key, cfg)
+    if original_cfg_by_key[gate_key] ~= nil then
+        return
+    end
+    if type(cfg) ~= "table" then
+        return
+    end
+
+    local snap = vim.deepcopy(cfg)
+    snap._venv_selector = nil
+    original_cfg_by_key[gate_key] = snap
+end
+
+---Stop plugin-owned python LSP clients attached to a buffer.
+---@param bufnr integer
+---@return string[] stopped_keys Gate keys for the stopped clients
+function M.stop_plugin_python_lsps_for_buf(bufnr)
+    ---@type string[]
+    local stopped_keys = {}
+    for _, client in ipairs(vim.lsp.get_clients({ bufnr = bufnr })) do
+        if is_python_lsp(client) and client.config and client.config._venv_selector == true then
+            local key = gate_key_for_client(client, bufnr)
+            stopped_keys[#stopped_keys + 1] = key
+            client:stop(true)
+        end
+    end
+    return stopped_keys
+end
+
+---Restore baseline python LSP clients for a buffer by restarting with the snapshotted config.
+---@param bufnr integer
+---@param gate_keys string[]
+function M.restore_original_python_lsps_for_buf(bufnr, gate_keys)
+    for _, key in ipairs(gate_keys or {}) do
+        local original = original_cfg_by_key[key]
+        if original ~= nil then
+            gate.request(key, vim.deepcopy(original), { [bufnr] = true })
+        end
+    end
+end
+
+---Clear restart memo for a specific project root so re-activating the same venv triggers restarts.
+---@param project_root string|nil
+function M.clear_restart_memo_for_root(project_root)
+    if type(project_root) ~= "string" or project_root == "" then
+        return
+    end
+    last_restart_by_root[project_root] = nil
+end
+
 ---Create cmd_env for a client restart based on venv type.
 ---@param client_name string
 ---@param venv_python string|nil
 ---@param env_type venv-selector.VenvType|nil
----@return venv-selector.LspCmdEnv env
+---@return table cmd_env_wrap
 local function create_cmd_env(client_name, venv_python, env_type)
     if not venv_python or venv_python == "" then
         return { cmd_env = {} }
@@ -103,7 +182,7 @@ end
 ---@param client_name string
 ---@param venv_python string|nil
 ---@param env_type venv-selector.VenvType|nil
----@return venv-selector.LspClientConfig cfg
+---@return table cfg
 local function default_lsp_settings(client_name, venv_python, env_type)
     if not venv_python or venv_python == "" then
         return { settings = {} }
@@ -113,7 +192,6 @@ local function default_lsp_settings(client_name, venv_python, env_type)
     local venv_name         = vim.fn.fnamemodify(venv_dir, ":t")
     local venv_path         = vim.fn.fnamemodify(venv_dir, ":h")
 
-    -- Preserve existing settings for this client if one exists
     local existing_clients  = vim.lsp.get_clients({ name = client_name })
     local existing_settings = {}
     if #existing_clients > 0 then
@@ -132,17 +210,13 @@ local function default_lsp_settings(client_name, venv_python, env_type)
     local merged_settings = vim.tbl_deep_extend("force", existing_settings, venv_settings)
     local cmd_env = create_cmd_env(client_name, venv_python, env_type)
 
-    ---@type venv-selector.LspClientConfig
     local cfg = { settings = merged_settings }
-
     if cmd_env.cmd_env and next(cmd_env.cmd_env) then
         cfg.cmd_env = cmd_env.cmd_env
     end
-
     return cfg
 end
 
----Resolve project_root for a buffer; fall back to currently active root if available.
 ---@param bufnr integer
 ---@return string project_root
 local function resolve_project_root(bufnr)
@@ -162,8 +236,7 @@ end
 local function log_lsp_clients_aligned()
     local clients = vim.lsp.get_clients()
 
-    -- First pass: compute dynamic widths
-    local max_id = 2 -- minimum sensible width
+    local max_id = 2
     local max_name = 4
     local max_root = 4
 
@@ -173,7 +246,6 @@ local function log_lsp_clients_aligned()
         local id = tostring(c.id or "")
         local name = c.name or ""
         local root = (c.config and c.config.root_dir) or ""
-        ---@diagnostic disable-next-line: undefined-field
         local fts_tbl = (c.config and c.config.filetypes) or {}
         local fts = table.concat(fts_tbl, ",")
 
@@ -181,18 +253,11 @@ local function log_lsp_clients_aligned()
         max_name = math.max(max_name, #name)
         max_root = math.max(max_root, #root)
 
-        rows[#rows + 1] = {
-            id = id,
-            name = name,
-            root = root,
-            fts = fts,
-        }
+        rows[#rows + 1] = { id = id, name = name, root = root, fts = fts }
     end
 
-    -- Optional: cap root width to avoid extremely wide logs
     max_root = math.min(max_root, 80)
 
-    -- Build dynamic format string
     local fmt = string.format(
         "LSP Seen id=%%-%ds name=%%-%ds root=%%-%ds fts=[%%s]",
         max_id,
@@ -200,20 +265,27 @@ local function log_lsp_clients_aligned()
         max_root
     )
 
-    -- Second pass: log with aligned columns
     for _, r in ipairs(rows) do
         local root = r.root
         if #root > max_root then
             root = root:sub(1, max_root - 1) .. "…"
         end
-
         log.debug(string.format(fmt, r.id, r.name, root, r.fts))
     end
 end
 
+---@param client any
+---@param bufnr integer
+---@return boolean
+local function client_attached_to_buf(client, bufnr)
+    local ab = client.attached_buffers
+    if type(ab) == "table" then
+        return ab[bufnr] == true
+    end
+    local bufs = attached_python_bufs(client)
+    return bufs[bufnr] == true
+end
 
----Restart python LSP clients for the given project root using the gate.
----Uses memoization per project_root to avoid repeating identical restarts.
 ---@param venv_python string|nil
 ---@param env_type venv-selector.VenvType|nil
 ---@param bufnr? integer
@@ -226,7 +298,41 @@ local function restart_all_python_lsps(venv_python, env_type, bufnr)
     local py = venv_python or ""
     local ty = env_type or ""
 
-    -- Memoize by root when possible.
+    log_lsp_clients_aligned()
+
+    ---@type table<string, { client:any, bufs:table<integer,true>, name:string }>
+    local by_key = {}
+
+    for _, c in ipairs(vim.lsp.get_clients()) do
+        if is_python_lsp(c) then
+            local root = (c.config and c.config.root_dir) or ""
+
+            local include = false
+            if root ~= "" then
+                include = (project_root == "" or root == project_root)
+            else
+                include = client_attached_to_buf(c, bufnr)
+            end
+
+            if include then
+                local gate_key = gate_key_for_client(c, bufnr)
+                if not by_key[gate_key] then
+                    by_key[gate_key] = {
+                        client = c,
+                        bufs = attached_python_bufs(c),
+                        name = c.name,
+                    }
+                end
+            end
+        end
+    end
+
+    if next(by_key) == nil then
+        log.trace("restart_all_python_lsps: no python LSP clients selected for this project_root")
+        return false, "no python LSP clients selected for this project_root"
+    end
+
+    -- Memoize by root when possible (AFTER we know there are targets).
     if project_root ~= "" then
         local last = last_restart_by_root[project_root]
         if last and last.py == py and last.ty == ty then
@@ -238,66 +344,6 @@ local function restart_all_python_lsps(venv_python, env_type, bufnr)
         log.debug("restart_all_python_lsps: project_root empty; not caching restart decision")
     end
 
-    log_lsp_clients_aligned()
-
-    ---@type table<string, {client:any, bufs:table<integer,true>, name:string, root:string}>
-    local by_key = {}
-
-    for _, c in ipairs(vim.lsp.get_clients()) do
-        if is_python_lsp(c) then
-            local root = (c.config and c.config.root_dir) or ""
-            
-                    -- only consider rootless clients if they are attached to THIS bufnr
-                    local function client_attached_to_buf(client, b)
-                        -- nvim 0.10+: client.attached_buffers exists
-                        local ab = client.attached_buffers
-                        if type(ab) == "table" then
-                            return ab[b] == true
-                        end
-            
-                        -- fallback: check via attached_python_bufs()
-                        local bufs = attached_python_bufs(client)
-                        return bufs[b] == true
-                    end
-            
-                    local include = false
-                    if root ~= "" then
-                        include = (project_root == "" or root == project_root)
-                    else
-                        -- Rootless: include only if it belongs to this buffer.
-                        -- This prevents restarting unrelated “root=nil” clients when restarting a rooted project.
-                        include = client_attached_to_buf(c, bufnr)
-                    end
-            
-                    if include then
-                        local gate_key
-                        if root ~= "" then
-                            gate_key = c.name .. "::root:" .. root
-                        else
-                            -- Rootless scope should be per-buffer (or per-buffer-dir) to avoid collisions.
-                            local bufname = vim.api.nvim_buf_get_name(bufnr)
-                            local dir = (bufname ~= "" and vim.fn.fnamemodify(bufname, ":p:h")) or ""
-                            local scope = (dir ~= "" and dir) or ("buf:%d"):format(bufnr)
-                            gate_key = c.name .. "::scope:" .. scope
-                        end
-            
-                        if not by_key[gate_key] then
-                            by_key[gate_key] = {
-                                client = c,
-                                bufs = attached_python_bufs(c),
-                                name = c.name,
-                                root = root,
-                            }
-                        end
-                    end
-        end
-    end
-
-    if next(by_key) == nil then
-        log.trace("restart_all_python_lsps: no python LSP clients selected for this project_root")
-        return false, "no python LSP clients selected for this project_root"
-    end
-
     if not venv_python or venv_python == "" then
         log.trace("restart_all_python_lsps: venv_python=nil/empty, nothing to restart")
         return true
@@ -305,37 +351,41 @@ local function restart_all_python_lsps(venv_python, env_type, bufnr)
 
     for gate_key, entry in pairs(by_key) do
         local old_cfg = entry.client.config or {}
+
+        if old_cfg._venv_selector ~= true then
+            snapshot_original_cfg(gate_key, old_cfg)
+        end
+
         local cfg = vim.deepcopy(old_cfg)
+        cfg._venv_selector = true
 
         local gen = default_lsp_settings(entry.name, venv_python, env_type)
         cfg.settings = gen.settings
         cfg.cmd_env = gen.cmd_env
 
-        -- preserve key fields from old config
         cfg.capabilities = old_cfg.capabilities
         cfg.handlers = old_cfg.handlers
         cfg.on_attach = old_cfg.on_attach
         cfg.init_options = old_cfg.init_options
 
-        -- Request restart through the gate.
+        cfg._venv_selector = true
+
         gate.request(gate_key, cfg, entry.bufs)
     end
 
     return true
 end
 
----Hook: restart python LSPs when a venv is activated.
 ---@param venv_python string|nil
 ---@param env_type venv-selector.VenvType|nil
 ---@param bufnr? integer
----@return integer count Number of LSP restarts requested (0 or 1)
+---@return integer
 function M.dynamic_python_lsp_hook(venv_python, env_type, bufnr)
     log.trace(("Hook dynamic_python_lsp_hook called venv=%s type=%s"):format(tostring(venv_python), tostring(env_type)))
     local ok = restart_all_python_lsps(venv_python, env_type, bufnr)
     return ok == true and 1 or 0
 end
 
----Notify the user with throttling (per unique message, 1 second).
 function M.send_notification(message)
     local now = vim.uv.hrtime()
     local last = M.notifications_memory[message]

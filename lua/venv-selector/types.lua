@@ -227,7 +227,6 @@ local M = {}
 
 ---@class venv-selector.SearchConfig
 ---@field command string
----@field type? venv-selector.VenvType|string
 ---@field execute_command? string
 ---@field on_telescope_result_callback? fun(line: string, source: string): string
 ---@field on_fd_result_callback? fun(line: string, source: string): string

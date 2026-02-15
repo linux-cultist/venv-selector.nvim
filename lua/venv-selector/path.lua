@@ -14,6 +14,8 @@
 --   only applies the global PATH/env mutations and stores global pointers.
 -- - PATH mutation is done by prepending the env's bin/Scripts directory and
 --   removing the previously prepended directory to avoid stacking.
+
+
 require("venv-selector.types")
 
 local log = require("venv-selector.logger")
@@ -261,27 +263,24 @@ function M.update_python_dap(python_path)
     end
 end
 
--- ============================================================================
--- Convenience utilities
--- ============================================================================
-
----Return the directory of the currently opened file (buffer).
----
----@return string|nil dir Absolute directory path, or nil if buffer has no file
-function M.get_current_file_directory()
-    local opened_filepath = vim.fn.expand("%:p")
-    if opened_filepath and opened_filepath ~= "" then
-        return M.get_base(opened_filepath)
-    end
-    return nil
-end
-
----Expand a path using vim.fn.expand (supports "~", env vars, etc).
----
+---Expand ~ and environment variables in paths.
 ---@param p string
 ---@return string expanded
 function M.expand(p)
+    if not p or p == "" then
+        return p
+    end
     return vim.fn.expand(p)
+end
+
+---Get current buffer's file directory.
+---@return string|nil dir
+function M.get_current_file_directory()
+    local name = vim.api.nvim_buf_get_name(0)
+    if name == "" then
+        return nil
+    end
+    return vim.fn.fnamemodify(name, ":p:h")
 end
 
 return M

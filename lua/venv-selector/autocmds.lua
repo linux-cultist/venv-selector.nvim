@@ -5,18 +5,47 @@ require("venv-selector.types")
 local M = {}
 
 function M.create()
-    -- ============================================================
-    -- Cached venv initial restore (one-shot per buffer)
-    -- ============================================================
-
-    ---Return true if the buffer is a normal on-disk python buffer (not a special buftype).
     ---@param bufnr integer
-    ---@return boolean ok
+    ---@return boolean
     local function is_normal_python_buf(bufnr)
         return vim.api.nvim_buf_is_valid(bufnr)
             and vim.bo[bufnr].buftype == ""
             and vim.bo[bufnr].filetype == "python"
     end
+
+    ---@param bufnr integer
+    ---@return boolean
+    local function is_disabled(bufnr)
+        return vim.api.nvim_buf_is_valid(bufnr) and vim.b[bufnr].venv_selector_disabled == true
+    end
+
+    ---When entering a disabled python buffer, enforce "no active env" globally.
+    ---This prevents a UV buffer's env from remaining active when returning to a deactivated buffer.
+    ---@param bufnr integer
+    local function enforce_deactivated_global_state(bufnr)
+        -- Only enforce for real python buffers that are explicitly disabled.
+        if not is_normal_python_buf(bufnr) then
+            return
+        end
+        if not is_disabled(bufnr) then
+            return
+        end
+
+        local venv = require("venv-selector.venv")
+        local path = require("venv-selector.path")
+
+        -- Clear plugin-owned global state (prevents "already active" too).
+        -- Keep the disabled flag intact.
+        venv.clear_active_state(bufnr)
+
+        -- Ensure PATH/env is not left pointing at some other buffer's env (e.g. UV).
+        path.remove_current()
+        venv.unset_env_variables()
+    end
+
+    -- ============================================================
+    -- Cached venv initial restore (one-shot per buffer)
+    -- ============================================================
 
     local group_cache = vim.api.nvim_create_augroup("VenvSelectorCachedVenv", { clear = true })
 
@@ -25,41 +54,34 @@ function M.create()
         callback = function(args)
             ---@cast args venv-selector.AutocmdArgs
             local bufnr = args.buf
-            if not is_normal_python_buf(bufnr) then
+            if not is_normal_python_buf(bufnr) then return end
+
+            if is_disabled(bufnr) then
+                enforce_deactivated_global_state(bufnr)
                 return
             end
 
-            -- Skip uv buffers
             local uv2 = require("venv-selector.uv2")
-            if uv2.is_uv_buffer(bufnr) then
-                return
-            end
+            if uv2.is_uv_buffer(bufnr) then return end
 
-            -- one-shot per buffer
-            if vim.b[bufnr].venv_selector_cache_checked then
-                return
-            end
+            if vim.b[bufnr].venv_selector_cache_checked then return end
             vim.b[bufnr].venv_selector_cache_checked = true
 
-            -- If this project is already active globally, do not trigger a cache restore.
             local pr = require("venv-selector.project_root").key_for_buf(bufnr)
             local venv = require("venv-selector.venv")
             if pr and type(venv.active_project_root) == "function" and venv.active_project_root() == pr then
-                require("venv-selector.logger").trace(
-                    ("cache-autocmd skip (project already active) b=%d root=%s"):format(bufnr, pr)
-                )
                 return
             end
 
-            require("venv-selector.logger").trace(
-                ("cache-autocmd once b=%d file=%s"):format(bufnr, vim.api.nvim_buf_get_name(bufnr))
-            )
-
-            -- Defer: allow project root detection / session restore / filetype to settle
             vim.defer_fn(function()
+                if not vim.api.nvim_buf_is_valid(bufnr) then return end
+                if is_disabled(bufnr) then
+                    enforce_deactivated_global_state(bufnr)
+                    return
+                end
                 local cached_venv = require("venv-selector.cached_venv")
-                if vim.api.nvim_buf_is_valid(bufnr) and cached_venv.cache_auto_enabled() then
-                    require("venv-selector.cached_venv").retrieve(bufnr)
+                if cached_venv.cache_auto_enabled() then
+                    cached_venv.retrieve(bufnr)
                 end
             end, 1000)
         end,
@@ -71,29 +93,22 @@ function M.create()
 
     local uv_group = vim.api.nvim_create_augroup("VenvSelectorUvDetect", { clear = true })
 
-    ---Run the complete “restore/activate” flow for a python buffer, in priority order.
-    ---This function is intentionally used by multiple autocmds to cover session restore and late filetype.
-    ---
     ---@param bufnr integer
     ---@param reason venv-selector.ActivationReason
     local function uv_maybe_activate(bufnr, reason)
-        if not is_normal_python_buf(bufnr) then
+        if not is_normal_python_buf(bufnr) then return end
+
+        -- If this buffer is disabled, actively enforce "no env" instead of just skipping restores.
+        if is_disabled(bufnr) then
+            enforce_deactivated_global_state(bufnr)
             return
         end
-
-        local log = require("venv-selector.logger")
-        log.trace(("uv-autocmd %s b=%d file=%s"):format(reason, bufnr, vim.api.nvim_buf_get_name(bufnr)))
 
         local cached = require("venv-selector.cached_venv")
         local uv2 = require("venv-selector.uv2")
 
-        -- 1) session-local per-buffer restore (works even if persistent cache is disabled)
         cached.ensure_buffer_last_venv_activated(bufnr)
-
-        -- 2) persistent cache restore (no-op if cache disabled)
         cached.ensure_cached_venv_activated(bufnr)
-
-        -- 3) uv restore (PEP 723)
         uv2.ensure_uv_buffer_activated(bufnr)
     end
 
@@ -114,7 +129,6 @@ function M.create()
         end,
     })
 
-    -- Critical: catches session restore, already-loaded buffers, and window switches
     vim.api.nvim_create_autocmd("BufEnter", {
         group = uv_group,
         callback = function(args)
@@ -123,13 +137,15 @@ function M.create()
         end,
     })
 
-    -- When user edits metadata, re-run uv flow
     vim.api.nvim_create_autocmd("BufWritePost", {
         group = uv_group,
         callback = function(args)
             ---@cast args venv-selector.AutocmdArgs
             local bufnr = args.buf
-            if not is_normal_python_buf(bufnr) then
+            if not is_normal_python_buf(bufnr) then return end
+            if is_disabled(bufnr) then
+                -- Disabled buffer: do not run uv flow; keep it deactivated.
+                enforce_deactivated_global_state(bufnr)
                 return
             end
             require("venv-selector.uv2").run_uv_flow_if_needed(bufnr)

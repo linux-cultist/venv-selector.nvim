@@ -24,15 +24,6 @@
 
 local M = {}
 
-
-
-
-
-
--- ============================================================
--- Public API (status helpers + actions)
--- ============================================================
-
 ---@return string|nil
 function M.python()
     return require("venv-selector.path").current_python_path
@@ -63,31 +54,46 @@ function M.file_dir()
     return require("venv-selector.path").get_current_file_directory()
 end
 
----Stop all python LSP servers managed by the plugin (delegates to venv.lua).
 function M.stop_lsp_servers()
     require("venv-selector.venv").stop_lsp_servers()
 end
 
----Activate an environment given an explicit python executable path.
----@param python_path string Absolute path to python executable
----@param env_type venv-selector.VenvType Environment type
+---@param python_path string
+---@param env_type venv-selector.VenvType
 function M.activate_from_path(python_path, env_type)
     require("venv-selector.venv").activate(python_path, env_type)
 end
 
----Deactivate the current environment:
----- removes the venv PATH prefix
----- unsets plugin-managed environment variables
 function M.deactivate()
+    local bufnr = vim.api.nvim_get_current_buf()
+
+    -- Prevent auto-restore (BufEnter/cache/uv) from re-activating this buffer.
+    if vim.api.nvim_buf_is_valid(bufnr) then
+        vim.b[bufnr].venv_selector_disabled = true
+    end
+
+    -- Capture root before clearing state; used to clear hook memoization.
+    local project_root = require("venv-selector.project_root").key_for_buf(bufnr) or ""
+
+    local hooks = require("venv-selector.hooks")
+
+    -- 1) Stop only plugin-owned python LSP clients attached to this buffer.
+    local stopped_keys = hooks.stop_plugin_python_lsps_for_buf(bufnr)
+
+    -- Clear restart memo so selecting the same venv again forces restart.
+    hooks.clear_restart_memo_for_root(project_root)
+
+    -- 2) Clear plugin active state so re-activation is not skipped.
+    require("venv-selector.venv").clear_active_state(bufnr)
+
+    -- 3) Restore baseline python LSP configs.
+    hooks.restore_original_python_lsps_for_buf(bufnr, stopped_keys)
+
+    -- 4) PATH/env cleanup.
     require("venv-selector.path").remove_current()
     require("venv-selector.venv").unset_env_variables()
 end
 
--- ============================================================
--- Setup helpers
--- ============================================================
-
----Initialize nvim-notify if available and enabled.
 local function setup_notify()
     local options = require("venv-selector.config").get_user_options()
     if options and options.override_notify then
@@ -98,8 +104,7 @@ local function setup_notify()
     end
 end
 
----Check if Neovim version meets minimum requirements.
----@return boolean ok
+---@return boolean
 local function check_nvim_version()
     local version = vim.version()
     if version.major == 0 and version.minor < 11 then
@@ -114,20 +119,17 @@ local function check_nvim_version()
     return true
 end
 
-
----Setup highlight group for selected venv marker.
 local function setup_highlight()
     local options = require("venv-selector.config").get_user_options()
     vim.api.nvim_set_hl(0, "VenvSelectActiveVenv", { fg = options.selected_venv_marker_color })
 end
 
----Validate fd availability. fd_binary_name should already be set by config finalization.
----@return boolean ok
+---@return boolean
 local function valid_fd()
     local options = require("venv-selector.config").user_settings.options
     if options.fd_binary_name == nil then
         local message =
-        "Cannot find any fd binary on your system. If it is installed under a different name, set options.fd_binary_name."
+            "Cannot find any fd binary on your system. If it is installed under a different name, set options.fd_binary_name."
         require("venv-selector.logger").error(message)
         vim.notify(message, vim.log.levels.ERROR, { title = "VenvSelect" })
         return false
@@ -135,8 +137,7 @@ local function valid_fd()
     return true
 end
 
----Setup plugin configuration, commands, and integrations.
----@param conf venv-selector.Settings|nil User configuration
+---@param conf venv-selector.Settings|nil
 function M.setup(conf)
     if not check_nvim_version() then
         return
@@ -144,15 +145,12 @@ function M.setup(conf)
 
     conf = conf or {}
 
-    -- Run this first so we have logging enabled when we print the config
     require("venv-selector.logger").setup_debug_logging(conf)
-
 
     local config = require("venv-selector.config")
     config.store(conf)
 
-    local autocmds = require("venv-selector.autocmds")
-    autocmds.create()
+    require("venv-selector.autocmds").create()
 
     if not valid_fd() then
         return

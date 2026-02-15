@@ -260,7 +260,9 @@ M.ui = {
 }
 ```
 
-### Lsp server information
+<br>
+    
+## Lsp server information
 
 The plugin takes care to not overwrite your own config. When you select a virtual environment in the picker, it only extends the config for the lsp server with additional python settings to use your selected venv.
 

@@ -295,4 +295,8 @@ The plugin has been tested with these LSP servers but should work with most/all 
 - 📡 pylsp
 - 🧹 ruff
 
+## 💾 Cached venvs
+
+The plugin remembers what virtual environment you have selected for a python project, and will automatically re-activate that venv when you open a python file in the project.
+
 

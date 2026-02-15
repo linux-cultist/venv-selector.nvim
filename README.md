@@ -76,9 +76,10 @@ Add this to your plugin specs (example):
 
 With the above settings, the plugin is lazy-loaded and activated on python files. The `:VenvSelect` command becomes available to select a venv for your currently opened python project.
 
-The `:VenvSelectLog` command is available if you set the `log_level` option to `DEBUG` or `TRACE`.
+The `:VenvSelectLog` command is available if you set the `log_level` option to `DEBUG` or `TRACE`. This shows a detailed log of what the plugin is doing when you pick a virtual environment in the picker.
 
-The `:VenvSelectCache` command is available if the `cached_venv_automatic_activation` option is `false` (default is `true`).
+The `:VenvSelectCache` command is only available if the `cached_venv_automatic_activation` [option](docs/OPTIONS.md) is `false`. This means you have turned off automatic activation of cached venvs and this command will let you manually activate them from cache.
+
 
 <br>
     
@@ -138,4 +139,3 @@ See if you can understand the problem from the log. If you still have issues, op
 
 - **How does the plugin detect venvs?** By searching for interpreter binaries and recognizing common venv manager locations. PEP-723 metadata is supported if `uv` is available.
 
-<br>

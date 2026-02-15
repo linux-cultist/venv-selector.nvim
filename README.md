@@ -13,6 +13,14 @@
 
 <br>
 
+## 🗞️ Important news
+
+- 2026-02-15 — 🔒 LSP gate added to prevent concurrent LSP operations (stop/start races). Also improved support for switching between multiple Python projects and PEP-723 `uv` metadata files.
+- 2025-09-30 — 🆕 Minimum Neovim now **0.11**; LSP servers are expected to be configured by the user via `vim.lsp.config`.
+- 2025-08-27 — ✅ Regexp-branch merged into `main`. If you need the older behavior you can pin the `v1` branch (note: `v1` is no longer actively updated).
+
+<br>
+    
 ## 🚀 Quick start
 
 1. Add the plugin to your plugin manager (example below for `lazy.nvim`).
@@ -52,13 +60,6 @@ If you don't see your expected venvs in the picker, you can add your own searche
 
 <br>
 
-## 🗞️ Recent important updates
-
-- 2026-02-15 — 🔒 LSP gate added to prevent concurrent LSP operations (stop/start races). Also improved support for switching between multiple Python projects and PEP-723 `uv` metadata files.
-- 2025-09-30 — 🆕 Minimum Neovim now **0.11**; LSP servers are expected to be configured by the user via `vim.lsp.config`.
-- 2025-08-27 — ✅ Regexp-branch merged into `main`. If you need the older behavior you can pin the `v1` branch (note: `v1` is no longer actively updated).
-
-<br>
     
 ## 📚 About these docs
 

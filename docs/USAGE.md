@@ -145,7 +145,7 @@ Refer to [docs/OPTIONS.md](OPTIONS.md) for complete reference of options you can
     </details>
 <br>
     
-## Overriding or disabling a search
+## 🔧 Overriding or disabling a search
 
 If you want to *override* one of the default searches, create a search with the same name. This changes the default cwd (*c*urrent *w*orking *d*irectory) search to not search for hidden files by removing the `-H` flag that is part of the default cwd search. This makes it much faster, but wont find venvs in directories like `.venv/`.
 
@@ -215,7 +215,7 @@ You can work with multiple uv files in different neovim buffers and switch betwe
 
 NOTE: You *don't use the picker* to select a venv for uv environments. The plugin activates the venv when you open a file with metadata automatically.
 
-## Support for lualine and nvchad statusbars
+## 🎛️ Support for lualine and nvchad statusbars
 
 ### Lualine
 
@@ -262,7 +262,7 @@ M.ui = {
 
 <br>
     
-## Lsp server information
+## 🧭 Lsp server information
 
 The plugin takes care to not overwrite your own config. When you select a virtual environment in the picker, it only extends the config for the lsp server with additional python settings to use your selected venv.
 

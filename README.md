@@ -1,6 +1,6 @@
-  <div align="center">
+<div align="center">
   <h1>🎉 venv-selector.nvim</h1>
-<p>Discover and activate Python virtual environments inside Neovim - no restart required.</p>
+  <p>Discover and activate Python virtual environments inside Neovim - no restart required.</p>
   <p>
     <a href="https://neovim.io"><img alt="Neovim >=0.11" src="https://img.shields.io/badge/Neovim-%3E%3D0.11-blue"></a>
     <a href="LICENCE.md"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-brightgreen"></a>
@@ -22,27 +22,36 @@
 5. Optionally open other python files in other projects and do steps 2-4 again.
 6. You can now switch between their buffers and the plugin remembers the selected venv for each project.
 
-The plugin configures your lsp to use the selected venv and also sets `VIRTUAL_ENV` or `CONDA_PREFIX` for use in terminals started from neovim.
+The plugin configures your LSP to use the selected venv and also sets `VIRTUAL_ENV` or `CONDA_PREFIX` for use in terminals started from Neovim.
 
-If you don't see your expected venvs in the picker, you can add your own searches. See [Creating your own search](docs/USAGE.md#-creating-your-own-search) for examples.
+If you don't see your expected venvs in the picker, you can add your own searches. See [Creating your own searches](docs/USAGE.md#🔎-creating-your-own-searches) for examples.
 
 <br>
 
 ## ⚡️ Features
 
-- Discover virtual environments automatically in common places and your workspaces.
-- [Create your own searches](docs/USAGE.md#-creating-your-own-searches) 
+- Discover virtual environments automatically in common places and your workspaces:
+  - 🐍 Python (python3 -m venv venv)
+  - 📦 Poetry
+  - 🪪 Pipenv
+  - 🐼 Anaconda
+  - 🧩 Miniconda
+  - 🧰 Pyenv (including pyenv-virtualenv and pyenv-win-venv plugins)
+  - 🔁 Virtualenvwrapper
+  - 🥚 Hatch
+  - 🧰 Pipx
+- [Create your own searches](docs/USAGE.md#🔎-creating-your-own-searches)
 - Switch between virtual environments in the same or different project/workspace
-- [PEP-723 (`uv`) integration](docs/USAGE.md#-pep-723-uv-integration).
+- [PEP-723 (`uv`) integration](docs/USAGE.md#🧾-pep-723-uv-integration).
 - Terminals start with selected venv active (sets `VIRTUAL_ENV` or `CONDA_PREFIX`).
 - Re-activates virtual environment for project/workspace when you open a python file.
 - Integrates with debuggers (nvim-dap / nvim-dap-python + debugpy), statuslines, and many pickers.
 - Picker backends: `telescope`, `fzf-lua`, `snacks`, `mini-pick`, `vim.ui.select`
-- Integrations with status bars: [Lualine](docs/USAGE.md#lualine), [NvChad](docs/USAGE.md#nvchad)
+- Integrations with status bars: [Lualine](docs/USAGE.md#🎛️-support-for-lualine-and-nvchad-statusbars), [NvChad](docs/USAGE.md#🎛️-support-for-lualine-and-nvchad-statusbars)
 - Many [options](docs/OPTIONS.md) to control behavior.
 
 <br>
-    
+
 ## 📚 About these docs
 
 These docs are structured into several categories:
@@ -52,7 +61,7 @@ These docs are structured into several categories:
 - [OPTIONS](docs/OPTIONS.md) - How to configure options
 
 <br>
-    
+
 ## 🧩 Requirements
 
 - Neovim >= 0.11
@@ -119,3 +128,12 @@ See if you can understand the problem from the log. If you still have issues, op
 
 <br>
 
+## Contributing
+
+Contributions welcome — please open issues or PRs. See `CONTRIBUTING.md` for details on the development workflow and tests.
+
+<br>
+
+## License
+
+MIT License — see `LICENCE.md` for details.

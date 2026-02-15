@@ -23,7 +23,8 @@ Refer to [docs/OPTIONS.md](OPTIONS.md) for complete reference of options you can
   - `$FILE_DIR` — directory of current file
   - `$CURRENT_FILE` — currently open file
 
-
+<br>
+    
 ### 🧪 1. Creating a fd search
 
 When creating a new search, make sure it gives the expected results in your terminal first.
@@ -144,7 +145,8 @@ search = {
 
 Have a look at [config.lua](../lua/venv-selector/config.lua) to see the built-in searches and how they look.
 </details>
-
+<br>
+    
 ## Overriding or disabling a search
 
 If you want to *override* one of the default searches, create a search with the same name. This changes the default cwd (*c*urrent *w*orking *d*irectory) search to not search for hidden files by removing the `-H` flag that is part of the default cwd search. This makes it much faster, but wont find venvs in directories like `.venv/`.

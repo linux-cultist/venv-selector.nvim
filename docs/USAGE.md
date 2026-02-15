@@ -114,7 +114,8 @@ Refer to [docs/OPTIONS.md](OPTIONS.md) for complete reference of options you can
 
     <details>
     <summary>🪟 Windows</summary>
-   
+    <br>
+
     VenvSelect doesn't understand Windows shell variables like **%USERPROFILE%**, but you can use **$HOME**.
     
     - You *have to* escape each backslash in the regexp with another backslash.

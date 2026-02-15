@@ -115,10 +115,8 @@ Refer to [docs/OPTIONS.md](OPTIONS.md) for complete reference of options you can
     <details>
     <summary>🪟 Windows</summary>
    
-    VenvSelect doesn't understand Windows shell variables like '%USERPROFILE%', but you can use '$HOME'. Its also important to escape backslashes on windows, see below.
+    VenvSelect doesn't understand Windows shell variables like ```%USERPROFILE%```, but you can use '$HOME'. Its also important to escape backslashes on windows, see below.
     
-        
-    NOTE:
     - You *have to* escape each backslash in the regexp with another backslash.
     - 'Scripts\\python.exe' from the fd example becomes 'Scripts\\\\python.exe' in the plugin config.
     - Use single quotes around regexps.

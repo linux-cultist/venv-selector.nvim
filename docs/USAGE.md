@@ -122,7 +122,7 @@ Refer to [docs/OPTIONS.md](OPTIONS.md) for complete reference of options you can
     - You *have to* escape each backslash in the regexp with another backslash.
     - 'Scripts\\python.exe' from the fd example becomes 'Scripts\\\\python.exe' in the plugin config.
     - Use single quotes around regexps.
-<br>
+
     ```lua
     search = {
       my_project_venvs = {

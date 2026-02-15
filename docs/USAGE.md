@@ -24,7 +24,7 @@ Refer to [docs/OPTIONS.md](OPTIONS.md) for complete reference of options you can
   - `$FILE_DIR` — directory of current file
   - `$CURRENT_FILE` — currently open file
 
-- **1. Creating a fd search**
+1. Creating a fd search
 
     When creating a new search, make sure it gives the expected results in your terminal first.
 
@@ -72,7 +72,7 @@ Refer to [docs/OPTIONS.md](OPTIONS.md) for complete reference of options you can
     Its a good idea to experiment with different flags to fd so you get good performance. Dont search hidden files if your venvs are not hidden, and exclude paths you dont need from the search.
 
 
-- **2. Adding the fd search to VenvSelect config**
+2. Adding the fd search to VenvSelect config
 
     Once your fd search is working, you add it to your plugin config.
 

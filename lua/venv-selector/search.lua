@@ -222,25 +222,44 @@ local function start_search_job(search_name, search_config, job_event_handler, s
         return
     end
 
-    local options = require("venv-selector.config").get_user_options()
+    -- log.debug("Executing search '" ..
+    --     search_name .. "' (using " .. options.shell.shell .. " " .. options.shell.shellcmdflag .. "): '" .. job .. "'")
+
+    -- local sysname = vim.uv.os_uname().sysname or "Linux"
+    -- if sysname == "Windows_NT" then
+    --     cmd = utils.split_cmd_for_windows(job)
+    --     if not cmd or #cmd == 0 then
+    --         log.error("Failed to split command for Windows. Original: " .. search_config.execute_command)
+    --         return
+    --     end
+    -- else
+    --     cmd = { options.shell.shell, options.shell.shellcmdflag, job } -- We use a shell on linux and mac but not windows at the moment.
+    -- end
 
     local job = search_config.execute_command
     ---@cast job string
-    local expanded_job = expand_env(job)
+    local expanded_job = expand_env(job) -- expands $VAR and ~
 
-    log.trace(
+    local options = require("venv-selector.config").get_user_options()
+    local shell = options.shell.shell
+    local shell_cmdflags = options.shell.shellcmdflag
+    if type(shell_cmdflags) == "string" then
+        shell_cmdflags = utils.split_string(shell_cmdflags)
+    end
+
+    local cmd = utils.extend({ options.shell.shell }, shell_cmdflags, { expanded_job })
+
+    log.debug(
         "Executing search '"
-        .. search_name
-        .. "' (using "
-        .. options.shell.shell
-        .. " "
-        .. options.shell.shellcmdflag
-        .. "): '"
-        .. expanded_job
-        .. "'"
+            .. search_name
+            .. "' (using "
+            .. shell
+            .. " "
+            .. table.concat(shell_cmdflags, " ")
+            .. "): '"
+            .. expanded_job
+            .. "'"
     )
-
-    local cmd = { options.shell.shell, options.shell.shellcmdflag, expanded_job }
 
     local function on_exit_wrapper(jid, data, event)
         job_event_handler(jid, data, event)

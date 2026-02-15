@@ -55,6 +55,30 @@ If you don't see your expected venvs in the picker, you can add your own searche
 <br>
 
 
+## 🛠️ Installation (example: lazy.nvim)
+
+Add this to your plugin specs (example):
+
+```lua
+{
+  "linux-cultist/venv-selector.nvim",
+  dependencies = {
+    { "nvim-telescope/telescope.nvim", version = "*", dependencies = { "nvim-lua/plenary.nvim" } },
+  },
+  ft = "python",
+  keys = { { ",v", "<cmd>VenvSelect<cr>" } }, -- example keybind
+  opts = {
+    options = {}, -- plugin-wide options
+    search = {}   -- custom search definitions
+  },
+}
+```
+
+- ⚙️ The plugin creates the `:VenvSelect` command and lazy-loading it by `ft = "python"` is recommended.
+- 🧾 The `:VenvSelectLog` command is available if you set the `log_level` option to `DEBUG` or `TRACE`.
+- 💾 The `:VenvSelectCache` command is available if the `cached_venv_automatic_activation` option is `false` (default is `true`).
+
+<br>
 ## 🗞️ Important updates
 
 - 2026-02-15 — 🔒 LSP gate added to prevent concurrent LSP operations (stop/start races). Also support for switching between multiple Python projects and PEP-723 `uv` metadata files.
@@ -84,32 +108,6 @@ These docs are structured into several categories:
 
 <br>
 
-## 🛠️ Installation (example: lazy.nvim)
-
-Add this to your plugin specs (example):
-
-```lua
-{
-  "linux-cultist/venv-selector.nvim",
-  dependencies = {
-    { "nvim-telescope/telescope.nvim", version = "*", dependencies = { "nvim-lua/plenary.nvim" } },
-  },
-  ft = "python",
-  keys = { { ",v", "<cmd>VenvSelect<cr>" } }, -- example keybind
-  opts = {
-    options = {}, -- plugin-wide options
-    search = {}   -- custom search definitions
-  },
-}
-```
-
-Note:
-
-- The plugin creates the `:VenvSelect` command and lazy-loading it by `ft = "python"` is recommended.
-- The `:VenvSelectLog` command is available if you set the `log_level` option to `DEBUG` or `TRACE`.
-- There is also the `:VenvSelectCache` command, only available if the `cached_venv_automatic_activation` option is `false` (default is `true`).
-
-<br>
 
 ## 🛟 Troubleshooting
 

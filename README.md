@@ -38,7 +38,7 @@ If you don't see your expected venvs in the picker, you can add your own searche
 - Re-activates virtual environment for project/workspace when you open a python file.
 - Integrates with debuggers (nvim-dap / nvim-dap-python + debugpy), statuslines, and many pickers.
 - Picker backends: `telescope`, `fzf-lua`, `snacks`, `mini-pick`, `vim.ui.select`
-- Integrations with status bars: [Lualine](docs/USAGE.md#lualine), [NvChad](docs/USAGE-md#nvchad)
+- Integrations with status bars: [Lualine](docs/USAGE.md#lualine), [NvChad](docs/USAGE.md#nvchad)
 - [Many options to control behavior](docs/OPTIONS.md).
 
 <br>

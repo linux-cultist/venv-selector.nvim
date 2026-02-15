@@ -26,126 +26,126 @@ Refer to [docs/OPTIONS.md](OPTIONS.md) for complete reference of options you can
 
 <br>
     
-##### 🧪 1. Creating a fd search
+- **🧪 1. Creating a fd search**
 
-When creating a new search, make sure it gives the expected results in your terminal first.
+    When creating a new search, make sure it gives the expected results in your terminal first.
 
-<details>
-<summary>🐧 Linux/macOS</summary>
-<br>
-Here we search for all pythons under the `~/Code` directory. We need the result to be the full paths to the python interpreters.
+    <details>
+    <summary>🐧 Linux/macOS</summary>
+    <br>
+    Here we search for all pythons under the `~/Code` directory. We need the result to be the full paths to the python interpreters.
 
-```
-$ `fd '/bin/python$' ~/Code --no-ignore-vcs --full-path`
-/home/cado/Code/Personal/new_env/infrastructure/venv/bin/python
-/home/cado/Code/Personal/play_with_python/venv/bin/python
-/home/cado/Code/Personal/python_test/venv/bin/python
-/home/cado/Code/Personal/test_venvsel/env/bin/python
-/home/cado/Code/Personal/test_space/my folder/venv/bin/python
-/home/cado/Code/Personal/playing/venv/bin/python
-/home/cado/Code/Personal/parse_manifest/venv/bin/python
-/home/cado/Code/Personal/fastapi_learning/venv/bin/python
-/home/cado/Code/Personal/snowflake-conn/venv/bin/python
-/home/cado/Code/Personal/dbt/venv/bin/python
-/home/cado/Code/Personal/pulse_jinja/venv/bin/python
-/home/cado/Code/Personal/databricks-cli/venv/bin/python
-/home/cado/Code/Personal/exercise/venv/bin/python
-/home/cado/Code/Personal/test_python/venv/bin/python
-/home/cado/Code/Personal/helix/venv/bin/python
-/home/cado/Code/Personal/fleet_python/venv/bin/python
-```
-
-</details>
-
-<details>
-<summary>🪟 Windows</summary>
-<br>
-Here we search for all pythons under the home directory. We want to match on all paths ending in `Scripts\\python.exe` since those are the venvs on Windows.
-
-```
-tameb@WIN11 C:\Users\tameb>fd Scripts\\python.exe$ %USERPROFILE%\Code --full-path -I -a  
-C:\Users\tameb\Code\another_project\venv\Scripts\python.exe
-C:\Users\tameb\Code\manual\venv\Scripts\python.exe
-C:\Users\tameb\Code\sample_project\venv\Scripts\python.exe
-```
-
-</details>
-
-Its a good idea to experiment with different flags to fd so you get good performance. Dont search hidden files if your venvs are not hidden, and exclude paths you dont need from the search.
-
-
-#### ➕ 2. Adding the fd search to VenvSelect config
-
-Once your fd search is working, you add it to your plugin config.
-
-<details>
-<summary>🐧 Linux/macOS</summary>
-<br>
-You can use relative paths here to specify search location, but make sure to use `fd --full-path` so `fd` always gives you back an absolute path to the results.
+    ```
+    $ `fd '/bin/python$' ~/Code --no-ignore-vcs --full-path`
+    /home/cado/Code/Personal/new_env/infrastructure/venv/bin/python
+    /home/cado/Code/Personal/play_with_python/venv/bin/python
+    /home/cado/Code/Personal/python_test/venv/bin/python
+    /home/cado/Code/Personal/test_venvsel/env/bin/python
+    /home/cado/Code/Personal/test_space/my folder/venv/bin/python
+    /home/cado/Code/Personal/playing/venv/bin/python
+    /home/cado/Code/Personal/parse_manifest/venv/bin/python
+    /home/cado/Code/Personal/fastapi_learning/venv/bin/python
+    /home/cado/Code/Personal/snowflake-conn/venv/bin/python
+    /home/cado/Code/Personal/dbt/venv/bin/python
+    /home/cado/Code/Personal/pulse_jinja/venv/bin/python
+    /home/cado/Code/Personal/databricks-cli/venv/bin/python
+    /home/cado/Code/Personal/exercise/venv/bin/python
+    /home/cado/Code/Personal/test_python/venv/bin/python
+    /home/cado/Code/Personal/helix/venv/bin/python
+    /home/cado/Code/Personal/fleet_python/venv/bin/python
+    ```
     
-```lua
-search = {
-  my_project_venvs = {
-    command = "fd '/bin/python$' ~/Code --full-path --color never",
-  },
--- you can add more searches here
--- another_search = {
--- command = ""
--- }
-}
-```
-
-If it's a search for a conda-type environment, set the type to `anaconda` so the plugin sets the environment variable `CONDA_PREFIX` and not `VIRTUAL_ENV`:
-
-```lua
-search = {
-  my_conda_base = {
-    command = "fd '/bin/python$' /opt/anaconda3 --full-path --color never -E pkgs", -- exclude path with pkgs
-    type = "anaconda" -- it's anaconda-style environment (also for miniconda)
-  }
-  -- you can add more searches here
-  -- another_search = {
-  -- command = ""
-  -- }
-}
-```
-
-Have a look at [config.lua](../lua/venv-selector/config.lua) to see the built-in searches and how they look.
-
-</details>
-
-<details>
-<summary>🪟 Windows</summary>
-<br>
-VenvSelect doesn't understand Windows shell variables like `%USERPROFILE%`, but you can use `$HOME`. Its also important to escape backslashes on windows, see below.
-<br>
+    </details>
     
-NOTE:
-- You *have to* escape each backslash in the regexp with another backslash.
-- 'Scripts\\python.exe' from the fd example becomes 'Scripts\\\\python.exe' in the plugin config.
-- Use single quotes around regexps.
+    <details>
+    <summary>🪟 Windows</summary>
+    <br>
+    Here we search for all pythons under the home directory. We want to match on all paths ending in `Scripts\\\\python.exe` since those are the venvs on Windows.
 
-```lua
-search = {
-  my_project_venvs = {
-      command = "fd 'Scripts\\\\python.exe$' $HOME/Code --full-path --color never -a",
-  }
-}
-```
+    ```
+    tameb@WIN11 C:\Users\tameb>fd Scripts\\python.exe$ %USERPROFILE%\Code --full-path -I -a  
+    C:\Users\tameb\Code\another_project\venv\Scripts\python.exe
+    C:\Users\tameb\Code\manual\venv\Scripts\python.exe
+    C:\Users\tameb\Code\sample_project\venv\Scripts\python.exe
+    ```
+    
+    </details>
+    
+    Its a good idea to experiment with different flags to fd so you get good performance. Dont search hidden files if your venvs are not hidden, and exclude paths you dont need from the search.
 
-For conda-style environments on Windows:
 
-```lua
-search = {
-  my_conda_base = {
-    command = "$FD anaconda3\\\\python.exe$ $HOME/anaconda3 --full-path -a",
-    type = "anaconda" -- anaconda-style environment
-  }
-}
-```
+- **➕ 2. Adding the fd search to VenvSelect config**
 
-Have a look at [config.lua](../lua/venv-selector/config.lua) to see the built-in searches and how they look.
-</details>
+    Once your fd search is working, you add it to your plugin config.
+
+    <details>
+    <summary>🐧 Linux/macOS</summary>
+    <br>
+    You can use relative paths here to specify search location, but make sure to use `fd --full-path` so `fd` always gives you back an absolute path to the results.
+        
+    ```lua
+    search = {
+      my_project_venvs = {
+        command = "fd '/bin/python$' ~/Code --full-path --color never",
+      },
+    -- you can add more searches here
+    -- another_search = {
+    -- command = ""
+    -- }
+    }
+    ```
+
+    If it's a search for a conda-type environment, set the type to `anaconda` so the plugin sets the environment variable `CONDA_PREFIX` and not `VIRTUAL_ENV`:
+
+    ```lua
+    search = {
+      my_conda_base = {
+        command = "fd '/bin/python$' /opt/anaconda3 --full-path --color never -E pkgs", -- exclude path with pkgs
+        type = "anaconda" -- it's anaconda-style environment (also for miniconda)
+      }
+      -- you can add more searches here
+      -- another_search = {
+      -- command = ""
+      -- }
+    }
+    ```
+
+    Have a look at [config.lua](../lua/venv-selector/config.lua) to see the built-in searches and how they look.
+
+    </details>
+
+    <details>
+    <summary>🪟 Windows</summary>
+    <br>
+    VenvSelect doesn't understand Windows shell variables like `%USERPROFILE%`, but you can use `$HOME`. Its also important to escape backslashes on windows, see below.
+    <br>
+        
+    NOTE:
+    - You *have to* escape each backslash in the regexp with another backslash.
+    - 'Scripts\\python.exe' from the fd example becomes 'Scripts\\\\python.exe' in the plugin config.
+    - Use single quotes around regexps.
+
+    ```lua
+    search = {
+      my_project_venvs = {
+          command = "fd 'Scripts\\\\\\\\python.exe$' $HOME/Code --full-path --color never -a",
+      }
+    }
+    ```
+
+    For conda-style environments on Windows:
+
+    ```lua
+    search = {
+      my_conda_base = {
+        command = "$FD anaconda3\\\\python.exe$ $HOME/anaconda3 --full-path -a",
+        type = "anaconda" -- anaconda-style environment
+      }
+    }
+    ```
+
+    Have a look at [config.lua](../lua/venv-selector/config.lua) to see the built-in searches and how they look.
+    </details>
 <br>
     
 ## Overriding or disabling a search

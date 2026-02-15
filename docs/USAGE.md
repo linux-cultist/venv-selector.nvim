@@ -58,7 +58,7 @@ Refer to [docs/OPTIONS.md](OPTIONS.md) for complete reference of options you can
     <details>
     <summary>🪟 Windows</summary>
     <br>
-    Here we search for all pythons under the home directory. We want to match on all paths ending in `Scripts\\\\python.exe` since those are the venvs on Windows.
+    Here we search for all pythons under the home directory. We want to match on all paths ending in `Scripts\\python.exe` since those are the venvs on Windows.
 
     ```
     tameb@WIN11 C:\Users\tameb>fd Scripts\\python.exe$ %USERPROFILE%\Code --full-path -I -a  
@@ -126,7 +126,7 @@ Refer to [docs/OPTIONS.md](OPTIONS.md) for complete reference of options you can
     ```lua
     search = {
       my_project_venvs = {
-          command = "fd 'Scripts\\\\\\\\python.exe$' $HOME/Code --full-path --color never -a",
+          command = "fd 'Scripts\\\\python.exe$' $HOME/Code --full-path --color never -a",
       }
     }
     ```

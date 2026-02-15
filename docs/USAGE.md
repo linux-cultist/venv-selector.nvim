@@ -259,3 +259,37 @@ M.ui = {
   }
 }
 ```
+
+### Lsp server information
+
+The plugin takes care to not overwrite your own config. When you select a virtual environment in the picker, it only extends the config for the lsp server with additional python settings to use your selected venv.
+
+You can run `checkhealth vim.lsp` to see your active lsp servers for your buffers and their configuration.
+
+```lua
+vim.lsp: Active Clients ~
+- ty (id: 4)
+  - Version: 0.0.14
+  - Root directory: /mnt/extra/Code/Projects/something
+  - Command: { "ty", "server" }
+  - Settings: {
+      python = {
+        pythonPath = "/mnt/extra/Code/Projects/something/venv/bin/python",
+        venv = "venv",
+        venvPath = "/mnt/extra/Code/Projects/something"
+      }
+    }
+  - Attached buffers: 3
+```
+
+The plugin has been tested with these lsp servers but should work with most/all of them.
+
+- basedpyright
+- pyright
+- ty
+- jedi_language_server
+- pyrefly
+- zuban
+- pylsp
+- ruff
+

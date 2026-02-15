@@ -13,29 +13,6 @@
 
 <br>
 
-## 🗞️ Important news
-
-- 2026-02-15 — 🔒 LSP gate added to prevent concurrent LSP operations (stop/start races). Also improved support for switching between multiple Python projects and PEP-723 `uv` metadata files.
-- 2025-09-30 — 🆕 Minimum Neovim now **0.11**; LSP servers are expected to be configured by the user via `vim.lsp.config`.
-- 2025-08-27 — ✅ Regexp-branch merged into `main`. If you need the older behavior you can pin the `v1` branch (note: `v1` is no longer actively updated).
-
-<br>
-    
-## 🚀 Quick start
-
-1. Add the plugin to your plugin manager (example below for `lazy.nvim`).
-2. Open any Python file.
-3. Trigger `:VenvSelect` or your mapped key (example `,v`).
-4. Choose a virtual environment.
-5. Optionally open other python files in other projects and do steps 2-4 again.
-6. You can now switch between their buffers and the plugin remembers the selected venv for each project.
-
-The plugin configures your LSP to use the selected venv and also sets `VIRTUAL_ENV` or `CONDA_PREFIX` for use in terminals started from Neovim.
-
-If you don't see your expected venvs in the picker, you can add your own searches. See [Creating your own searches](docs/USAGE.md#🔎-creating-your-own-searches) for examples.
-
-<br>
-
 ## ⚡️ Features
 
 - 🌍 Discover virtual environments automatically in common places and your workspaces:
@@ -59,7 +36,32 @@ If you don't see your expected venvs in the picker, you can add your own searche
 - ⚙️ Many [options](docs/OPTIONS.md) to control behavior.
 
 <br>
+    
 
+    
+## 🚀 Quick start
+
+1. Add the plugin to your plugin manager (example below for `lazy.nvim`).
+2. Open any Python file.
+3. Trigger `:VenvSelect` or your mapped key (example `,v`).
+4. Choose a virtual environment.
+5. Optionally open other python files in other projects and do steps 2-4 again.
+6. You can now switch between their buffers and the plugin remembers the selected venv for each project.
+
+The plugin configures your LSP to use the selected venv and also sets `VIRTUAL_ENV` or `CONDA_PREFIX` for use in terminals started from Neovim.
+
+If you don't see your expected venvs in the picker, you can add your own searches. See [Creating your own searches](docs/USAGE.md#🔎-creating-your-own-searches) for examples.
+
+<br>
+
+
+## 🗞️ Important updates
+
+- 2026-02-15 — 🔒 LSP gate added to prevent concurrent LSP operations (stop/start races). Also support for switching between multiple Python projects and PEP-723 `uv` metadata files.
+- 2025-09-30 — 🆕 Minimum Neovim now **0.11**; LSP servers are expected to be configured by the user via `vim.lsp.config`.
+- 2025-08-27 — ✅ Regexp-branch merged into `main`. If you need the older behavior you can pin the `v1` branch (note: `v1` is no longer actively updated).
+
+<br>
     
 ## 📚 About these docs
 

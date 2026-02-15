@@ -284,14 +284,15 @@ vim.lsp: Active Clients ~
   - Attached buffers: 3
 ```
 
-The plugin has been tested with these lsp servers but should work with most/all of them.
+The plugin has been tested with these LSP servers but should work with most/all of them.
 
-- basedpyright
-- pyright
-- ty
-- jedi_language_server
-- pyrefly
-- zuban
-- pylsp
-- ruff
+- 🔧 basedpyright
+- ⚡ pyright
+- 🔎 ty
+- 🧙‍♂️ jedi_language_server
+- 🪶 pyrefly
+- 🎯 zuban
+- 📡 pylsp
+- 🧹 ruff
+
 

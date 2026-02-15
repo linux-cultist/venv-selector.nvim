@@ -39,9 +39,17 @@ If you don't see your expected venvs in the picker, you can add your own searche
 - Integrates with debuggers (nvim-dap / nvim-dap-python + debugpy), statuslines, and many pickers.
 - Picker backends: `telescope`, `fzf-lua`, `snacks`, `mini-pick`, `vim.ui.select`
 - Integrations with status bars: [Lualine](docs/USAGE.md#lualine), [NvChad](docs/USAGE.md#nvchad)
-- [Many options to control behavior](docs/OPTIONS.md).
+- Many [options](docs/OPTIONS.md) to control behavior.
 
 <br>
+    
+## 📚 Docs
+
+These docs are structured into several categories:
+
+- [USAGE](docs/USAGE.md) - How to use the plugin
+- [API](docs/API.md) - How to interact with the plugin from code
+- [OPTIONS](docs/OPTIONS.md) - How to configure options
 
 ## 🧩 Requirements
 

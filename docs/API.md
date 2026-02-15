@@ -1,16 +1,4 @@
-# API — venv-selector.nvim
-
-This document describes the public API exported by the plugin. Use these functions in your configuration, statusline integrations, callbacks, or other plugins to inspect and control the selected Python interpreter / virtual environment.
-
-All functions are accessed through:
-
-```lua
-require("venv-selector")
-```
-
-Note: this file is a concise reference. For configuration options, examples, and deeper behavior, see `docs/OPTIONS.md` and the project README.
-
----
+# Public API of venv-selector.nvim
 
 ## Exposed functions
 
@@ -89,56 +77,3 @@ Note: this file is a concise reference. For configuration options, examples, and
     ```
 
 ---
-
-## Common usage patterns
-
-- Using the API inside a callback (for example `on_venv_activate_callback`) to run project-specific commands:
-  ```lua
-  options = {
-    on_venv_activate_callback = function()
-      local source = require("venv-selector").source()
-      local python = require("venv-selector").python()
-      if source == "poetry" and python then
-        -- Example: instruct poetry to use the selected python in a newly opened terminal
-        local cmd = "poetry env use " .. vim.fn.shellescape(python) .. "\n"
-        vim.api.nvim_feedkeys(cmd, "n", false)
-      end
-    end
-  }
-  ```
-
-- Integrating with statuslines (lualine example):
-  ```lua
-  options = {
-    statusline_func = {
-      lualine = function()
-        local venv_path = require("venv-selector").venv()
-        if not venv_path or venv_path == "" then return "" end
-        local venv_name = vim.fn.fnamemodify(venv_path, ":t")
-        return "🐍 " .. (venv_name or "") .. " "
-      end,
-    }
-  }
-  ```
-
-- Programmatic activation flow (example):
-  ```lua
-  -- programmatically discover a python path by some custom logic and activate it
-  local my_python = "/home/user/.virtualenvs/foo/bin/python"
-  require("venv-selector").activate_from_path(my_python)
-  -- optionally restart/stop LSP servers to ensure they pick up the new interpreter
-  require("venv-selector").stop_lsp_servers()
-  ```
-
----
-
-## Best practices and notes
-
-- Many plugin features rely on a working LSP for Python projects. Some searches also use `$WORKSPACE_PATH`, which is populated by LSP. If you expect workspace-based detections, ensure your LSP is attached.
-- If you are integrating this API into statuslines or UI code, always handle `nil` returns from `python()`, `venv()`, and `source()` to avoid rendering invalid content.
-- Prefer using `activate_from_path` only with interpreter paths you are certain belong to virtual environments. Misuse can result in incorrect environment variables.
-- For configuration of searches and options that affect the behavior of these functions, see `docs/OPTIONS.md`. Default search templates and patterns are defined in `lua/venv-selector/config.lua`.
-
----
-
-If you want, copy example helpers into `examples/` and reference them from your configuration. The `examples/` directory contains statusline and callback helper scripts that demonstrate safe, production-ready usage of these API functions.

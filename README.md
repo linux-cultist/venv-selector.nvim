@@ -43,7 +43,7 @@ If you don't see your expected venvs in the picker, you can add your own searche
 
 <br>
     
-## 📚 Docs
+## 📚 About these docs
 
 These docs are structured into several categories:
 
@@ -51,6 +51,8 @@ These docs are structured into several categories:
 - [API](docs/API.md) - How to interact with the plugin from code
 - [OPTIONS](docs/OPTIONS.md) - How to configure options
 
+<br>
+    
 ## 🧩 Requirements
 
 - Neovim >= 0.11

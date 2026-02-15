@@ -266,7 +266,7 @@ M.ui = {
 
 The plugin takes care to not overwrite your own config. When you select a virtual environment in the picker, it only extends the config for the lsp server with additional python settings to use your selected venv.
 
-You can run `checkhealth vim.lsp` to see your active lsp servers for your buffers and their configuration.
+You can run `:checkhealth vim.lsp` in neovim to see your active lsp servers for your buffers and their configuration.
 
 ```lua
 vim.lsp: Active Clients ~

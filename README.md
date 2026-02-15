@@ -30,7 +30,7 @@ If you don't see your expected venvs in the picker, you can add your own searche
 
 ## ⚡️ Features
 
-- Discover virtual environments automatically in common places and your workspaces:
+- 🌍 Discover virtual environments automatically in common places and your workspaces:
   - 🐍 Python (python3 -m venv venv)
   - 📦 Poetry
   - 🪪 Pipenv
@@ -40,15 +40,15 @@ If you don't see your expected venvs in the picker, you can add your own searche
   - 🔁 Virtualenvwrapper
   - 🥚 Hatch
   - 🧰 Pipx
-- [Create your own searches](docs/USAGE.md#🔎-creating-your-own-searches)
-- Switch between virtual environments in the same or different project/workspace
-- [PEP-723 (`uv`) integration](docs/USAGE.md#🧾-pep-723-uv-integration).
-- Terminals start with selected venv active (sets `VIRTUAL_ENV` or `CONDA_PREFIX`).
-- Re-activates virtual environment for project/workspace when you open a python file.
-- Integrates with debuggers (nvim-dap / nvim-dap-python + debugpy), statuslines, and many pickers.
-- Picker backends: `telescope`, `fzf-lua`, `snacks`, `mini-pick`, `vim.ui.select`
-- Integrations with status bars: [Lualine](docs/USAGE.md#🎛️-support-for-lualine-and-nvchad-statusbars), [NvChad](docs/USAGE.md#🎛️-support-for-lualine-and-nvchad-statusbars)
-- Many [options](docs/OPTIONS.md) to control behavior.
+- 🔍 [Create your own searches](docs/USAGE.md#🔎-creating-your-own-searches)
+- 🔁 Switch between virtual environments in the same or different project/workspace
+- 🧾 [PEP-723 (`uv`) integration](docs/USAGE.md#🧾-pep-723-uv-integration).
+- 🖥️ Terminals start with selected venv active (sets `VIRTUAL_ENV` or `CONDA_PREFIX`).
+- 🔄 Re-activates virtual environment for project/workspace when you open a python file.
+- 🧩 Integrates with debuggers (nvim-dap / nvim-dap-python + debugpy), statuslines, and many pickers.
+- 🧰 Picker backends: `telescope`, `fzf-lua`, `snacks`, `mini-pick`, `vim.ui.select`
+- 🎛️ Integrations with status bars: [Lualine](docs/USAGE.md#🎛️-support-for-lualine-and-nvchad-statusbars), [NvChad](docs/USAGE.md#🎛️-support-for-lualine-and-nvchad-statusbars)
+- ⚙️ Many [options](docs/OPTIONS.md) to control behavior.
 
 <br>
 
@@ -127,13 +127,3 @@ See if you can understand the problem from the log. If you still have issues, op
 - **How does the plugin detect venvs?** By searching for interpreter binaries and recognizing common venv manager locations. PEP-723 metadata is supported if `uv` is available.
 
 <br>
-
-## Contributing
-
-Contributions welcome — please open issues or PRs. See `CONTRIBUTING.md` for details on the development workflow and tests.
-
-<br>
-
-## License
-
-MIT License — see `LICENCE.md` for details.

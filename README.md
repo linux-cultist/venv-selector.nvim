@@ -76,7 +76,7 @@ Add this to your plugin specs (example):
 
 With the above settings, the plugin is lazy-loaded and activated on python files. The `:VenvSelect` command becomes available to select a venv for your currently opened python project.
 
-The `:VenvSelectLog` command is available if you set the `log_level` option to `DEBUG` or `TRACE`. This shows a detailed log of what the plugin is doing when you pick a virtual environment in the picker.
+The `:VenvSelectLog` command is available if you set the `log_level` [option](docs/OPTIONS.md) to `DEBUG` or `TRACE`. This shows a detailed log of what the plugin is doing when you pick a virtual environment in the picker.
 
 The `:VenvSelectCache` command is only available if the `cached_venv_automatic_activation` [option](docs/OPTIONS.md) is `false`. This means you have turned off automatic activation of cached venvs and this command will let you manually activate them from cache.
 

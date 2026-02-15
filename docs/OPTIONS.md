@@ -40,10 +40,10 @@ options = {
   -- Timeout in seconds for individual search commands (fd). Longer values for slow disks.
   search_timeout = 5,
 
-  -- debug = false,                             -- default: false (boolean)
-  -- Enables debug logging. Use `:VenvSelectLog` to inspect traces.
-  debug = false,
-
+  -- log_level = NONE,                             -- default: NONE
+  -- Enables debug logging. Can be set to DEBUG, TRACE, or NONE. Use `:VenvSelectLog` to inspect traces.
+  log_level = "NONE",
+  
   -- fd_binary_name = nil,                      -- default: auto-detected (string|nil)
   -- Force the fd binary name (e.g., "fd" or "fdfind"). Nil = auto-detect.
   fd_binary_name = nil,

@@ -81,6 +81,7 @@ The `:VenvSelectLog` command is available if you set the `log_level` option to `
 The `:VenvSelectCache` command is available if the `cached_venv_automatic_activation` option is `false` (default is `true`).
 
 <br>
+    
 ## 🗞️ Important updates
 
 - 2026-02-15 — 🔒 LSP gate added to prevent concurrent LSP operations (stop/start races). Also support for switching between multiple Python projects and PEP-723 `uv` metadata files.

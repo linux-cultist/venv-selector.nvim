@@ -1,19 +1,50 @@
+-- lua/venv-selector/gui/fzf-lua.lua
+--
+-- fzf-lua picker backend for venv-selector.nvim.
+--
+-- Responsibilities:
+-- - Present discovered python interpreters (SearchResult) in an fzf-lua picker.
+-- - Configure fzf matching mode based on options.picker_filter_type:
+--   - "character": fuzzy matching (fzf default) + smart-case
+--   - "substring": contiguous substring matching (exact/literal/no-extended) + smart-case
+-- - Stream results incrementally to fzf via the callback function provided by fzf-lua.
+-- - Keep the currently active venv prioritized near the top:
+--   - delay initial emission briefly to allow the active item to arrive
+--   - emit active items first, then sort the rest
+-- - Stop running searches when the fzf window closes.
+--
+-- Design notes:
+-- - fzf-lua consumes entries as strings; we maintain a `self.entries` map from rendered line -> result table
+--   so selection can activate the correct environment.
+-- - Streaming uses a queue and batched emission to keep UI responsive:
+--   - results are queued via :insert_result()
+--   - :consume_queue() dedups, sorts, formats, emits in batches
+-- - ANSI color is injected into the marker column for the active item using truecolor escape codes.
+--
+-- Conventions:
+-- - Each emitted entry line encodes the configured picker columns:
+--   marker / search_icon / search_name / search_result.
+-- - This module implements the Picker interface used by search.lua:
+--   - :insert_result(result)
+--   - :search_done()
+require("venv-selector.types")
+
 local gui_utils = require("venv-selector.gui.utils")
 
 local M = {}
 M.__index = M
 
+---Compute a window configuration sized to the current editor dimensions.
+---@return table winopts
 local function get_dynamic_winopts()
     local columns = vim.o.columns
     local lines = vim.o.lines
 
-    -- Calculate dynamic width (80-95% of terminal width, with min/max constraints)
     local width_ratio = 0.9
     local min_width = 60
     local max_width = 120
     local dynamic_width = math.max(min_width, math.min(max_width, math.floor(columns * width_ratio)))
 
-    -- Calculate dynamic height (30-50% of terminal height, with min/max constraints)
     local height_ratio = 0.4
     local min_height = 0.3
     local max_height = 0.6
@@ -26,32 +57,43 @@ local function get_dynamic_winopts()
     }
 end
 
+
+---Create and display an fzf-lua picker instance.
+---`search_opts` are passed through to the search layer by the caller (not used directly here).
+---@param search_opts table Search options (unused; accepted for backend parity)
+---@return venv-selector.FzfLuaState self
 function M.new(search_opts)
     local self = setmetatable({ is_done = false, queue = {}, entries = {}, is_closed = false, picker_started = false }, M)
+    self._started_emitting = false
+    self._grace_ms = 120 -- enough for fast sources to deliver active item
+    self._t0 = vim.uv.now()
+    self._flush_scheduled = false
+    self._flush_ms = 15
+    self._batch_size = 25
 
     local config = require("venv-selector.config")
-    local filter_type = config.user_settings.options.picker_filter_type or
-        config.user_settings.options.telescope_filter_type or "substring"
-    local algo = filter_type == "substring" and "v2" or "v1"
+    local filter_type = config.user_settings.options.picker_filter_type
+
+    -- fzf matching behavior:
+    -- - "character": fuzzy matching (default fzf behavior) + smart-case
+    -- - "substring": literal substring matching + smart-case
+    local algo = (filter_type == "substring") and "v2" or "v1"
 
     local fzf_lua = require("fzf-lua")
-    
-    -- Set up autocmd to detect when fzf-lua window closes
+
+    -- Stop search when the fzf window closes (and avoid further emissions).
     local augroup = vim.api.nvim_create_augroup("VenvSelectFzfLua", { clear = true })
     vim.api.nvim_create_autocmd("WinClosed", {
         group = augroup,
         callback = function(ev)
-            -- Check if this is an fzf-lua window by checking buffer name
             local winid = tonumber(ev.match)
             if winid then
                 local ok, bufnr = pcall(vim.api.nvim_win_get_buf, winid)
                 if ok then
                     local bufname = vim.api.nvim_buf_get_name(bufnr)
-                    -- fzf-lua buffers typically have 'fzf' in their name
                     if bufname:match("fzf") or vim.bo[bufnr].filetype == "fzf" then
-                        -- Mark picker as closed and stop any active search jobs
                         self.is_closed = true
-                        self.fzf_cb = nil  -- Clear callback to prevent reopening
+                        self.fzf_cb = nil
                         require("venv-selector.search").stop_search()
                         vim.api.nvim_del_augroup_by_id(augroup)
                     end
@@ -59,24 +101,34 @@ function M.new(search_opts)
             end
         end,
     })
-    
+
+    local fzf_opts = {
+        ["--tabstop"] = "1",
+        ["--algo"] = algo,
+        ["--smart-case"] = true,
+        ["--ansi"] = true,
+        ["--no-sort"] = true,
+        ["--no-multi"] = true,
+    }
+
+    if filter_type == "substring" then
+        fzf_opts["--no-extended"] = true -- spaces are literal (no term-splitting)
+        fzf_opts["--exact"] = true       -- disable fuzzy; require contiguous substring
+        fzf_opts["--literal"] = true     -- treat query literally (no regex-like chars)
+    else
+        fzf_opts["--no-extended"] = nil
+        fzf_opts["--exact"] = nil
+        fzf_opts["--literal"] = nil
+    end
+
     fzf_lua.fzf_exec(function(fzf_cb)
         self.fzf_cb = fzf_cb
-        self:consume_queue()
     end, {
         prompt = "Virtual environments > ",
         winopts = vim.tbl_extend("force", get_dynamic_winopts(), {
-            on_create = function()
-                vim.cmd("startinsert")
-            end,
+            on_create = function() vim.cmd("startinsert") end,
         }),
-        fzf_opts = {
-            ["--tabstop"] = "1",
-            ["--algo"] = algo,
-            ["--exact"] = filter_type == "substring",
-            ["--literal"] = filter_type == "substring",
-            ["--no-multi"] = true,
-        },
+        fzf_opts = fzf_opts,
         actions = {
             ["default"] = function(selected, _)
                 if selected and #selected > 0 then
@@ -90,29 +142,92 @@ function M.new(search_opts)
     return self
 end
 
+---Schedule a queue flush into fzf (debounced).
+---@param self venv-selector.FzfLuaState
+local function schedule_flush(self)
+    if self._flush_scheduled or not self.fzf_cb or self.is_closed then
+        return
+    end
+    self._flush_scheduled = true
+
+    vim.defer_fn(function()
+        self._flush_scheduled = false
+        if self.is_closed or not self.fzf_cb then
+            return
+        end
+        self:consume_queue()
+    end, self._flush_ms or 25)
+end
+
+---Return true if a list contains at least one item that is currently active.
+---@param list venv-selector.SearchResult[]
+---@return boolean has
+local function has_active(list)
+    for _, r in ipairs(list) do
+        if gui_utils.hl_active_venv(r) ~= nil then
+            return true
+        end
+    end
+    return false
+end
+
+---Consume queued results and emit formatted entries into fzf.
+---This function may reschedule itself until the queue is empty.
 function M:consume_queue()
-    -- Don't process results if picker was closed or fzf_cb was cleared
     if self.is_closed or not self.fzf_cb then
         return
     end
-    
-    if self.fzf_cb then
-        for _, result in ipairs(self.queue) do
-            local fzf = require("fzf-lua")
 
+    -- Gate first emission so active can be placed first.
+    if not self._started_emitting then
+        local elapsed = vim.uv.now() - (self._t0 or 0)
+        if not has_active(self.queue) and not self.is_done and elapsed < (self._grace_ms or 120) then
+            schedule_flush(self)
+            return
+        end
+        self._started_emitting = true
+    end
+
+    if #self.queue == 0 then
+        if self.is_done then
+            self.fzf_cb()
+        end
+        return
+    end
+
+    self.queue = gui_utils.remove_dups(self.queue)
+
+    local active, rest = {}, {}
+    for _, r in ipairs(self.queue) do
+        if gui_utils.hl_active_venv(r) ~= nil then
+            active[#active + 1] = r
+        else
+            rest[#rest + 1] = r
+        end
+    end
+    gui_utils.sort_results(rest)
+
+    local emit = vim.list_extend(active, rest)
+
+    local cfg = require("venv-selector.config")
+    local columns = gui_utils.get_picker_columns()
+    local batch_size = self._batch_size or 50
+
+    local emitted = 0
+    local remaining = {}
+
+    for _, result in ipairs(emit) do
+        if emitted < batch_size then
             local hl = gui_utils.hl_active_venv(result)
-
-            -- Format entry with configurable column order
-            local config = require("venv-selector.config")
-            -- Prepare column data
             local type_icon = gui_utils.draw_icons_for_types(result.source)
+
             local marker
             if hl then
-                local color = config.user_settings.options.selected_venv_marker_color or
-                    config.user_settings.options.telescope_active_venv_color
-                local icon = config.user_settings.options.selected_venv_marker_icon or config.user_settings.options.icon or
-                    "●"
-                -- Convert hex color to ANSI escape sequence
+                local color = cfg.user_settings.options.selected_venv_marker_color
+                    or cfg.user_settings.options.telescope_active_venv_color
+                local icon = cfg.user_settings.options.selected_venv_marker_icon
+                    or cfg.user_settings.options.icon
+                    or "●"
                 local r = tonumber(color:sub(2, 3), 16)
                 local g = tonumber(color:sub(4, 5), 16)
                 local b = tonumber(color:sub(6, 7), 16)
@@ -125,51 +240,60 @@ function M:consume_queue()
                 marker = marker,
                 search_icon = type_icon,
                 search_name = string.format("%-15s", result.source),
-                search_result = result.name
+                search_result = result.name,
             }
 
-            -- Build entry based on configured column order
-            local columns = gui_utils.get_picker_columns()
             local parts = {}
             for _, col in ipairs(columns) do
                 if column_data[col] then
-                    table.insert(parts, column_data[col])
+                    parts[#parts + 1] = column_data[col]
                 end
             end
-            entry = table.concat(parts, "  ")
 
-            -- No need to strip ansi colors since we're not using them anymore
+            local entry = table.concat(parts, "  ")
             self.entries[entry] = result
             self.fzf_cb(entry)
+            emitted = emitted + 1
+        else
+            remaining[#remaining + 1] = result
         end
-        self.queue = {}
+    end
 
-        -- notify to fzf-lua that we are done generating results
-        if self.is_done then
-            self.fzf_cb(nil)
-        end
+    self.queue = remaining
+
+    if self.is_done and #self.queue == 0 then
+        self.fzf_cb()
+        return
+    end
+
+    if #self.queue > 0 then
+        vim.defer_fn(function()
+            if not self.is_closed and self.fzf_cb then
+                self:consume_queue()
+            end
+        end, self._flush_ms or 25)
     end
 end
 
+---Queue a SearchResult for emission into fzf and schedule a flush.
+---@param result venv-selector.SearchResult
 function M:insert_result(result)
-    -- Don't accept new results if picker was closed
     if self.is_closed then
         return
     end
-    
-    -- Just queue results, don't consume until search is done
     self.queue[#self.queue + 1] = result
+    schedule_flush(self)
 end
 
+---Mark the search as done and ensure the remaining queue is emitted, then close the fzf feed.
 function M:search_done()
-    -- Don't do anything if picker was already closed
     if self.is_closed then
         return
     end
-
-    -- Process all queued results
     self.is_done = true
-    self:consume_queue()
+    if self.fzf_cb then
+        self:consume_queue()
+    end
 end
 
 return M

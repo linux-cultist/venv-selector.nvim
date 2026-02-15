@@ -1,74 +1,41 @@
-local hooks = require("venv-selector.hooks")
+-- lua/venv-selector/config.lua
+--
+-- Configuration and defaults for venv-selector.nvim.
+--
+-- Responsibilities:
+-- - Define typed configuration shapes (Options / Settings / Searches).
+-- - Provide OS-specific default search commands (fd-based discovery).
+-- - Provide default options and cache location.
+-- - Finalize settings:
+--     - Merge shell defaults
+--     - Auto-detect fd binary name
+--     - Populate default searches (if user didn't specify any)
+--     - Inject default hook(s) if user didn't provide hooks
+-- - Store user configuration (deep-merge) and expose getters.
+--
+-- Design notes:
+-- - This module intentionally avoids hard-requiring other modules at load time
+--   where it might create cycles; e.g. default hook is injected via pcall(require)
+--   inside ensure_default_hooks().
+-- - fd_binary_name is computed during finalize_settings so it is always available
+--   to the search layer without repeated detection calls.
 
----@class venv-selector.SearchCommand
----@field command string The command to execute for finding python interpreters
----@field type? string Optional type identifier (e.g., "anaconda")
-
----@class venv-selector.SearchCommands
----@field virtualenvs? venv-selector.SearchCommand
----@field hatch? venv-selector.SearchCommand
----@field poetry? venv-selector.SearchCommand
----@field pyenv? venv-selector.SearchCommand
----@field pipenv? venv-selector.SearchCommand
----@field pixi? venv-selector.SearchCommand
----@field anaconda_envs? venv-selector.SearchCommand
----@field anaconda_base? venv-selector.SearchCommand
----@field miniconda_envs? venv-selector.SearchCommand
----@field miniconda_base? venv-selector.SearchCommand
----@field pipx? venv-selector.SearchCommand
----@field cwd? venv-selector.SearchCommand
----@field workspace? venv-selector.SearchCommand
----@field file? venv-selector.SearchCommand
-
----@alias venv-selector.Hook fun(venv_python: string|nil, env_type: string|nil)
-
----@class venv-selector.CacheSettings
----@field file string Path to cache file (default: "~/.cache/venv-selector/venvs2.json")
-
----@class venv-selector.PickerOptions
----@field snacks? table Snacks picker specific options (default: { layout = { preset = "select" } })
-
----@class venv-selector.Options
----@field on_venv_activate_callback? fun() Callback function for after a venv activates (default: nil)
----@field enable_default_searches boolean Switches all default searches on/off (default: true)
----@field enable_cached_venvs boolean Use cached venvs that are activated automatically (default: true)
----@field cached_venv_automatic_activation boolean If false, VenvSelectCached command becomes available for manual activation (default: true)
----@field activate_venv_in_terminal boolean Activate the selected python interpreter in terminal windows (default: true)
----@field set_environment_variables boolean Sets VIRTUAL_ENV or CONDA_PREFIX environment variables (default: true)
----@field notify_user_on_venv_activation boolean Notifies user on activation of the virtual env (default: false)
----@field override_notify boolean  Override built-in vim.notify with nvim-notify plugin if its installed (default: true)
----@field search_timeout number If a search takes longer than this many seconds, stop it (default: 5)
----@field debug boolean Enables VenvSelectLog command to view debug logs (default: false)
----@field fd_binary_name? string Name of fd binary to use (fd, fdfind, etc.) (default: auto-detected)
----@field require_lsp_activation boolean Require activation of an lsp before setting env variables (default: true)
----@field shell? table Allows you to override what shell and shell flags to use for the searches (may be different from your default shell)
----@field on_telescope_result_callback? fun(filename: string): string Callback for modifying telescope results (default: nil)
----@field picker_filter_type "substring"|"character" Filter by substring or character in pickers (default: "substring")
----@field selected_venv_marker_color string The color of the selected venv marker (default: "#00FF00")
----@field selected_venv_marker_icon string The icon to use for marking the selected venv (default: "✔")
----@field picker_icons table<string, string> Override default icons for venv types (default: {})
----@field picker_columns string[] Column order in pickers (default: { "marker", "search_icon", "search_name", "search_result" })
----@field picker "telescope"|"fzf-lua"|"native"|"mini-pick"|"snacks"|"auto" The picker to use (default: "auto")
----@field statusline_func table Statusline functions for different statusline plugins (default: { nvchad = nil, lualine = nil })
----@field picker_options venv-selector.PickerOptions Picker-specific options
----@field telescope_active_venv_color? string Deprecated: use selected_venv_marker_color
----@field icon? string Deprecated: use selected_venv_marker_icon
----@field telescope_filter_type? string Deprecated: use picker_filter_type
-
----@class venv-selector.Settings
----@field cache venv-selector.CacheSettings Cache configuration (default: { file = "~/.cache/venv-selector/venvs2.json" })
----@field hooks venv-selector.Hook[] Hook functions called on venv activation (default: { hooks.dynamic_python_lsp_hook })
----@field options venv-selector.Options Plugin options (see venv-selector.Options for defaults)
----@field search venv-selector.SearchCommands Search commands for finding virtual environments (default: OS-specific searches)
----@field detected? table Detected system information
+require("venv-selector.types")
 
 local M = {}
 
----Find the fd command name available on the system
----@return string|nil
+local uv = vim.uv
+
+-- ============================================================================
+-- Helpers
+-- ============================================================================
+
+---Return the first available fd executable name, or nil if none found.
+---Supports common distro naming variants (fd, fdfind, fd_find).
+---
+---@return string|nil fd_name
 local function find_fd_command_name()
-    local look_for = { "fd", "fdfind", "fd_find" }
-    for _, cmd in ipairs(look_for) do
+    for _, cmd in ipairs({ "fd", "fdfind", "fd_find" }) do
         if vim.fn.executable(cmd) == 1 then
             return cmd
         end
@@ -76,59 +43,81 @@ local function find_fd_command_name()
     return nil
 end
 
----Get default search commands for the current operating system
----@return venv-selector.SearchCommands
+---Build default shell settings from current Neovim options.
+---These defaults are merged with any user-provided overrides during finalize_settings().
+---
+---@return table shell_settings
+local function default_shell_settings()
+    return {
+        shellcmdflag = vim.o.shellcmdflag,
+        shell = vim.o.shell,
+    }
+end
+
+-- ============================================================================
+-- Default searches
+-- ============================================================================
+
+---Return OS-specific default search definitions.
+---These searches are fd-based and expanded by search.lua with $FD/$CWD/$WORKSPACE_PATH/$FILE_DIR.
+---
+---Notes:
+--- - Windows searches use python.exe and Scripts\\python.exe patterns.
+--- - Mac/Linux searches use regex forms like '/bin/python$' depending on expected layout.
+--- - "type = anaconda" is used to mark conda-derived environments for env var handling.
+---
+---@return venv-selector.SearchCommands searches
 function M.get_default_searches()
-    local system = vim.loop.os_uname().sysname
+    local system = (uv.os_uname() or {}).sysname
 
     if system == "Windows_NT" then
         return {
             hatch = {
                 command =
-                "$FD python.exe $HOME/AppData/Local/hatch/env/virtual --no-ignore-vcs --full-path --color never",
+                "$FD python.exe $HOME\\AppData\\Local\\hatch\\env\\virtual --no-ignore-vcs --full-path --color never",
             },
             poetry = {
                 command =
-                "$FD python.exe$ $HOME/AppData/Local/pypoetry/Cache/virtualenvs --no-ignore-vcs --full-path --color never",
+                "$FD python.exe$ $HOME\\AppData\\Local\\pypoetry\\Cache\\virtualenvs --no-ignore-vcs --full-path --color never",
             },
             pyenv = {
                 command =
-                "$FD python.exe$ $HOME/.pyenv/pyenv-win/versions $HOME/.pyenv-win-venv/envs --no-ignore-vcs -E Lib",
+                "$FD python.exe$ $HOME\\.pyenv\\pyenv-win\\versions $HOME\\.pyenv-win-venv\\envs --no-ignore-vcs -E Lib",
             },
             pipenv = {
-                command = "$FD python.exe$ $HOME/.virtualenvs --no-ignore-vcs --full-path --color never",
+                command = "$FD python.exe$ $HOME\\.virtualenvs --no-ignore-vcs --full-path --color never",
             },
             pixi = {
                 command =
-                "$FD python.exe$ $CWD/.pixi/envs $WORKSPACE_PATH/.pixi/envs $FILE_DIR/.pixi/envs $HOME/.pixi/envs -d 2 --no-ignore-vcs --full-path --color never",
+                "$FD python.exe$ $HOME\\.pixi $CWD\\.pixi -HI --no-ignore-vcs --full-path -a --color never",
             },
             anaconda_envs = {
-                command = "$FD python.exe$ $HOME/anaconda3/envs --no-ignore-vcs --full-path -a -E Lib",
+                command = "$FD python.exe$ $HOME\\anaconda3\\envs --no-ignore-vcs --full-path -a -E Lib",
                 type = "anaconda",
             },
             anaconda_base = {
-                command = "$FD anaconda3//python.exe $HOME/anaconda3 --no-ignore-vcs --full-path -a --color never",
+                command = "$FD anaconda3\\\\python.exe$ $HOME\\anaconda3 --no-ignore-vcs --full-path -a --color never",
                 type = "anaconda",
             },
             miniconda_envs = {
-                command = "$FD python.exe$ $HOME/miniconda3/envs --no-ignore-vcs --full-path -a -E Lib",
+                command = "$FD python.exe$ $HOME\\miniconda3\\envs --no-ignore-vcs --full-path -a -E Lib",
                 type = "anaconda",
             },
             miniconda_base = {
-                command = "$FD miniconda3//python.exe $HOME/miniconda3 --no-ignore-vcs --full-path -a --color never",
+                command = "$FD miniconda3\\\\python.exe$ $HOME\\miniconda3 --no-ignore-vcs --full-path -a --color never",
                 type = "anaconda",
             },
             pipx = {
-                command = "$FD Scripts//python.exe$ $HOME/pipx/venvs --no-ignore-vcs --full-path -a --color never",
+                command = "$FD Scripts\\\\python.exe$ $HOME\\pipx\\venvs --no-ignore-vcs --full-path -a --color never",
             },
             cwd = {
-                command = "$FD Scripts//python.exe$ '$CWD' --full-path --color never -HI -a -L",
+                command = "$FD Scripts\\\\python.exe$ $CWD --full-path --color never -HI -a -L",
             },
             workspace = {
-                command = "$FD Scripts//python.exe$ '$WORKSPACE_PATH' --full-path --color never -HI -a -L",
+                command = "$FD Scripts\\\\python.exe$ $WORKSPACE_PATH --full-path --color never -HI -a -L",
             },
             file = {
-                command = "$FD Scripts//python.exe$ '$FILE_DIR' --full-path --color never -HI -a -L",
+                command = "$FD Scripts\\\\python.exe$ $FILE_DIR --full-path --color never -HI -a -L",
             },
         }
     elseif system == "Darwin" then
@@ -151,7 +140,7 @@ function M.get_default_searches()
                 command = "$FD '/bin/python$' ~/.local/share/virtualenvs --no-ignore-vcs --full-path --color never",
             },
             pixi = {
-                command = "$FD '/bin/python$' ~/.pixi/envs --no-ignore-vcs --full-path --color never",
+                command = "$FD '/bin/python$' ~/.pixi/envs $PIXI_HOME -HI --no-ignore-vcs --full-path --color never",
             },
             anaconda_envs = {
                 command = "$FD 'bin/python$' ~/.conda/envs --no-ignore-vcs --full-path --color never",
@@ -184,7 +173,8 @@ function M.get_default_searches()
                 command = "$FD '/bin/python$' '$FILE_DIR' --full-path --color never -E /proc -HI -a -L",
             },
         }
-    else -- Linux and other Unix-like systems
+    else
+        -- Linux / other UNIX
         return {
             virtualenvs = {
                 command = "$FD 'python$' ~/.virtualenvs --no-ignore-vcs --color never",
@@ -203,7 +193,7 @@ function M.get_default_searches()
                 command = "$FD '/bin/python$' ~/.local/share/virtualenvs --no-ignore-vcs --full-path --color never",
             },
             pixi = {
-                command = "$FD '/bin/python$' ~/.pixi/envs --no-ignore-vcs --full-path --color never",
+                command = "$FD '/bin/python$' ~/.pixi/envs $PIXI_HOME -HI --no-ignore-vcs --full-path --color never",
             },
             anaconda_envs = {
                 command = "$FD 'bin/python$' ~/.conda/envs --no-ignore-vcs --full-path --color never",
@@ -239,15 +229,20 @@ function M.get_default_searches()
     end
 end
 
----Default settings with full type annotations for autocomplete
+-- ============================================================================
+-- Defaults
+-- ============================================================================
+
+---Default plugin settings used when the user does not override values.
 ---@type venv-selector.Settings
 local default_settings = {
     cache = {
-        file = "~/.cache/venv-selector/venvs2.json",
+        file = "~/.cache/venv-selector/venvs3.json",
     },
-    hooks = {
-        hooks.dynamic_python_lsp_hook,
-    },
+
+    -- Hooks are kept as a table; if empty, a default hook is injected at finalize time.
+    hooks = {},
+
     options = {
         on_venv_activate_callback = nil,
         enable_default_searches = true,
@@ -259,7 +254,7 @@ local default_settings = {
         override_notify = true,
         search_timeout = 5,
         debug = false,
-        fd_binary_name = find_fd_command_name(),
+        fd_binary_name = nil, -- filled in by finalize_settings()
         require_lsp_activation = true,
         on_telescope_result_callback = nil,
         picker_filter_type = "substring",
@@ -275,42 +270,118 @@ local default_settings = {
                 layout = { preset = "select" },
             },
         },
-        shell = {
-            shellcmdflag = vim.o.shellcmdflag,
-            shell = vim.o.shell
-        }
+        shell = default_shell_settings(),
     },
-    search = M.get_default_searches(),
+
+    -- Filled in by finalize_settings() if missing/empty.
+    search = {},
 }
 
----Initialize user_settings with defaults for immediate autocomplete support
----@type venv-selector.Settings
-M.user_settings = vim.deepcopy(default_settings)
 
----Merge user configuration with default settings
----@param settings venv-selector.Settings|nil User configuration
+-- ============================================================================
+-- Finalization steps (hooks, fd detection, searches)
+-- ============================================================================
+
+---Ensure a default hook exists if the user did not provide any hooks.
+---This keeps the configuration "just works" by default, while allowing users
+---to supply their own hooks list.
+---
+---Implementation detail:
+--- - Uses pcall(require, ...) to avoid config<->hooks require cycles at module load time.
+---
+---@param s venv-selector.Settings
+local function ensure_default_hooks(s)
+    -- Normalize to table.
+    if type(s.hooks) ~= "table" then
+        s.hooks = {}
+    end
+
+    -- User provided hooks (non-empty): respect them.
+    if #s.hooks > 0 then
+        return
+    end
+
+    -- Default hook (lazy require).
+    local ok, hooks_mod = pcall(require, "venv-selector.hooks")
+    if ok and hooks_mod and type(hooks_mod.dynamic_python_lsp_hook) == "function" then
+        s.hooks = { hooks_mod.dynamic_python_lsp_hook }
+    else
+        s.hooks = {}
+    end
+end
+
+---Finalize settings after merge:
+--- - Merge shell defaults
+--- - Auto-detect fd binary
+--- - Populate searches if missing/empty
+--- - Ensure default hooks if user provided none
+---
+---@param s venv-selector.Settings
+---@return venv-selector.Settings finalized
+local function finalize_settings(s)
+    -- Shell defaults: merge user overrides onto current Neovim defaults.
+    s.options.shell = vim.tbl_deep_extend("force", default_shell_settings(), s.options.shell or {})
+
+    -- fd auto-detect.
+    if not s.options.fd_binary_name or s.options.fd_binary_name == "" then
+        s.options.fd_binary_name = find_fd_command_name()
+    end
+
+    -- Default searches if missing/empty.
+    if not s.search or vim.tbl_isempty(s.search) then
+        s.search = M.get_default_searches()
+    end
+
+    -- Default hooks if none provided.
+    ensure_default_hooks(s)
+
+
+
+    return s
+end
+
+-- ============================================================================
+-- State + public API
+-- ============================================================================
+
+---Current effective user settings (defaults, optionally merged with user overrides).
+---@type venv-selector.Settings
+M.user_settings = finalize_settings(vim.deepcopy(default_settings))
+
+---Store user settings (deep-merge with defaults) and finalize.
+---
+---@param settings venv-selector.Settings|nil User overrides (can be nil)
+---@return venv-selector.Settings effective_settings
 function M.store(settings)
     local log = require("venv-selector.logger")
     log.debug("User plugin settings: ", settings, "")
-    -- Deep merge user settings with defaults
+
+    -- Merge onto defaults, then finalize derived fields.
     M.user_settings = vim.tbl_deep_extend("force", default_settings, settings or {})
+    M.user_settings = finalize_settings(M.user_settings)
+
     return M.get_user_settings()
 end
 
+---Get the current Options table (convenience helper).
+---
 ---@return venv-selector.Options
 function M.get_user_options()
     return M.user_settings.options
 end
 
+---Get the current full Settings table (hooks/options/search/cache).
+---
 ---@return venv-selector.Settings
 function M.get_user_settings()
     return M.user_settings
 end
 
----Get the default settings (useful for documentation or testing)
----@return venv-selector.Settings
+---Return a finalized copy of the defaults (no user overrides).
+---
+---@return venv-selector.Settings defaults
 function M.get_defaults()
-    return vim.deepcopy(default_settings)
+    return finalize_settings(vim.deepcopy(default_settings))
 end
 
 return M

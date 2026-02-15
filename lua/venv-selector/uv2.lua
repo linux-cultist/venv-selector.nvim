@@ -219,12 +219,18 @@ end
 ---@param bufnr integer
 ---@param python_path string
 local function apply_uv_python(bufnr, python_path)
-    if not python_path or python_path == "" then
+    if not python_path or python_path == "" then return end
+
+    local cur = vim.api.nvim_get_current_buf()
+    log.trace(("uv2.apply_uv_python bufnr=%d cur=%d py=%s"):format(bufnr, cur, python_path))
+
+    -- Guard: never apply a UV env globally unless that buffer is current.
+    if cur ~= bufnr then
+        log.trace(("uv2.apply_uv_python skip (not current) bufnr=%d cur=%d"):format(bufnr, cur))
         return
     end
-    if path_mod.current_python_path == python_path then
-        return
-    end
+
+    if path_mod.current_python_path == python_path then return end
     require("venv-selector.venv").activate_for_buffer(python_path, "uv", bufnr, { save_cache = false })
 end
 

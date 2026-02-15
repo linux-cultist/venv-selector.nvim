@@ -237,7 +237,7 @@ end
 ---@type venv-selector.Settings
 local default_settings = {
     cache = {
-        file = "~/.cache/venv-selector/venvs3.json",
+        file = "~/.cache/venv-selector/venvs2.json",
     },
 
     -- Hooks are kept as a table; if empty, a default hook is injected at finalize time.

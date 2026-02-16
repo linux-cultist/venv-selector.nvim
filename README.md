@@ -98,7 +98,7 @@ The `:VenvSelectCache` command is only available if the `cached_venv_automatic_a
 ## 🗞️ Important updates
 
 - 2026-02-16 — 🔒 LSP gate added to prevent concurrent LSP operations (stop/start races).
-- 2026-02-16 - 🔀 Support for switching between multiple Python projects and PEP-723 `uv` metadata files and remembering the venv for each.
+- 2026-02-16 — 🔀 Support for switching between multiple Python projects and PEP-723 `uv` metadata files and remembering the venv for each.
 - 2025-09-30 — 🆕 Minimum Neovim now **0.11**; LSP servers are expected to be configured by the user via `vim.lsp.config`.
 - 2025-08-27 — ✅ Regexp-branch merged into `main`. If you need the older behavior you can pin the `v1` branch (note: `v1` is no longer actively updated).
 

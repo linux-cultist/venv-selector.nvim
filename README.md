@@ -11,11 +11,19 @@
   </p>
 </div>
 
-<p align="center">
-  <a href="README.md"><img src="https://img.shields.io/badge/README-2e7d32?style=for-the-badge" /></a>
-  <a href="docs/USAGE.md"><img src="https://img.shields.io/badge/USAGE-2e7d32?style=for-the-badge" /></a>
-  <a href="docs/API.md"><img src="https://img.shields.io/badge/API-2e7d32?style=for-the-badge" /></a>
-  <a href="docs/OPTIONS.md"><img src="https://img.shields.io/badge/OPTIONS-2e7d32?style=for-the-badge" /></a>
+<p>
+  <a href="README.md">
+    <img alt="README" src="https://img.shields.io/badge/README-blue">
+  </a>
+  <a href="docs/USAGE.md">
+    <img alt="USAGE" src="https://img.shields.io/badge/USAGE-blue">
+  </a>
+  <a href="docs/API.md">
+    <img alt="API" src="https://img.shields.io/badge/API-blue">
+  </a>
+  <a href="docs/OPTIONS.md">
+    <img alt="OPTIONS" src="https://img.shields.io/badge/OPTIONS-blue">
+  </a>
 </p>
 
 <br>

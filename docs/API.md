@@ -9,13 +9,6 @@ Quick import
 local vs = require("venv-selector")
 ```
 
-Table of contents
-- Quick reference
-- Detailed API
-- Examples
-- Notes & types
-- See also
-
 <br>
 
 
@@ -60,9 +53,7 @@ require("venv-selector").setup({
   }
 })
 ```
-- Notes:
-  - Call this once from your plugin configuration (e.g. in your lazy.nvim spec `opts` or `setup`).
-  - If prerequisites fail (old Neovim, missing `fd`), setup returns early and not all features will be available.
+Call this once from your plugin configuration (e.g. in your lazy.nvim spec `opts` or `setup`).
 
 <br>
 
@@ -71,7 +62,6 @@ require("venv-selector").setup({
 - Signature: `vs.python()` -> `string | nil`
 - Returns: Absolute path to the active Python interpreter for the current buffer/project (e.g. `/home/user/.venv/bin/python`), or `nil` if none is active.
 - Purpose: Retrieve the interpreter binary path to pass to external tools, debuggers, or job spawns.
-- Buffer scope: value is relevant to the currently active buffer; APIs and commands in the plugin track activation per-project/buffer.
 - Example:
 ```lua
 local py = require("venv-selector").python()
@@ -145,12 +135,12 @@ end
 - Signature: `vs.activate_from_path(python_path, env_type?)`
 - Parameters:
   - `python_path` (string): Full path to a Python interpreter (typically a venv's `bin/python` or `Scripts\python.exe`).
-  - `env_type` (optional string): One of `"venv" | "conda" | "uv"`. If omitted, the plugin attempts to infer the type.
+  - `env_type` (optional string): One of `"venv" | "anaconda".
 - Purpose: Programmatically activate a virtual environment by passing the interpreter path directly. This bypasses the interactive picker and applies the same activation logic the plugin uses for selected entries.
 - Buffer scope: Activation applies to the current buffer/project context (the plugin tracks activation state per project/buffer).
 - Important:
   - Intended for virtualenv-like interpreters. Passing a system Python or arbitrary interpreter may lead to incorrect env var behavior (`VIRTUAL_ENV` set incorrectly).
-  - Provide `env_type = "conda"` for conda-style environments so the plugin sets `CONDA_PREFIX` instead of `VIRTUAL_ENV`.
+  - Provide `env_type = "anaconda"` for conda-style environments so the plugin sets `CONDA_PREFIX` instead of `VIRTUAL_ENV`.
 - Example:
 ```lua
 require("venv-selector").activate_from_path("/home/you/.local/share/venvs/myproject/bin/python", "venv")
@@ -265,9 +255,5 @@ end
 ```
 
 <br>
-
-## 🔧 Statusline & nvim-dap snippets
-
-(removed — moved to `docs/USAGE.md` per docs reorganization)
 
 <br>

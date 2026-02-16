@@ -14,7 +14,7 @@ Table of contents
 - Detailed API
 - Examples
 
----
+<br>
 
 ## ⚡ Quick reference
 
@@ -31,7 +31,7 @@ Table of contents
 | `deactivate` | `vs.deactivate()` | `nil` | Remove active venv from PATH & unset env vars; restore baseline LSP. |
 | `stop_lsp_servers` | `vs.stop_lsp_servers()` | `nil` | Stop plugin-managed python LSP clients for the current buffer. |
 
----
+<br>
 
 ## 🧾 Detailed API
 
@@ -57,7 +57,7 @@ require("venv-selector").setup({
 - Notes:
   - Call this once from your plugin configuration (e.g. in your lazy.nvim spec `opts` or `setup`).
 
----
+<br>
 
 ### vs.python()
 - Signature: `vs.python()` -> `string | nil`
@@ -73,7 +73,7 @@ else
 end
 ```
 
----
+<br>
 
 ### vs.venv()
 - Signature: `vs.venv()` -> `string | nil`
@@ -87,7 +87,7 @@ if venv_path then
 end
 ```
 
----
+<br>
 
 ### vs.source()
 - Signature: `vs.source()` -> `string | nil`
@@ -100,8 +100,7 @@ if src == "poetry" then
   -- special-case logic for poetry projects
 end
 ```
-
----
+<br>
 
 ### vs.workspace_paths()
 - Signature: `vs.workspace_paths()` -> `string[]`
@@ -110,21 +109,21 @@ end
 - Notes:
   - If no LSP is active or the LSP cant detect a workspace, an empty array is returned.
 
----
+<br>
 
 ### vs.cwd()
 - Signature: `vs.cwd()` -> `string`
 - Returns: Current Neovim working directory (equivalent to `vim.fn.getcwd()`). Usually the directory where you start neovim from, but can be changed.
 - Purpose: Useful in custom search templates or for status displays.
 
----
+<br>
 
 ### vs.file_dir()
 - Signature: `vs.file_dir()` -> `string | nil`
 - Returns: Directory of the current buffer's file (or `nil` when buffer has no file).
 - Purpose: Useful for file-local searches that use `$FILE_DIR`.
 
----
+<br>
 
 ### vs.activate_from_path(python_path, env_type?)
 - Signature: `vs.activate_from_path(python_path, env_type?)`
@@ -140,7 +139,7 @@ end
 require("venv-selector").activate_from_path("/home/you/.local/share/venvs/myproject/bin/python", "venv")
 ```
 
----
+<br>
 
 ### vs.deactivate()
 - Signature: `vs.deactivate()`
@@ -160,7 +159,7 @@ require("venv-selector").deactivate()
   - If other plugins or user code dynamically alter LSP client configuration after the snapshot was taken, those changes will not automatically be re-applied.
   - In highly customized LSP setups, you may still need to manually re-attach or restart clients to fully restore your desired configuration.
 
----
+<br>
 
 ### vs.stop_lsp_servers()
 - Purpose: Stop Python LSP clients that were started or modified by venv-selector for the current buffer.

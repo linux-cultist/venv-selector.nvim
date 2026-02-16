@@ -216,7 +216,8 @@ vs.restart_lsp_servers()
   - Unrelated non-Python LSP clients are not affected.
 
 
-
+<br>
+    
 ## 💡 Examples
 
 ### Activate a virtual environment programmatically

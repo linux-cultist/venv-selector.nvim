@@ -88,14 +88,14 @@ The `:VenvSelectCache` command is only available if the `cached_venv_automatic_a
  
 ## 📚 Learn more after installation
 
-- 🧰 [USAGE](docs/USAGE.md) - How to use more features of the plugin
-- 🧩 [API](docs/API.md) - How to interact with the plugin from code
-- ⚙️ [OPTIONS](docs/OPTIONS.md) - How to configure options
+- 🧰 [USAGE](docs/USAGE.md) - Learn more about different features of the plugin
+- 🧩 [API](docs/API.md) - How to interact with the plugin from lua
+- ⚙️ [OPTIONS](docs/OPTIONS.md) - How to configure plugin options
 
 <br>
     
 
-## 🗞️ Important updates
+## 🗞️ Recent major updates
 
 - 2026-02-16 — 🔒 LSP gate added to prevent concurrent LSP operations (stop/start races).
 - 2026-02-16 — 🔀 Support for switching between multiple Python projects and PEP-723 `uv` metadata files and remembering the venv for each.

@@ -17,6 +17,12 @@
 -- - SearchResult.path is a path to the python executable.
 -- - SearchResult.name is a display name (potentially transformed by callbacks).
 -- - SearchResult.type and SearchResult.source identify the search origin.
+--
+-- Buffer scoping note:
+-- - $WORKSPACE_PATH expansion is now scoped to a "context buffer" when possible, so searches
+--   only use workspace folders relevant to the buffer the user invoked the picker from.
+-- - This avoids searching all workspaces across the whole session, and avoids picker-buffer
+--   issues (where current buffer is the picker prompt/results buffer).
 
 local workspace = require("venv-selector.workspace")
 local path = require("venv-selector.path")
@@ -82,6 +88,44 @@ end
 -- ============================================================================
 -- Internal helpers
 -- ============================================================================
+
+---@param bufnr integer
+---@return boolean
+local function is_normal_python_buf(bufnr)
+    return type(bufnr) == "number"
+        and bufnr > 0
+        and vim.api.nvim_buf_is_valid(bufnr)
+        and vim.bo[bufnr].buftype == ""
+        and vim.bo[bufnr].filetype == "python"
+end
+
+---Pick a "context buffer" for scoping workspace folder discovery.
+---This avoids picker buffers (prompt/results) accidentally becoming the scope.
+---
+---Priority:
+--- 1) opts.bufnr if provided and valid
+--- 2) current buffer if it's a normal python buffer
+--- 3) alternate buffer (#) if it's a normal python buffer
+--- 4) fallback to current buffer
+---@param opts venv-selector.SearchOpts|nil
+---@return integer bufnr
+local function resolve_context_bufnr(opts)
+    if opts and type(opts.bufnr) == "number" and vim.api.nvim_buf_is_valid(opts.bufnr) then
+        return opts.bufnr
+    end
+
+    local cur = vim.api.nvim_get_current_buf()
+    if is_normal_python_buf(cur) then
+        return cur
+    end
+
+    local alt = vim.fn.bufnr("#")
+    if type(alt) == "number" and alt > 0 and is_normal_python_buf(alt) then
+        return alt
+    end
+
+    return cur
+end
 
 ---Get the current file path, falling back to alternate buffer if current is empty.
 ---Useful when the command is invoked from a non-file buffer.
@@ -222,20 +266,6 @@ local function start_search_job(search_name, search_config, job_event_handler, s
         return
     end
 
-    -- log.debug("Executing search '" ..
-    --     search_name .. "' (using " .. options.shell.shell .. " " .. options.shell.shellcmdflag .. "): '" .. job .. "'")
-
-    -- local sysname = vim.uv.os_uname().sysname or "Linux"
-    -- if sysname == "Windows_NT" then
-    --     cmd = utils.split_cmd_for_windows(job)
-    --     if not cmd or #cmd == 0 then
-    --         log.error("Failed to split command for Windows. Original: " .. search_config.execute_command)
-    --         return
-    --     end
-    -- else
-    --     cmd = { options.shell.shell, options.shell.shellcmdflag, job } -- We use a shell on linux and mac but not windows at the moment.
-    -- end
-
     local job = search_config.execute_command
     ---@cast job string
     local expanded_job = expand_env(job) -- expands $VAR and ~
@@ -310,11 +340,13 @@ end
 ---@param search_config venv-selector.SearchConfig
 ---@param job_event_handler fun(job_id: integer, data: any, event: string)
 ---@param options table User options
-local function process_search(search_name, search_config, job_event_handler, options)
+---@param context_bufnr integer Buffer used to scope $WORKSPACE_PATH discovery
+local function process_search(search_name, search_config, job_event_handler, options, context_bufnr)
     local cmd = search_config.command:gsub("$FD", options.fd_binary_name)
 
     if cmd:find("$WORKSPACE_PATH") then
-        for _, workspace_path in pairs(workspace.list_folders()) do
+        -- Scope to context buffer to avoid searching all workspaces in the whole session.
+        for _, workspace_path in pairs(workspace.list_folders(context_bufnr)) do
             local ws_search = vim.deepcopy(search_config)
             ws_search.execute_command = cmd:gsub("$WORKSPACE_PATH", workspace_path)
             start_search_job(search_name, ws_search, job_event_handler, options.search_timeout)
@@ -347,6 +379,11 @@ end
 -- ============================================================================
 
 ---Run all configured searches and stream results into a picker/callback.
+---
+---opts.bufnr (optional):
+---If provided, scopes $WORKSPACE_PATH discovery to that buffer's attached LSP clients.
+---If not provided, a best-effort context buffer is chosen (avoids picker buffers).
+---
 ---@param picker venv-selector.Picker|venv-selector.SearchCallbacks|nil
 ---@param opts venv-selector.SearchOpts|nil
 function M.run_search(picker, opts)
@@ -359,6 +396,8 @@ function M.run_search(picker, opts)
 
     local user_settings = require("venv-selector.config").user_settings
     local options = user_settings.options
+
+    local context_bufnr = resolve_context_bufnr(opts)
 
     local search_settings = user_settings
     if opts and type(opts.args) == "string" and #opts.args > 0 then
@@ -392,7 +431,7 @@ function M.run_search(picker, opts)
             local search_config = vim.tbl_extend("force", {}, search_command, {
                 name = search_name,
             })
-            process_search(search_name, search_config, job_event_handler, options)
+            process_search(search_name, search_config, job_event_handler, options, context_bufnr)
         end
     end
 end

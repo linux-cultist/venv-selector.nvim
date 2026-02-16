@@ -41,7 +41,7 @@ end
 
 ---@return string[]
 function M.workspace_paths()
-    return require("venv-selector.workspace").list_folders()
+    return require("venv-selector.workspace").list_folders(vim.api.nvim_get_current_buf())
 end
 
 ---@return string
@@ -55,7 +55,22 @@ function M.file_dir()
 end
 
 function M.stop_lsp_servers()
-    require("venv-selector.venv").stop_lsp_servers()
+    local bufnr = vim.api.nvim_get_current_buf()
+
+    -- 1) Always stop plugin-owned python LSP clients for this buffer.
+    local hooks_mod = require("venv-selector.hooks")
+    hooks_mod.stop_plugin_python_lsps_for_buf(bufnr)
+
+    -- Ensure selecting the same venv again triggers restarts.
+    local pr = require("venv-selector.project_root").key_for_buf(bufnr) or ""
+    hooks_mod.clear_restart_memo_for_root(pr)
+
+    -- 2) Optional: notify user hooks for any additional cleanup they want.
+    -- Convention: (nil,nil,bufnr) means "stop/cleanup".
+    local hooks = require("venv-selector.config").user_settings.hooks or {}
+    for _, hook in pairs(hooks) do
+        pcall(hook, nil, nil, bufnr)
+    end
 end
 
 ---@param python_path string
@@ -129,7 +144,7 @@ local function valid_fd()
     local options = require("venv-selector.config").user_settings.options
     if options.fd_binary_name == nil then
         local message =
-            "Cannot find any fd binary on your system. If it is installed under a different name, set options.fd_binary_name."
+        "Cannot find any fd binary on your system. If it is installed under a different name, set options.fd_binary_name."
         require("venv-selector.logger").error(message)
         vim.notify(message, vim.log.levels.ERROR, { title = "VenvSelect" })
         return false

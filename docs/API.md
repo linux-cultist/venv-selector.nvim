@@ -11,10 +11,8 @@ local vs = require("venv-selector")
 
 Table of contents
 - Quick reference
-- Detailed API (functions)
-- Notes & types
+- Detailed API
 - Examples
-- See also
 
 ---
 
@@ -58,21 +56,20 @@ require("venv-selector").setup({
 ```
 - Notes:
   - Call this once from your plugin configuration (e.g. in your lazy.nvim spec `opts` or `setup`).
-  - If prerequisites fail (old Neovim or missing fd), setup returns early and not all features are available.
 
 ---
 
 ### vs.python()
 - Signature: `vs.python()` -> `string | nil`
-- Returns: Absolute path to the currently selected Python interpreter (e.g. `/home/user/.venv/bin/python`) or `nil` if no venv is selected.
-- Purpose: Use when you need the interpreter binary (to spawn processes, tools, linters, etc.).
+- Returns: Absolute path to the active python interpreter for the workspace/project. Returns `nil` if no python interpreter has been set active (by the plugin).
+- Purpose: Use when you need the path to the interpreter binary.
 - Example:
 ```lua
 local py = require("venv-selector").python()
 if py then
-  vim.notify("Active python: " .. py)
+  vim.notify("Active python path: " .. py)
 else
-  vim.notify("No active venv")
+  vim.notify("No python is activated by the plugin.")
 end
 ```
 
@@ -80,13 +77,13 @@ end
 
 ### vs.venv()
 - Signature: `vs.venv()` -> `string | nil`
-- Returns: Absolute path to the virtualenv root directory (folder containing `bin/` or `Scripts/`) or `nil`.
+- Returns: Absolute path to the active virtual environment folder (containing `bin/` or `Scripts/`) or `nil` if no venv has been set active (by the plugin)
 - Purpose: Useful for statuslines, diagnostics, or inspecting files inside the venv.
 - Example:
 ```lua
 local venv_path = require("venv-selector").venv()
 if venv_path then
-  print("Venv root:", venv_path)
+  print("Virtual environment is located at: ", venv_path)
 end
 ```
 
@@ -94,7 +91,7 @@ end
 
 ### vs.source()
 - Signature: `vs.source()` -> `string | nil`
-- Returns: Name of the search that discovered the currently selected venv (e.g. `"poetry"`, `"cwd"`, `"pyenv"`), or `nil`.
+- Returns: Name of the search that discovered the currently selected venv (e.g. `"poetry"`, `"cwd"`, `"pyenv"`), or `nil` if no interpreter has been set active (by the plugin)
 - Purpose: Helpful when callbacks or automation should behave differently depending on how the venv was found.
 - Example:
 ```lua
@@ -108,16 +105,16 @@ end
 
 ### vs.workspace_paths()
 - Signature: `vs.workspace_paths()` -> `string[]`
-- Returns: Array of workspace root strings detected via LSP for the current buffer/project.
+- Returns: Array of workspace root strings detected via LSP for the current workspace/project in the active buffer.
 - Purpose: Use when constructing searches that reference workspace roots (e.g. templates using `$WORKSPACE_PATH`).
 - Notes:
-  - This depends on LSP clients being attached. If no LSP is active, an empty array may be returned.
+  - If no LSP is active or the LSP cant detect a workspace, an empty array is returned.
 
 ---
 
 ### vs.cwd()
 - Signature: `vs.cwd()` -> `string`
-- Returns: Current Neovim working directory (equivalent to `vim.fn.getcwd()`).
+- Returns: Current Neovim working directory (equivalent to `vim.fn.getcwd()`). Usually the directory where you start neovim from, but can be changed.
 - Purpose: Useful in custom search templates or for status displays.
 
 ---
@@ -149,75 +146,107 @@ require("venv-selector").activate_from_path("/home/you/.local/share/venvs/myproj
 - Signature: `vs.deactivate()`
 - Purpose: Programmatically deactivate the active virtual environment for the current buffer:
   - Prevents automatic restoration on BufEnter for that buffer.
-  - Stops plugin-owned Python LSP clients attached to the buffer.
-  - Restores baseline LSP settings for the buffer.
+  - Stops Python LSP clients that were started or modified by venv-selector.
+  - Restarts Python LSP clients using the previously snapshotted baseline configuration.
   - Removes environment variables and PATH modifications applied by the plugin.
+  - Clears internal activation state so the same environment can be reactivated immediately.
 - Example:
 ```lua
 require("venv-selector").deactivate()
 ```
 - Notes:
-  - Deactivation tries to leave the LSP configuration in a sensible baseline state; if you rely on custom LSP client configs, you may need to re-attach / restart those clients yourself.
+  - Deactivation restores the LSP configuration to the snapshotted baseline taken before venv-selector modified the client.
+  - Because Neovim LSP clients cannot be mutated in place, deactivation stops plugin-managed clients and restarts them using the stored baseline config.
+  - If other plugins or user code dynamically alter LSP client configuration after the snapshot was taken, those changes will not automatically be re-applied.
+  - In highly customized LSP setups, you may still need to manually re-attach or restart clients to fully restore your desired configuration.
 
 ---
 
 ### vs.stop_lsp_servers()
-- Signature: `vs.stop_lsp_servers()`
-- Purpose: Stop plugin-managed Python LSP clients for the current buffer. Useful if you changed interpreter settings and want a clean restart of LSP clients.
+- Purpose: Stop Python LSP clients that were started or modified by venv-selector for the current buffer.
+- This is useful when you want to force a clean LSP restart while keeping the currently active virtual environment.
 - Example:
 ```lua
 require("venv-selector").stop_lsp_servers()
 ```
 - Notes:
-  - This stops only LSP clients the plugin owns/managed. It does not forcibly stop unrelated non-python LSPs.
-
----
-
-## 📝 Notes & types
-
-- `env_type` accepted values:
-  - `"venv"` — venv / virtualenv style.
-  - `"conda"` — Anaconda / Miniconda style.
-  - `"uv"` — PEP-723 (`uv`) style environments.
-- Interpreter path normalization:
-  - On Unix: interpreter typically at `.../bin/python`
-  - On Windows: interpreter typically at `...\\Scripts\\python.exe`
-- LSP work:
-  - The plugin attempts to avoid race conditions when restarting LSP servers (a gated restart flow is used).
-  - `workspace_paths()` relies on attached LSP clients for accurate results.
-
+  - Only plugin-managed Python LSP clients attached to the current buffer are stopped.
+  - Python LSP clients attached exclusively to other buffers are not affected.
+  - Unrelated non-Python LSP clients are not affected.
+- This does not:
+  - Restore baseline LSP configuration
+  - Clear the active virtual environment state
+  - Remove environment variables or PATH modifications
+  - Prevent automatic re-activation
+- After stopping plugin-managed clients, configured hooks are also invoked with (nil, nil, bufnr) to allow user-supplied hooks to perform additional cleanup if they implement that convention.
+  - After calling this function, LSP clients will remain stopped until:
+  - The environment is reactivated, or
+  - Some other mechanism restarts the Python LSP clients.
 ---
 
 ## 💡 Examples
 
-- Programmatic activation + restart LSP:
+### Activate a virtual environment programmatically
+
 ```lua
 local vs = require("venv-selector")
 vs.activate_from_path("/home/me/.venvs/myproject/bin/python", "venv")
--- Optionally stop plugin LSPs to force a restart:
-vs.stop_lsp_servers()
 ```
 
-- Use Python path for a debug adapter or external tool:
+This:
+  - Activates the environment
+  - Restarts Python LSP clients with venv-aware settings
+  - Updates PATH / environment variables
+
+
+### Force a clean LSP restart (keep environment active)
+
+```lua
+local vs = require("venv-selector")
+
+-- Stop only plugin-managed Python LSP clients
+vs.stop_lsp_servers()
+
+-- They can then be restarted by re-activating or via normal lifecycle
+vs.activate_from_path(vs.python(), "venv")
+```
+
+Use this when:
+  - You changed interpreter-related settings
+  - You want a clean LSP restart
+  - You do NOT want to deactivate the environment
+
+This does not:
+  - Clear active environment state
+  - Remove PATH / VIRTUAL_ENV
+  - Restore baseline LSP configuration
+
+
+### Fully deactivate the environment
+
+```lua
+local vs = require("venv-selector")
+
+vs.deactivate()
+```
+
+This:
+- Stops plugin-managed Python LSP clients
+- Restores baseline LSP configuration
+- Clears activation state
+- Removes PATH / environment modifications
+- Prevents automatic restoration for that buffer
+
+Use this when you want to completely revert to the pre-activation state.
+
+### Use the active Python path for external tools
+
 ```lua
 local py = require("venv-selector").python()
+
 if py then
-  -- pass to debug adapter settings or spawn a job
   print("Debugger should use:", py)
 end
 ```
 
 ---
-
-## 🔗 See also
-- `:VenvSelect` — interactive picker (user-facing).
-- `:VenvSelectLog` — log output for debugging when `log_level` is `DEBUG`/`TRACE`.
-- `docs/OPTIONS.md` — configuration options and defaults.
-- `docs/USAGE.md` — usage guides and examples.
-
----
-
-If you'd like, I can:
-- Apply this exact file content to `docs/API.md`.
-- Generate small snippet examples for common integrations (statusline, nvim-dap config).
-- Add a "changelog" subsection showing when API additions occurred.

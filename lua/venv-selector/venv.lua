@@ -55,12 +55,6 @@ end
 ---@type string|nil
 path.current_source = nil
 
-function M.stop_lsp_servers()
-    local hooks = require("venv-selector.config").user_settings.hooks
-    for _, hook in pairs(hooks) do
-        hook(nil, nil, nil)
-    end
-end
 
 ---@param source string
 function M.set_source(source)

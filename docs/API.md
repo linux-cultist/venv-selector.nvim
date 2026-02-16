@@ -205,16 +205,15 @@ vs.restart_lsp_servers()
 ```
 
 - Notes:
-
-- Only plugin-managed Python LSP clients attached to the current buffer are restarted.
-- The active virtual environment remains unchanged.
-- Environment variables and PATH modifications are preserved.
-- This is useful when:
-  - You installed or removed Python packages.
-  - You modified interpreter-related configuration.
-  - LSP diagnostics appear stale or inconsistent.
-- If no plugin-managed Python LSP clients exist for the current buffer (for example, before any activation), this function is a no-op.
-- Unrelated non-Python LSP clients are not affected.
+  - Only plugin-managed Python LSP clients attached to the current buffer are restarted.
+  - The active virtual environment remains unchanged.
+  - Environment variables and PATH modifications are preserved.
+  - This is useful when:
+    - You installed or removed Python packages.
+    - You modified interpreter-related configuration.
+    - LSP diagnostics appear stale or inconsistent.
+  - If no plugin-managed Python LSP clients exist for the current buffer (for example, before any activation), this function is a no-op.
+  - Unrelated non-Python LSP clients are not affected.
 
 
 

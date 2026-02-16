@@ -12,10 +12,18 @@
 </div>
 
 <p align="center">
-  <a href="README.md"><img src="https://img.shields.io/badge/Docs-README-blue?style=for-the-badge" /></a>
-  <a href="docs/USAGE.md"><img src="https://img.shields.io/badge/Docs-USAGE-blue?style=for-the-badge" /></a>
-  <a href="docs/API.md"><img src="https://img.shields.io/badge/Docs-API-blue?style=for-the-badge" /></a>
-  <a href="docs/OPTIONS.md"><img src="https://img.shields.io/badge/Docs-OPTIONS-blue?style=for-the-badge" /></a>
+  <a href="README.md">
+    <img src="https://img.shields.io/badge/README-2e7d32?style=for-the-badge&logo=readthedocs&logoColor=white" />
+  </a>
+  <a href="docs/USAGE.md">
+    <img src="https://img.shields.io/badge/USAGE-388e3c?style=for-the-badge" />
+  </a>
+  <a href="docs/API.md">
+    <img src="https://img.shields.io/badge/API-43a047?style=for-the-badge" />
+  </a>
+  <a href="docs/OPTIONS.md">
+    <img src="https://img.shields.io/badge/OPTIONS-66bb6a?style=for-the-badge" />
+  </a>
 </p>
 
 <br>
@@ -43,9 +51,8 @@
 - ⚙️ Many [options](docs/OPTIONS.md) to control behavior.
 
 <br>
-    
 
-    
+
 ## 🚀 Quick start
 
 1. Add the plugin to your plugin manager (example below for `lazy.nvim`).
@@ -60,7 +67,6 @@ The plugin configures your LSP to use the selected venv and also sets `VIRTUAL_E
 If you don't see your expected venvs in the picker, you can add your own searches. See [Creating your own searches](docs/USAGE.md#🔎-creating-your-own-searches) for examples.
 
 <br>
-
 
 ## 🛠️ Installation (example: lazy.nvim)
 
@@ -90,7 +96,6 @@ With the above settings, the plugin is lazy-loaded and activated on python files
 The `:VenvSelectLog` command is available if you set the `log_level` [option](docs/OPTIONS.md) to `DEBUG` or `TRACE`. This shows a detailed log of what the plugin is doing when you pick a virtual environment in the picker.
 
 The `:VenvSelectCache` command is only available if the `cached_venv_automatic_activation` [option](docs/OPTIONS.md) is `false`. This means you have turned off automatic activation of cached venvs and this command will let you manually activate them from cache.
-
 
 <br>
     
@@ -123,7 +128,6 @@ These docs are structured into several categories:
 
 <br>
 
-
 ## 🛟 Troubleshooting
 
 Start with setting the `log_level` option to `TRACE` or `DEBUG` and then use the `:VenvSelectLog` command after using `:VenvSelect`.
@@ -149,4 +153,3 @@ See if you can understand the problem from the log. If you still have issues, op
 - **Can I automatically activate venvs per-project?** The plugin caches the last selected venv per workspace and can re-activate it when you open files in the same workspace.
 
 - **How does the plugin detect venvs?** By searching for interpreter binaries and recognizing common venv manager locations. PEP-723 metadata is supported if `uv` is available.
-

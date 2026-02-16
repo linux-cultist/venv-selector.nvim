@@ -11,6 +11,13 @@
   </p>
 </div>
 
+<p align="center">
+  <a href="README.md"><img src="https://img.shields.io/badge/Docs-README-blue?style=for-the-badge" /></a>
+  <a href="docs/USAGE.md"><img src="https://img.shields.io/badge/Docs-USAGE-blue?style=for-the-badge" /></a>
+  <a href="docs/API.md"><img src="https://img.shields.io/badge/Docs-API-blue?style=for-the-badge" /></a>
+  <a href="docs/OPTIONS.md"><img src="https://img.shields.io/badge/Docs-OPTIONS-blue?style=for-the-badge" /></a>
+</p>
+
 <br>
 
 ## ⚡️ Features

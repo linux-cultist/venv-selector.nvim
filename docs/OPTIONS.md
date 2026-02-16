@@ -1,6 +1,6 @@
-# Options to venv-selector.nvim
+# ⚙️ Options
 
-## Full listing
+## All options
 
 ```lua
 options = {

@@ -85,24 +85,25 @@ The `:VenvSelectLog` command is available if you set the `log_level` [option](do
 The `:VenvSelectCache` command is only available if the `cached_venv_automatic_activation` [option](docs/OPTIONS.md) is `false`. This means you have turned off automatic activation of cached venvs and this command will let you manually activate them from cache.
 
 <br>
+ 
+## 📚 Learn more after installation
+
+- 🧰 [USAGE](docs/USAGE.md) - How to use more features of the plugin
+- 🧩 [API](docs/API.md) - How to interact with the plugin from code
+- ⚙️ [OPTIONS](docs/OPTIONS.md) - How to configure options
+
+<br>
     
+
 ## 🗞️ Important updates
 
-- 2026-02-15 — 🔒 LSP gate added to prevent concurrent LSP operations (stop/start races). Also support for switching between multiple Python projects and PEP-723 `uv` metadata files and remembering the venv for each.
+- 2026-02-16 — 🔒 LSP gate added to prevent concurrent LSP operations (stop/start races).
+- 2026-02-16 - 🔀 Support for switching between multiple Python projects and PEP-723 `uv` metadata files and remembering the venv for each.
 - 2025-09-30 — 🆕 Minimum Neovim now **0.11**; LSP servers are expected to be configured by the user via `vim.lsp.config`.
 - 2025-08-27 — ✅ Regexp-branch merged into `main`. If you need the older behavior you can pin the `v1` branch (note: `v1` is no longer actively updated).
 
 <br>
     
-## 📚 About these docs
-
-These docs are structured into several categories:
-
-- [USAGE](docs/USAGE.md) - How to use the plugin
-- [API](docs/API.md) - How to interact with the plugin from code
-- [OPTIONS](docs/OPTIONS.md) - How to configure options
-
-<br>
 
 ## 🧩 Requirements
 

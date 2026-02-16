@@ -1,4 +1,4 @@
-# 🧩 Public API — venv-selector.nvim
+# 🧩 API
 
 
 Quick import

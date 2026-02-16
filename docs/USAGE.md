@@ -1,4 +1,4 @@
-# 🧰 Usage of venv-selector.nvim
+# 🧰 Usage
 
 ## ⚙️ Configuration structure
 

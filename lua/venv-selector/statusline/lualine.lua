@@ -1,4 +1,7 @@
+require("venv-selector.types")
+
 local M = {}
+
 
 function M.render() -- call this function from lualine
     if vim.bo.filetype ~= "python" then
@@ -10,7 +13,12 @@ function M.render() -- call this function from lualine
         return statusline_func()
     end
 
-    local venv_path = require("venv-selector").venv()
+    ---@type any
+    local vs = require("venv-selector")
+    ---@cast vs venv-selector.API
+    local venv_path = vs.venv()
+    
+
     if not venv_path or venv_path == "" then
         return ""
     end

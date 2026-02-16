@@ -1,20 +1,55 @@
+-- lua/venv-selector/gui/telescope.lua
+--
+-- Telescope picker backend for venv-selector.nvim.
+--
+-- Responsibilities:
+-- - Present discovered python interpreters (SearchResult) in a Telescope picker.
+-- - Provide smartcase filtering with two modes:
+--   - substring match (default): prompt must appear as a contiguous substring
+--   - character/subsequence match: prompt characters must appear in order
+-- - Keep the currently active venv visually pinned near the top by prefix-ranking entries.
+-- - Refresh dynamically:
+--   - incremental refresh while search jobs stream results
+--   - full refresh on search completion (dedup + sort)
+--   - auto-refresh on VimResized while the picker is active
+-- - Stop any running searches when the Telescope window closes.
+--
+-- Conventions:
+-- - `entry.ordinal` is formatted as: "<rank> <name> <source> <path>" for matching/sorting.
+-- - This module implements the Picker interface used by search.lua:
+--   - :insert_result(result)
+--   - :search_done()
+
 local config = require("venv-selector.config")
 local gui_utils = require("venv-selector.gui.utils")
 
+-- Load shared annotations/types.
+require("venv-selector.types")
+
+---@class venv-selector.TelescopePicker : venv-selector.Picker
+---@field results venv-selector.SearchResult[]
+---@field _refresh_scheduled? boolean
 local M = {}
 M.__index = M
 
--- Track active telescope instance for auto-refresh on resize
+---@type any|nil
 local active_telescope_instance = nil
 
+---@param line any
+---@return integer rank
+---@return string rest
 local function split_prefix(line)
     line = tostring(line or "")
-    local pfx = line:sub(1, 2) -- "0 " or "1 "
+    local pfx = line:sub(1, 2)
     if pfx == "0 " then return 0, line:sub(3) end
     if pfx == "1 " then return 1, line:sub(3) end
     return 1, line
 end
 
+---@param prompt string
+---@param line string
+---@return string p
+---@return string l
 local function smartcase_prepare(prompt, line)
     line = tostring(line or "")
     if prompt:match("%u") then
@@ -23,6 +58,7 @@ local function smartcase_prepare(prompt, line)
     return prompt:lower(), line:lower()
 end
 
+---@return any sorter
 local function make_smartcase_substring_sorter()
     local sorters = require("telescope.sorters")
     return sorters.new {
@@ -30,20 +66,20 @@ local function make_smartcase_substring_sorter()
             local rank, raw = split_prefix(line)
 
             if not prompt or prompt == "" then
-                return rank -- active (0) before others (1)
+                return rank
             end
 
             local p, l = smartcase_prepare(prompt, raw)
             local start = l:find(p, 1, true)
             if not start then return -1 end
 
-            -- active bias: subtract a large constant so it stays on top
             return (rank * 1000000) + start
         end,
         highlighter = function() return {} end,
     }
 end
 
+---@return any sorter
 local function make_smartcase_subsequence_sorter()
     local sorters = require("telescope.sorters")
     return sorters.new {
@@ -74,19 +110,15 @@ local function make_smartcase_subsequence_sorter()
     }
 end
 
-
-
+---@return table layout_config
 local function get_dynamic_layout_config()
     local columns = vim.o.columns
-    local lines = vim.o.lines
 
-    -- Calculate dynamic width (80-95% of terminal width, with min/max constraints)
     local width_ratio = 0.9
     local min_width = 60
     local max_width = 120
     local dynamic_width = math.max(min_width, math.min(max_width, math.floor(columns * width_ratio)))
 
-    -- Calculate dynamic height (30-50% of terminal height, with min/max constraints)
     local height_ratio = 0.4
     local min_height = 0.3
     local max_height = 0.6
@@ -99,36 +131,29 @@ local function get_dynamic_layout_config()
     }
 end
 
+---@return table display_config
 local function get_dynamic_display_config()
     local columns = vim.o.columns
     local picker_columns = gui_utils.get_picker_columns()
 
-    -- Calculate dynamic widths based on configured columns
-    local name_width, source_width
-
-    -- Reserve space for icon columns (2 chars each) and separators
-    local reserved_space = 6 -- 2 (icon) + 2 (type icon) + 2 (separators)
+    local reserved_space = 6
     local available_space = columns - reserved_space
 
+    local name_width, source_width
     if columns < 80 then
-        -- Very small screens: prioritize name, minimal source
         name_width = math.floor(available_space * 0.75)
         source_width = math.floor(available_space * 0.25)
     elseif columns < 120 then
-        -- Small-medium screens: balanced distribution
         name_width = math.floor(available_space * 0.65)
         source_width = math.floor(available_space * 0.35)
     else
-        -- Large screens: cap name width, give more to source
         name_width = math.min(90, math.floor(available_space * 0.6))
         source_width = math.min(30, math.floor(available_space * 0.4))
     end
 
-    -- Ensure minimum readable widths
     name_width = math.max(20, name_width)
     source_width = math.max(8, source_width)
 
-    -- Build display config based on column order
     local items = {}
     for _, col in ipairs(picker_columns) do
         if col == "marker" then
@@ -142,7 +167,6 @@ local function get_dynamic_display_config()
         end
     end
 
-    -- Add remaining space for the last column
     if #items > 0 then
         items[#items].remaining = true
     end
@@ -153,28 +177,128 @@ local function get_dynamic_display_config()
     }
 end
 
+function M:update_results()
+    local bufnr = vim.api.nvim_get_current_buf()
+    local picker = require("telescope.actions.state").get_current_picker(bufnr)
+    if picker ~= nil then
+        picker.layout_config = get_dynamic_layout_config()
+        picker:full_layout_update()
+        picker:refresh(self:make_finder(), { reset_prompt = false })
+    end
+end
+
+---@param result venv-selector.SearchResult
+function M:insert_result(result)
+    table.insert(self.results, result)
+
+    if self._refresh_scheduled then
+        return
+    end
+    self._refresh_scheduled = true
+
+    vim.defer_fn(function()
+        self._refresh_scheduled = false
+        self:update_results()
+    end, 30)
+end
+
+function M:search_done()
+    self.results = gui_utils.remove_dups(self.results)
+    gui_utils.sort_results(self.results)
+    self:update_results()
+end
+
+function M:setup_resize_autocmd()
+    local group = vim.api.nvim_create_augroup("VenvSelectorTelescope", { clear = true })
+
+    vim.api.nvim_create_autocmd("VimResized", {
+        group = group,
+        callback = function()
+            if active_telescope_instance == self then
+                vim.defer_fn(function()
+                    if active_telescope_instance == self then
+                        self:update_results()
+                    end
+                end, 50)
+            else
+                vim.api.nvim_del_augroup_by_id(group)
+            end
+        end,
+    })
+end
+
+---@return any finder
+function M:make_finder()
+    local display_config = get_dynamic_display_config()
+    local displayer = require("telescope.pickers.entry_display").create(display_config)
+
+    local entry_maker = function(entry)
+        ---@cast entry venv-selector.TelescopeEntry
+
+        entry.value = entry.name
+
+        local is_active = gui_utils.hl_active_venv(entry) ~= nil
+        local prefix = is_active and "0 " or "1 "
+
+        entry.ordinal = prefix .. table.concat({
+            tostring(entry.name or ""),
+            tostring(entry.source or ""),
+            tostring(entry.path or ""),
+        }, " ")
+
+        entry.display = function(e)
+            local picker_columns = gui_utils.get_picker_columns()
+
+            local hl = gui_utils.hl_active_venv(e)
+            local marker_icon = config.user_settings.options.selected_venv_marker_icon
+                or config.user_settings.options.icon
+                or "●"
+
+            local marker_hl = hl and "VenvSelectMarker" or nil
+
+            local column_data = {
+                marker = { hl and marker_icon or " ", marker_hl },
+                search_icon = { gui_utils.draw_icons_for_types(e.source) },
+                search_name = { e.source },
+                search_result = { e.name },
+            }
+
+            local display_items = {}
+            for _, col in ipairs(picker_columns) do
+                local item = column_data[col]
+                if item then display_items[#display_items + 1] = item end
+            end
+
+            return displayer(display_items)
+        end
+
+        return entry
+    end
+
+    return require("telescope.finders").new_table({
+        results = self.results,
+        entry_maker = entry_maker,
+    })
+end
+
+---@return any sorter
 local function get_sorter()
     local filter_type = config.get_user_options().picker_filter_type
-
-    require("venv-selector.logger").debug(filter_type)
 
     if filter_type == "character" then
         return make_smartcase_subsequence_sorter()
     end
-
     return make_smartcase_substring_sorter()
 end
 
+---@param search_opts table
+---@return venv-selector.Picker
 function M.new(search_opts)
     local self = setmetatable({ results = {} }, M)
-
-    -- Set this as the active instance for resize handling
+    ---@cast self venv-selector.TelescopePicker
     active_telescope_instance = self
 
-    -- Setup highlight groups for marker color
     local marker_color = config.user_settings.options.selected_venv_marker_color
-
-    -- Create marker highlight group
     vim.api.nvim_set_hl(0, "VenvSelectMarker", { fg = marker_color })
 
     local opts = {
@@ -200,7 +324,6 @@ function M.new(search_opts)
                 require("venv-selector.search").run_search(self, search_opts)
             end)
 
-            -- Disable multi-selection mappings
             map("i", "<Tab>", false)
             map("i", "<S-Tab>", false)
             map("n", "<Tab>", false)
@@ -210,15 +333,12 @@ function M.new(search_opts)
         end,
     }
 
-    -- Create the picker
     local picker = require("telescope.pickers").new({}, opts)
 
-    -- Set up autocmd to stop search when telescope window closes
     local augroup = vim.api.nvim_create_augroup("VenvSelectTelescope", { clear = true })
     vim.api.nvim_create_autocmd("WinClosed", {
         group = augroup,
         callback = function(ev)
-            -- Check if the closed window is the telescope prompt
             local winid = tonumber(ev.match)
             if winid and picker and picker.prompt_bufnr then
                 local closed_bufnr = vim.api.nvim_win_get_buf(winid)
@@ -232,134 +352,9 @@ function M.new(search_opts)
     })
 
     picker:find()
-
-    -- Set up autocmd for window resize
     self:setup_resize_autocmd()
 
     return self
-end
-
-function M:make_finder()
-    local display_config = get_dynamic_display_config()
-    local displayer = require("telescope.pickers.entry_display").create(display_config)
-
-
-    local entry_maker = function(entry)
-        local icon = entry.icon
-        entry.value = entry.name
-        local is_active = gui_utils.hl_active_venv(entry) ~= nil
-        local prefix = is_active and "0 " or "1 "
-
-        entry.ordinal = prefix .. table.concat({
-            tostring(entry.name or ""),
-            tostring(entry.source or ""),
-            tostring(entry.path or ""),
-        }, " ")
-
-        entry.display = function(e)
-            local picker_columns = gui_utils.get_picker_columns()
-
-            -- Prepare column data
-            local hl = gui_utils.hl_active_venv(entry)
-            local marker_icon = config.user_settings.options.selected_venv_marker_icon or
-                config.user_settings.options.icon or "●"
-
-            -- Use pre-created highlight groups
-            local marker_hl = hl and "VenvSelectMarker" or nil
-
-            local column_data = {
-                marker = {
-                    hl and marker_icon or " ",
-                    marker_hl,
-                },
-                search_icon = {
-                    gui_utils.draw_icons_for_types(entry.source),
-                },
-                search_name = {
-                    e.source,
-                },
-                search_result = { e.name },
-            }
-
-            -- Build display items based on configured column order
-            local display_items = {}
-            for _, col in ipairs(picker_columns) do
-                if column_data[col] then
-                    table.insert(display_items, column_data[col])
-                end
-            end
-
-            return displayer(display_items)
-        end
-
-        return entry
-    end
-
-    return require("telescope.finders").new_table({
-        results = self.results,
-        entry_maker = entry_maker,
-    })
-end
-
-function M:update_results()
-    local bufnr = vim.api.nvim_get_current_buf()
-    local picker = require("telescope.actions.state").get_current_picker(bufnr)
-    if picker ~= nil then
-        -- Update layout configuration for new window size
-        picker.layout_config = get_dynamic_layout_config()
-        picker:full_layout_update()
-        -- Then refresh the finder with new column widths
-        picker:refresh(self:make_finder(), { reset_prompt = false })
-    end
-end
-
-function M:insert_result(result) -- result is a table with name, path, icon, source, venv.
-    table.insert(self.results, result)
-
-    if self._refresh_scheduled then
-        return
-    end
-    self._refresh_scheduled = true
-
-    vim.defer_fn(function()
-        self._refresh_scheduled = false
-
-        -- self.results = gui_utils.remove_dups(self.results)
-        -- gui_utils.sort_results(self.results)
-
-        self:update_results()
-    end, 30) -- 20–50ms is usually fine
-end
-
-function M:search_done()
-    self.results = gui_utils.remove_dups(self.results)
-    gui_utils.sort_results(self.results)
-
-    self:update_results()
-end
-
-function M:setup_resize_autocmd()
-    -- Create autocmd group for this telescope instance
-    local group = vim.api.nvim_create_augroup("VenvSelectorTelescope", { clear = true })
-
-    -- Set up autocmd for VimResized event
-    vim.api.nvim_create_autocmd("VimResized", {
-        group = group,
-        callback = function()
-            -- Only refresh if this telescope instance is still active
-            if active_telescope_instance == self then
-                -- Small delay to ensure resize is complete
-                vim.defer_fn(function()
-                    if active_telescope_instance == self then
-                        self:update_results()
-                    end
-                end, 50)
-            else
-                -- Clean up autocmd if instance is no longer active
-                vim.api.nvim_del_augroup_by_id(group)
-            end
-        end,
-    })
 end
 
 return M

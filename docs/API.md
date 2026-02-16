@@ -1,8 +1,5 @@
 # 🧩 Public API — venv-selector.nvim
 
-This document is a concise, developer-focused reference for the public API exported by
-`require("venv-selector")`. It documents the exposed functions, their signatures,
-brief descriptions, return values, usage examples, and important notes/gotchas.
 
 Quick import
 ```lua
@@ -28,6 +25,7 @@ The short table below is a compact summary. Each entry links to the detailed sec
 | [⚡ `vs.activate_from_path(python_path, env_type?)`](#activate_from_path) | `nil` | Programmatically activate a venv by interpreter path (affects current buffer/project). |
 | [⛔ `vs.deactivate()`](#deactivate) | `nil` | Deactivate the venv for the current buffer: restore baseline LSP, cleanup env vars/PATH. |
 | [🛑 `vs.stop_lsp_servers()`](#stop_lsp_servers) | `nil` | Stop plugin-managed Python LSP clients for the current buffer. |
+| [🔄 `vs.restart_lsp_servers()`](#restart_lsp_servers) | `nil` | Restart plugin-managed Python LSP clients for the current buffer. |
 
 <br>
 
@@ -135,7 +133,7 @@ end
 - Signature: `vs.activate_from_path(python_path, env_type?)`
 - Parameters:
   - `python_path` (string): Full path to a Python interpreter (typically a venv's `bin/python` or `Scripts\python.exe`).
-  - `env_type` (optional string): One of `"venv" | "anaconda".
+  - `env_type` (optional string): One of `"venv" | "anaconda". Defaults to "venv".
 - Purpose: Programmatically activate a virtual environment by passing the interpreter path directly. This bypasses the interactive picker and applies the same activation logic the plugin uses for selected entries.
 - Buffer scope: Activation applies to the current buffer/project context (the plugin tracks activation state per project/buffer).
 - Important:
@@ -180,8 +178,10 @@ require("venv-selector").stop_lsp_servers()
 ```
 - Notes:
   - Only plugin-managed Python LSP clients attached to the current buffer are stopped.
+  - It doesnt stop lsp servers that are not activated by the plugin. So before activating a venv, this function doesnt do anything.
   - Python LSP clients attached exclusively to other buffers are not affected.
   - Unrelated non-Python LSP clients are not affected.
+  - If it stops the only Python LSP clients running, activate_from_path() or the picker will will not restart anything until LSP clients are started again (e.g. :LspStart, reopening buffer, or whatever starts them in your setup).
 - This does not:
   - Restore baseline LSP configuration
   - Clear the active virtual environment state
@@ -190,6 +190,33 @@ require("venv-selector").stop_lsp_servers()
 - After stopping plugin-managed clients, configured hooks are also invoked with `(nil, nil, bufnr)` to allow user-supplied hooks to perform additional cleanup if they implement that convention.
 
 <br>
+    
+<a id="restart_lsp_servers"></a>
+### 🔄 vs.restart_lsp_servers()
+
+Signature: vs.restart_lsp_servers()
+Purpose: Force a clean restart of plugin-managed Python LSP clients for the current buffer while keeping the currently active virtual environment.
+Example:
+```lua
+local vs = require("venv-selector")
+
+-- Force Python LSP to restart using the currently active interpreter
+vs.restart_lsp_servers()
+```
+
+- Notes:
+
+- Only plugin-managed Python LSP clients attached to the current buffer are restarted.
+- The active virtual environment remains unchanged.
+- Environment variables and PATH modifications are preserved.
+- This is useful when:
+  - You installed or removed Python packages.
+  - You modified interpreter-related configuration.
+  - LSP diagnostics appear stale or inconsistent.
+- If no plugin-managed Python LSP clients exist for the current buffer (for example, before any activation), this function is a no-op.
+- Unrelated non-Python LSP clients are not affected.
+
+
 
 ## 💡 Examples
 

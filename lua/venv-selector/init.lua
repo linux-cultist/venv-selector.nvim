@@ -54,6 +54,26 @@ function M.file_dir()
     return require("venv-selector.path").get_current_file_directory()
 end
 
+function M.restart_lsp_servers()
+    local bufnr = vim.api.nvim_get_current_buf()
+
+    -- Clear memo so "same venv" triggers a restart.
+    local hooks = require("venv-selector.hooks")
+    local pr = require("venv-selector.project_root").key_for_buf(bufnr) or ""
+    hooks.clear_restart_memo_for_root(pr)
+
+    -- Re-run hooks with current active venv (forces gate.request restarts).
+    -- This assumes your active state fields exist (path.current_python_path/current_type).
+    local path = require("venv-selector.path")
+    local py = path.current_python_path
+    local ty = path.current_type
+
+    local user_hooks = require("venv-selector.config").user_settings.hooks or {}
+    for _, hook in pairs(user_hooks) do
+        pcall(hook, py, ty, bufnr)
+    end
+end
+
 function M.stop_lsp_servers()
     local bufnr = vim.api.nvim_get_current_buf()
 

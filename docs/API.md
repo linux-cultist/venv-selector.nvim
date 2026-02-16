@@ -25,16 +25,16 @@ The short table below is a compact summary. Each entry links to the detailed sec
 
 | Function (signature) | Returns | Short description |
 |---|---:|---|
-| 🛠️ `vs.setup(conf)` | `nil` | Initialize plugin: validate prerequisites, register autocmds & commands (global). |
-| 🐍 `vs.python()` | `string | nil` | Active Python interpreter path for the current buffer/project, or `nil`. |
-| 🧰 `vs.venv()` | `string | nil` | Active virtualenv root directory (current buffer/project), or `nil`. |
-| 🔎 `vs.source()` | `string | nil` | Name of the search that discovered the active venv for the current buffer (e.g. `"poetry"`), or `nil`. |
-| 🧭 `vs.workspace_paths()` | `string[]` | Workspace root folders detected (via LSP) for the active buffer. |
-| 📁 `vs.cwd()` | `string` | Neovim current working directory (global). |
-| 📂 `vs.file_dir()` | `string | nil` | Directory of the current buffer's file, or `nil` if none. |
-| ⚡ `vs.activate_from_path(python_path, env_type?)` | `nil` | Programmatically activate a venv by interpreter path (affects current buffer/project). |
-| ⛔ `vs.deactivate()` | `nil` | Deactivate the venv for the current buffer: restore baseline LSP, cleanup env vars/PATH. |
-| 🛑 `vs.stop_lsp_servers()` | `nil` | Stop plugin-managed Python LSP clients for the current buffer. |
+| [🛠️ `vs.setup(conf)`](#setup) | `nil` | Initialize plugin: validate prerequisites, register autocmds & commands (global). |
+| [🐍 `vs.python()`](#python) | `string | nil` | Active Python interpreter path for the current buffer/project, or `nil`. |
+| [🧰 `vs.venv()`](#venv) | `string | nil` | Active virtualenv root directory (current buffer/project), or `nil`. |
+| [🔎 `vs.source()`](#source) | `string | nil` | Name of the search that discovered the active venv for the current buffer (e.g. `"poetry"`), or `nil`. |
+| [🧭 `vs.workspace_paths()`](#workspace_paths) | `string[]` | Workspace root folders detected (via LSP) for the active buffer. |
+| [📁 `vs.cwd()`](#cwd) | `string` | Neovim current working directory (global). |
+| [📂 `vs.file_dir()`](#file_dir) | `string | nil` | Directory of the current buffer's file, or `nil` if none. |
+| [⚡ `vs.activate_from_path(python_path, env_type?)`](#activate_from_path) | `nil` | Programmatically activate a venv by interpreter path (affects current buffer/project). |
+| [⛔ `vs.deactivate()`](#deactivate) | `nil` | Deactivate the venv for the current buffer: restore baseline LSP, cleanup env vars/PATH. |
+| [🛑 `vs.stop_lsp_servers()`](#stop_lsp_servers) | `nil` | Stop plugin-managed Python LSP clients for the current buffer. |
 
 ---
 

@@ -16,27 +16,30 @@ Table of contents
 
 <br>
 
+
 ## ⚡ Quick reference
+
+The short table below is a compact summary. Each entry links to the detailed section below.
 
 | Function | Signature | Returns | Short description |
 |---|---:|---|---|
-| [setup](#setup) | `vs.setup(conf)` | `nil` | Initialize plugin: validate prerequisites, register autocmds & commands (global). |
-| [python](#python) | `vs.python()` | `string | nil` | Active Python interpreter path for the current buffer/project, or `nil`. |
-| [venv](#venv) | `vs.venv()` | `string | nil` | Active virtualenv root directory (current buffer/project), or `nil`. |
-| [source](#source) | `vs.source()` | `string | nil` | Name of the search that discovered the active venv for the current buffer (e.g. `"poetry"`), or `nil`. |
-| [workspace_paths](#workspace_paths) | `vs.workspace_paths()` | `string[]` | Workspace root folders detected (via LSP) for the active buffer. |
-| [cwd](#cwd) | `vs.cwd()` | `string` | Neovim current working directory (global). |
-| [file_dir](#file_dir) | `vs.file_dir()` | `string | nil` | Directory of the current buffer's file, or `nil` if none. |
-| [activate_from_path](#activate_from_path) | `vs.activate_from_path(python_path, env_type?)` | `nil` | Programmatically activate a venv by interpreter path (affects current buffer/project). |
-| [deactivate](#deactivate) | `vs.deactivate()` | `nil` | Deactivate the venv for the current buffer: restore baseline LSP, cleanup env vars/PATH. |
-| [stop_lsp_servers](#stop_lsp_servers) | `vs.stop_lsp_servers()` | `nil` | Stop plugin-managed Python LSP clients for the current buffer. |
+| [🛠️ setup](#setup) | `vs.setup(conf)` | `nil` | Initialize plugin: validate prerequisites, register autocmds & commands (global). |
+| [🐍 python](#python) | `vs.python()` | `string | nil` | Active Python interpreter path for the current buffer/project, or `nil`. |
+| [🧰 venv](#venv) | `vs.venv()` | `string | nil` | Active virtualenv root directory (current buffer/project), or `nil`. |
+| [🔎 source](#source) | `vs.source()` | `string | nil` | Name of the search that discovered the active venv for the current buffer (e.g. `"poetry"`), or `nil`. |
+| [🧭 workspace_paths](#workspace_paths) | `vs.workspace_paths()` | `string[]` | Workspace root folders detected (via LSP) for the active buffer. |
+| [📁 cwd](#cwd) | `vs.cwd()` | `string` | Neovim current working directory (global). |
+| [📂 file_dir](#file_dir) | `vs.file_dir()` | `string | nil` | Directory of the current buffer's file, or `nil` if none. |
+| [⚡ activate_from_path](#activate_from_path) | `vs.activate_from_path(python_path, env_type?)` | `nil` | Programmatically activate a venv by interpreter path (affects current buffer/project). |
+| [⛔ deactivate](#deactivate) | `vs.deactivate()` | `nil` | Deactivate the venv for the current buffer: restore baseline LSP, cleanup env vars/PATH. |
+| [🛑 stop_lsp_servers](#stop_lsp_servers) | `vs.stop_lsp_servers()` | `nil` | Stop plugin-managed Python LSP clients for the current buffer. |
 
-<br>
+---
 
 ## 🧾 Detailed API
 
 <a id="setup"></a>
-### vs.setup(conf)
+### 🛠️ vs.setup(conf)
 - Signature: `vs.setup(conf)`
 - Parameters:
   - `conf` (table | nil): Plugin configuration table — see `docs/OPTIONS.md` for the full schema.
@@ -60,7 +63,8 @@ require("venv-selector").setup({
 
 <br>
 
-### vs.python()
+<a id="python"></a>
+### 🐍 vs.python()
 - Signature: `vs.python()` -> `string | nil`
 - Returns: Absolute path to the active python interpreter for the workspace/project. Returns `nil` if no python interpreter has been set active (by the plugin).
 - Purpose: Use when you need the path to the interpreter binary.
@@ -76,7 +80,8 @@ end
 
 <br>
 
-### vs.venv()
+<a id="venv"></a>
+### 🧰 vs.venv()
 - Signature: `vs.venv()` -> `string | nil`
 - Returns: Absolute path to the active virtual environment folder (containing `bin/` or `Scripts/`) or `nil` if no venv has been set active (by the plugin)
 - Purpose: Useful for statuslines, diagnostics, or inspecting files inside the venv.
@@ -90,7 +95,8 @@ end
 
 <br>
 
-### vs.source()
+<a id="source"></a>
+### 🔎 vs.source()
 - Signature: `vs.source()` -> `string | nil`
 - Returns: Name of the search that discovered the currently selected venv (e.g. `"poetry"`, `"cwd"`, `"pyenv"`), or `nil` if no interpreter has been set active (by the plugin)
 - Purpose: Helpful when callbacks or automation should behave differently depending on how the venv was found.
@@ -103,7 +109,8 @@ end
 ```
 <br>
 
-### vs.workspace_paths()
+<a id="workspace_paths"></a>
+### 🧭 vs.workspace_paths()
 - Signature: `vs.workspace_paths()` -> `string[]`
 - Returns: Array of workspace root strings detected via LSP for the current workspace/project in the active buffer.
 - Purpose: Use when constructing searches that reference workspace roots (e.g. templates using `$WORKSPACE_PATH`).
@@ -112,21 +119,24 @@ end
 
 <br>
 
-### vs.cwd()
+<a id="cwd"></a>
+### 📁 vs.cwd()
 - Signature: `vs.cwd()` -> `string`
 - Returns: Current Neovim working directory (equivalent to `vim.fn.getcwd()`). Usually the directory where you start neovim from, but can be changed.
 - Purpose: Useful in custom search templates or for status displays.
 
 <br>
 
-### vs.file_dir()
+<a id="file_dir"></a>
+### 📂 vs.file_dir()
 - Signature: `vs.file_dir()` -> `string | nil`
 - Returns: Directory of the current buffer's file (or `nil` when buffer has no file).
 - Purpose: Useful for file-local searches that use `$FILE_DIR`.
 
 <br>
 
-### vs.activate_from_path(python_path, env_type?)
+<a id="activate_from_path"></a>
+### ⚡ vs.activate_from_path(python_path, env_type?)
 - Signature: `vs.activate_from_path(python_path, env_type?)`
 - Parameters:
   - `python_path` (string) — Full path to a Python interpreter (typically a venv's `bin/python` or `Scripts\python.exe`).
@@ -142,7 +152,8 @@ require("venv-selector").activate_from_path("/home/you/.local/share/venvs/myproj
 
 <br>
 
-### vs.deactivate()
+<a id="deactivate"></a>
+### ⛔ vs.deactivate()
 - Signature: `vs.deactivate()`
 - Purpose: Programmatically deactivate the active virtual environment for the current buffer:
   - Prevents automatic restoration on BufEnter for that buffer.
@@ -162,7 +173,8 @@ require("venv-selector").deactivate()
 
 <br>
 
-### vs.stop_lsp_servers()
+<a id="stop_lsp_servers"></a>
+### 🛑 vs.stop_lsp_servers()
 - Purpose: Stop Python LSP clients that were started or modified by venv-selector for the current buffer.
 - This is useful when you want to force a clean LSP restart while keeping the currently active virtual environment.
 - Example:
@@ -182,7 +194,7 @@ require("venv-selector").stop_lsp_servers()
   - After calling this function, LSP clients will remain stopped until:
   - The environment is reactivated, or
   - Some other mechanism restarts the Python LSP clients.
----
+--- 
 
 ## 💡 Examples
 

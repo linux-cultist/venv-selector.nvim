@@ -3,10 +3,10 @@
   <p>
     <a href="https://neovim.io"><img alt="Neovim >=0.11" src="https://img.shields.io/badge/Neovim-%3E%3D0.11-blue"></a>
     <a href="LICENCE.md"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-brightgreen"></a>
-    <a href="README.md"><img alt="README" src="https://img.shields.io/badge/README-blue"></a>
-      <a href="docs/USAGE.md"><img alt="USAGE" src="https://img.shields.io/badge/USAGE-blue"></a>
-      <a href="docs/API.md"><img alt="API" src="https://img.shields.io/badge/API-blue"></a>
-      <a href="docs/OPTIONS.md"><img alt="OPTIONS" src="https://img.shields.io/badge/OPTIONS-blue"></a>
+    <a href="README.md"><img alt="README" src="https://img.shields.io/badge/docs-README-blue"></a>
+      <a href="docs/USAGE.md"><img alt="USAGE" src="https://img.shields.io/badge/docs-USAGE-blue"></a>
+      <a href="docs/API.md"><img alt="API" src="https://img.shields.io/badge/docs-API-blue"></a>
+      <a href="docs/OPTIONS.md"><img alt="OPTIONS" src="https://img.shields.io/badge/docs-OPTIONS-blue"></a>
   </p>
   <p>Discover and activate Python virtual environments inside Neovim - no restart required.</p>
   <p>

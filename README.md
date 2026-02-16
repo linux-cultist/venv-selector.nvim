@@ -1,6 +1,5 @@
 <div align="center">
   <h1>🎉 venv-selector.nvim</h1>
-  <p>Discover and activate Python virtual environments inside Neovim - no restart required.</p>
   <p>
     <a href="https://neovim.io"><img alt="Neovim >=0.11" src="https://img.shields.io/badge/Neovim-%3E%3D0.11-blue"></a>
     <a href="LICENCE.md"><img alt="License: MIT" src="https://img.shields.io/badge/license-MIT-brightgreen"></a>
@@ -17,12 +16,11 @@
       <img alt="OPTIONS" src="https://img.shields.io/badge/docs-OPTIONS-blue">
     </a>
   </p>
-
+  <p>Discover and activate Python virtual environments inside Neovim - no restart required.</p>
   <p>
     <img src="venvselect.png" alt="venv-selector screenshot" style="max-width:720px; width:100%; height:auto;">
   </p>
 </div>
-
 
 <br>
 
@@ -49,7 +47,6 @@
 - ⚙️ Many [options](docs/OPTIONS.md) to control behavior.
 
 <br>
-
 
 ## 🚀 Quick start
 

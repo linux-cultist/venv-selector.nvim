@@ -316,6 +316,12 @@ end
 --- - Populate searches if missing/empty
 --- - Ensure default hooks if user provided none
 ---
+---Finalize settings after merge:
+--- - Merge shell defaults
+--- - Auto-detect fd binary
+--- - Populate searches if missing/empty (merge defaults with user-provided)
+--- - Ensure default hooks if user provided none
+---
 ---@param s venv-selector.Settings
 ---@return venv-selector.Settings finalized
 local function finalize_settings(s)
@@ -327,15 +333,22 @@ local function finalize_settings(s)
         s.options.fd_binary_name = find_fd_command_name()
     end
 
-    -- Default searches if missing/empty.
+    -- Merge default searches with user-provided searches:
+    local default_searches = M.get_default_searches()
     if not s.search or vim.tbl_isempty(s.search) then
-        s.search = M.get_default_searches()
+        -- No user searches: use defaults
+        s.search = default_searches
+    else
+        -- User provided some searches: keep them and add any missing defaults
+        for name, def in pairs(default_searches) do
+            if s.search[name] == nil then
+                s.search[name] = def
+            end
+        end
     end
 
     -- Default hooks if none provided.
     ensure_default_hooks(s)
-
-
 
     return s
 end

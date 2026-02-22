@@ -66,11 +66,7 @@ Add this to your plugin specs (example):
     { "nvim-telescope/telescope.nvim", version = "*", dependencies = { "nvim-lua/plenary.nvim" } }, -- optional: you can also use fzf-lua, snacks, mini-pick instead.
   },
   ft = "python", -- Load when opening Python files
-  keys = {
-    { ",v", "<cmd>VenvSelect<cr>" }, -- Open picker on keymap
-  },
-  ft = "python",
-  keys = { { ",v", "<cmd>VenvSelect<cr>" } }, -- example keybind
+  keys = { { ",v", "<cmd>VenvSelect<cr>" } }, -- Open picker on keymap
   opts = {
     options = {}, -- plugin-wide options
     search = {}   -- custom search definitions

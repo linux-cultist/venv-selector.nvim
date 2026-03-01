@@ -277,6 +277,38 @@ local function start_search_job(search_name, search_config, job_event_handler, s
         shell_cmdflags = utils.split_string(shell_cmdflags)
     end
 
+    -- On PowerShell (pwsh / powershell), anything after the -Command / /c flag
+    -- in shellcmdflag is a Neovim terminal encoding preamble (e.g. setting
+    -- $PSDefaultParameterValues or [Console]::OutputEncoding). That preamble is
+    -- only needed for Neovim's own interactive terminal and must not be forwarded
+    -- to fd search jobs for two reasons:
+    --
+    --   1. split_string strips quotes, corrupting key literals such as
+    --      ['Out-File:Encoding'] -> [Out-File:Encoding], which is invalid
+    --      PowerShell syntax and causes a ParserError on every search job.
+    --
+    --   2. fd produces plain ASCII paths and requires no encoding setup.
+    --
+    -- Truncate shell_cmdflags at -Command (inclusive) so the fd command is the
+    -- only argument that follows.
+    local shell_basename = shell:match("[^\\/]+$") or shell
+    local is_powershell = shell_basename:lower() == "pwsh" or shell_basename:lower() == "powershell"
+
+    if is_powershell then
+        local command_flag_idx = nil
+        for i, flag in ipairs(shell_cmdflags) do
+            if flag:lower() == "-command" or flag:lower() == "/c" then
+                command_flag_idx = i
+                break
+            end
+        end
+        if command_flag_idx then
+            while #shell_cmdflags > command_flag_idx do
+                table.remove(shell_cmdflags)
+            end
+        end
+    end
+
     local cmd = utils.extend({ options.shell.shell }, shell_cmdflags, { expanded_job })
 
     log.debug(

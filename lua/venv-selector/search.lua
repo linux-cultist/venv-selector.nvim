@@ -29,6 +29,9 @@ local path = require("venv-selector.path")
 local utils = require("venv-selector.utils")
 local log = require("venv-selector.logger")
 
+---@type venv-selector.ShellOptions
+local shellopts = { shell = vim.o.shell, cmdflags = {} }
+
 -- Load shared annotations/types (kept as a module so other files can @class reference it).
 require("venv-selector.types")
 
@@ -270,57 +273,19 @@ local function start_search_job(search_name, search_config, job_event_handler, s
     ---@cast job string
     local expanded_job = expand_env(job) -- expands $VAR and ~
 
-    local options = require("venv-selector.config").get_user_options()
-    local shell = options.shell.shell
-    local shell_cmdflags = options.shell.shellcmdflag
-    if type(shell_cmdflags) == "string" then
-        shell_cmdflags = utils.split_string(shell_cmdflags)
-    end
 
-    -- On PowerShell (pwsh / powershell), anything after the -Command / /c flag
-    -- in shellcmdflag is a Neovim terminal encoding preamble (e.g. setting
-    -- $PSDefaultParameterValues or [Console]::OutputEncoding). That preamble is
-    -- only needed for Neovim's own interactive terminal and must not be forwarded
-    -- to fd search jobs for two reasons:
-    --
-    --   1. split_string strips quotes, corrupting key literals such as
-    --      ['Out-File:Encoding'] -> [Out-File:Encoding], which is invalid
-    --      PowerShell syntax and causes a ParserError on every search job.
-    --
-    --   2. fd produces plain ASCII paths and requires no encoding setup.
-    --
-    -- Truncate shell_cmdflags at -Command (inclusive) so the fd command is the
-    -- only argument that follows.
-    local shell_basename = shell:match("[^\\/]+$") or shell
-    local is_powershell = shell_basename:lower() == "pwsh" or shell_basename:lower() == "powershell"
-
-    if is_powershell then
-        local command_flag_idx = nil
-        for i, flag in ipairs(shell_cmdflags) do
-            if flag:lower() == "-command" or flag:lower() == "/c" then
-                command_flag_idx = i
-                break
-            end
-        end
-        if command_flag_idx then
-            while #shell_cmdflags > command_flag_idx do
-                table.remove(shell_cmdflags)
-            end
-        end
-    end
-
-    local cmd = utils.extend({ options.shell.shell }, shell_cmdflags, { expanded_job })
+    local cmd = utils.extend({ shellopts.shell }, shellopts.cmdflags, { expanded_job })
 
     log.debug(
         "Executing search '"
-            .. search_name
-            .. "' (using "
-            .. shell
-            .. " "
-            .. table.concat(shell_cmdflags, " ")
-            .. "): '"
-            .. expanded_job
-            .. "'"
+        .. search_name
+        .. "' (using "
+        .. shellopts.shell
+        .. " "
+        .. table.concat(shellopts.cmdflags, " ")
+        .. "): '"
+        .. expanded_job
+        .. "'"
     )
 
     local function on_exit_wrapper(jid, data, event)
@@ -456,6 +421,20 @@ function M.run_search(picker, opts)
 
     M.active_jobs = {}
     local job_event_handler = create_job_event_handler(picker, options)
+
+    local shell = options.shell.shell
+    local shell_cmdflags = options.shell.shellcmdflag
+
+
+    shellopts.shell = shell
+    if type(shell_cmdflags) == "string" then
+        shellopts.cmdflags = utils.split_string(shell_cmdflags)
+    end
+
+    if utils.is_windows() then
+        shellopts.cmdflags = utils.on_windows_inject_noprofile(shell, shell_cmdflags)
+    end
+
 
     for search_name, search_command in pairs(search_settings.search) do
         if search_command ~= true and search_command ~= false then

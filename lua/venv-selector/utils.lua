@@ -15,12 +15,60 @@
 require("venv-selector.types")
 
 local log = require("venv-selector.logger")
+local is_windows = nil
 
 local M = {}
 
 -- ============================================================================
 -- Table helpers
 -- ============================================================================
+
+function M.is_windows()
+    if is_windows == nil then
+        is_windows = vim.uv.os_uname().sysname == "Windows_NT" -- Saving result locally since its called for every search
+    end
+
+    return is_windows
+end
+
+function M.on_windows_inject_noprofile(shell, shell_cmdflags)
+    -- On PowerShell (pwsh / powershell), inject -NoProfile before -Command if
+    -- it is not already present. The user's PowerShell profile is not needed to
+    -- run fd, and profiles commonly cause search job failures on Windows:
+    --
+    --   * Modules such as Terminal-Icons hold file locks on their XML caches,
+    --     crashing the PowerShell process before fd can run (exit code 1).
+    --   * Heavy profiles (Oh-My-Posh, PSReadLine, etc.) can take several seconds
+    --     to load, causing jobs to hit the 5-second search timeout with the
+    --     misleading warning "Avoid using VenvSelect in $HOME directory".
+    --
+    -- Users who have already added -NoProfile to their shellcmdflag or to the
+    -- venv-selector shell.shellcmdflag option are unaffected.
+    local shell_basename = shell:match("[^\\/]+$") or shell
+    local is_powershell = shell_basename:lower() == "pwsh" or shell_basename:lower() == "powershell"
+
+    if is_powershell then
+        local has_noprofile = false
+        for _, flag in ipairs(shell_cmdflags) do
+            if flag:lower() == "-noprofile" then
+                has_noprofile = true
+                break
+            end
+        end
+        if not has_noprofile then
+            -- Insert before -Command so the flag order stays conventional.
+            local insert_at = #shell_cmdflags + 1
+            for i, flag in ipairs(shell_cmdflags) do
+                if flag:lower() == "-command" or flag:lower() == "/c" then
+                    insert_at = i
+                    break
+                end
+            end
+            table.insert(shell_cmdflags, insert_at, "-NoProfile")
+            return shell_cmdflags
+        end
+    end
+end
 
 ---Check whether a table contains at least one key.
 ---

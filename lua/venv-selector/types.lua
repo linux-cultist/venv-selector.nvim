@@ -274,5 +274,8 @@ local M = {}
 ---@field ordinal string
 ---@field display fun(e: venv-selector.TelescopeEntry): any
 
+---@class venv-selector.ShellOptions
+---@field shell string
+---@field cmdflags string[]|nil
 
 return M

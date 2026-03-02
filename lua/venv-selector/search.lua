@@ -433,8 +433,8 @@ function M.run_search(picker, opts)
 
     if utils.is_windows() then
         shellopts.cmdflags = utils.on_windows_inject_noprofile(shell, shell_cmdflags)
+        shellopts.cmdflags = utils.strip_shellcmd_preamble(shell, shellopts.cmdflags)
     end
-
 
     for search_name, search_command in pairs(search_settings.search) do
         if search_command ~= true and search_command ~= false then

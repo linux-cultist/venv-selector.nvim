@@ -429,10 +429,12 @@ function M.run_search(picker, opts)
     shellopts.shell = shell
     if type(shell_cmdflags) == "string" then
         shellopts.cmdflags = utils.split_string(shell_cmdflags)
+    else
+        shellopts.cmdflags = shell_cmdflags
     end
 
     if utils.is_windows() then
-        shellopts.cmdflags = utils.on_windows_inject_noprofile(shell, shell_cmdflags)
+        shellopts.cmdflags = utils.on_windows_inject_noprofile(shell, shellopts.cmdflags)
         shellopts.cmdflags = utils.strip_shellcmd_preamble(shell, shellopts.cmdflags)
     end
 

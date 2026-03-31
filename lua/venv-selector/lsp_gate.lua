@@ -11,8 +11,8 @@
 local log = require("venv-selector.logger")
 local uv  = vim.uv
 
-local POLL_INTERVAL_MS  = 60
-local MAX_TRIES         = 3
+local POLL_INTERVAL_MS  = 200
+local MAX_TRIES         = 10
 local START_GRACE_MS    = 250
 local FORCE_EXTRA_TRIES = 30
 

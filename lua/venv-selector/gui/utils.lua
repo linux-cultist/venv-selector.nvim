@@ -16,8 +16,9 @@ local M = {}
 -- ============================================================================
 
 local DEDUPE_SOURCE_PRIO = {
-    workspace = 30,
-    file = 20,
+    cwd = -20,
+    workspace = -10,
+    file = -5,
 }
 
 ---@param r venv-selector.SearchResult

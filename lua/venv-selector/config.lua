@@ -89,7 +89,8 @@ function M.get_default_searches()
             },
             pixi = {
                 command =
-                "$FD python.exe$ $HOME\\.pixi $CWD\\.pixi -HI --no-ignore-vcs --full-path -a --color never",
+                "$FD python.exe$ $HOME\\.pixi $CWD\\.pixi $CWD\\.pixi\\envs $WORKSPACE_PATH\\.pixi\\envs -HI --no-ignore-vcs --full-path -a --color never",
+                type = "anaconda",
             },
             anaconda_envs = {
                 command = "$FD python.exe$ $HOME\\anaconda3\\envs --no-ignore-vcs --full-path -a -E Lib",
@@ -140,7 +141,10 @@ function M.get_default_searches()
                 command = "$FD '/bin/python$' ~/.local/share/virtualenvs --no-ignore-vcs --full-path --color never",
             },
             pixi = {
-                command = "$FD '/bin/python$' ~/.pixi/envs $PIXI_HOME -HI --no-ignore-vcs --full-path --color never",
+                command =
+                "$FD '/bin/python$' ~/.pixi/envs $PIXI_HOME $CWD/.pixi/envs $WORKSPACE_PATH/.pixi/envs -HI --no-ignore-vcs --full-path --color never",
+                type = "anaconda",
+                
             },
             anaconda_envs = {
                 command = "$FD 'bin/python$' ~/.conda/envs --no-ignore-vcs --full-path --color never",
@@ -193,7 +197,10 @@ function M.get_default_searches()
                 command = "$FD '/bin/python$' ~/.local/share/virtualenvs --no-ignore-vcs --full-path --color never",
             },
             pixi = {
-                command = "$FD '/bin/python$' ~/.pixi/envs $PIXI_HOME -HI --no-ignore-vcs --full-path --color never",
+                command =
+                "$FD '/bin/python$' ~/.pixi/envs $PIXI_HOME $CWD/.pixi/envs $WORKSPACE_PATH/.pixi/envs -HI --no-ignore-vcs --full-path --color never",
+                type = "anaconda"
+                
             },
             anaconda_envs = {
                 command = "$FD 'bin/python$' ~/.conda/envs --no-ignore-vcs --full-path --color never",

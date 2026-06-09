@@ -276,6 +276,7 @@ local default_settings = {
             snacks = {
                 layout = { preset = "select" },
             },
+            telescope = {},
         },
         shell = default_shell_settings(),
     },

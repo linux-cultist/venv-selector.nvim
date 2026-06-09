@@ -113,6 +113,7 @@ end
 ---@return table layout_config
 local function get_dynamic_layout_config()
     local columns = vim.o.columns
+    local opts = config.user_settings.options.picker_options.telescope
 
     local width_ratio = 0.9
     local min_width = 60
@@ -124,11 +125,11 @@ local function get_dynamic_layout_config()
     local max_height = 0.6
     local dynamic_height = math.max(min_height, math.min(max_height, height_ratio))
 
-    return {
+    return vim.tbl_deep_extend("force", {
         height = dynamic_height,
         width = dynamic_width,
         prompt_position = "top",
-    }
+    }, opts.layout_config or {})
 end
 
 ---@return table display_config
@@ -301,7 +302,7 @@ function M.new(search_opts)
     local marker_color = config.user_settings.options.selected_venv_marker_color
     vim.api.nvim_set_hl(0, "VenvSelectMarker", { fg = marker_color })
 
-    local opts = {
+    local opts = vim.tbl_deep_extend("force", {
         prompt_title = "Virtual environments (ctrl-r to refresh)",
         finder = self:make_finder(),
         layout_strategy = "vertical",
@@ -331,7 +332,7 @@ function M.new(search_opts)
 
             return true
         end,
-    }
+   }, config.user_settings.options.picker_options.telescope)
 
     local picker = require("telescope.pickers").new({}, opts)
 

@@ -109,6 +109,7 @@ local M = {}
 
 ---@class venv-selector.PickerOptions
 ---@field snacks? table Snacks picker specific options
+---@field telescope? table Telescope picker specific options
 
 ---@class venv-selector.Options
 ---@field on_venv_activate_callback? fun()

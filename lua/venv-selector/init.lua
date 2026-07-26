@@ -118,15 +118,18 @@ function M.deactivate()
     -- Clear restart memo so selecting the same venv again forces restart.
     hooks.clear_restart_memo_for_root(project_root)
 
-    -- 2) Clear plugin active state so re-activation is not skipped.
-    require("venv-selector.venv").clear_active_state(bufnr)
-
-    -- 3) Restore baseline python LSP configs.
-    hooks.restore_original_python_lsps_for_buf(bufnr, stopped_keys)
-
-    -- 4) PATH/env cleanup.
+    -- 2) PATH/env cleanup. Must run before clear_active_state() below, since
+    -- path.remove_current() only acts `if M.current_python_path then` -- once
+    -- that's nil'd out, it silently no-ops and the venv's bin dir is never
+    -- actually removed from $PATH.
     require("venv-selector.path").remove_current()
     require("venv-selector.venv").unset_env_variables()
+
+    -- 3) Clear plugin active state so re-activation is not skipped.
+    require("venv-selector.venv").clear_active_state(bufnr)
+
+    -- 4) Restore baseline python LSP configs.
+    hooks.restore_original_python_lsps_for_buf(bufnr, stopped_keys)
 end
 
 local function setup_notify()

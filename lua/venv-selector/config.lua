@@ -89,7 +89,7 @@ function M.get_default_searches()
             },
             pixi = {
                 command =
-                "$FD python.exe$ $HOME\\.pixi $CWD\\.pixi $CWD\\.pixi\\envs $WORKSPACE_PATH\\.pixi\\envs -HI --no-ignore-vcs --full-path -a --color never",
+                "$FD python.exe$ $HOME\\.pixi '$CWD\\.pixi' '$CWD\\.pixi\\envs' '$WORKSPACE_PATH\\.pixi\\envs' -HI --no-ignore-vcs --full-path -a --color never",
                 type = "anaconda",
             },
             anaconda_envs = {
@@ -112,13 +112,13 @@ function M.get_default_searches()
                 command = "$FD Scripts\\\\python.exe$ $HOME\\pipx\\venvs --no-ignore-vcs --full-path -a --color never",
             },
             cwd = {
-                command = "$FD Scripts\\\\python.exe$ $CWD --full-path --color never -HI -a -L",
+                command = "$FD Scripts\\\\python.exe$ '$CWD' --full-path --color never -HI -a -L",
             },
             workspace = {
-                command = "$FD Scripts\\\\python.exe$ $WORKSPACE_PATH --full-path --color never -HI -a -L",
+                command = "$FD Scripts\\\\python.exe$ '$WORKSPACE_PATH' --full-path --color never -HI -a -L",
             },
             file = {
-                command = "$FD Scripts\\\\python.exe$ $FILE_DIR --full-path --color never -HI -a -L",
+                command = "$FD Scripts\\\\python.exe$ '$FILE_DIR' --full-path --color never -HI -a -L",
             },
         }
     elseif system == "Darwin" then

@@ -52,6 +52,14 @@ options = {
   -- If true, wait for LSP workspace detection before applying environment (helps avoid premature activation).
   require_lsp_activation = true,
 
+  -- uv_venv_auto_create = true,                -- default: true (boolean)
+  -- When true, the uv (PEP 723) integration creates a missing script environment with `uv sync`. Set false to only use script environments that already exist.
+  uv_venv_auto_create = true,
+
+  -- uv_venv_confirm_create = false,            -- default: false (boolean)
+  -- When true and `uv_venv_auto_create` is true, ask before creating a missing script environment. Answering No skips creation for that buffer.
+  uv_venv_confirm_create = false,
+
   -- shell = { shell = vim.o.shell, shellcmdflag = vim.o.shellcmdflag } -- default (table)
   -- Override the shell and shellcmdflag used to run search commands (useful for fish/zsh configs).
   shell = { shell = vim.o.shell, shellcmdflag = vim.o.shellcmdflag },

@@ -11,6 +11,7 @@
 --     uv sync --script <file>
 --     uv python find --script <file>
 -- - Activate the returned interpreter for that buffer as env_type="uv".
+-- - Creating a missing script environment is gated by uv_venv_auto_create / uv_venv_confirm_create.
 --
 -- Design notes:
 -- - Detection is cached per-buffer per changedtick (cheap BufEnter checks).
@@ -25,6 +26,7 @@ require("venv-selector.types")
 local uv = vim.uv
 local log = require("venv-selector.logger")
 local path_mod = require("venv-selector.path")
+local config = require("venv-selector.config")
 
 local has_uv = vim.fn.executable("uv") == 1
 
@@ -219,6 +221,41 @@ local function uv_python_find(bufnr, file)
     return first_line(uv_out(res))
 end
 
+---@param file string
+---@return boolean|nil exists nil when uv reported neither an existing nor a missing environment
+local function uv_env_exists(file)
+    local cmd = { "uv", "sync", "--script", file, "--dry-run", "--offline", "--no-build", "--no-python-downloads" }
+    local res = await_system(cmd, { text = true, cwd = vim.fn.fnamemodify(file, ":h") })
+    log_multiline("uv sync --dry-run: ", uv_out(res))
+
+    local stderr = res.stderr or ""
+    if stderr:find("Would use script environment at:", 1, true)
+        or stderr:find("Would replace script environment at:", 1, true) then
+        return true
+    end
+    if stderr:find("Would create script environment at:", 1, true) then return false end
+
+    vim.notify(uv_out(res) or "uv sync --dry-run failed", vim.log.levels.ERROR, { title = "VenvSelector" })
+    return nil
+end
+
+---@param bufnr integer
+---@param file string
+---@return boolean|nil allowed nil when the existence check failed
+local function may_sync(bufnr, file)
+    local options = config.user_settings.options
+    if options.uv_venv_auto_create and not options.uv_venv_confirm_create then return true end
+    if not has_uv then return false end
+    local exists = uv_env_exists(file)
+    if exists ~= false then return exists end
+    if not options.uv_venv_auto_create or vim.b[bufnr].venv_selector_uv_create_declined then return false end
+
+    local prompt = ("Create uv environment for %s?"):format(vim.fn.fnamemodify(file, ":~:."))
+    if vim.fn.confirm(prompt, "&Yes\n&No", 2) == 1 then return true end
+    vim.b[bufnr].venv_selector_uv_create_declined = true
+    return false
+end
+
 ---@param bufnr integer
 local function finish_uv_run(bufnr)
     vim.b[bufnr].venv_selector_uv_running = false
@@ -237,6 +274,13 @@ local function start_uv_flow_async(bufnr)
             local file = vim.api.nvim_buf_get_name(bufnr)
             if file == "" then return end
 
+            local allowed = may_sync(bufnr, file)
+            if allowed == nil then return end
+            if not allowed then
+                vim.b[bufnr].venv_selector_uv_last_tick = vim.b[bufnr].changedtick or 0
+                log.debug("uv2: skipped uv env creation for " .. file)
+                return
+            end
             if not uv_sync(bufnr, file) then return end
             local python_path = uv_python_find(bufnr, file)
             if python_path and python_path ~= "" then

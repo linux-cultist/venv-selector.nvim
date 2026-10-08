@@ -215,6 +215,17 @@ You can work with multiple uv files in different neovim buffers and switch betwe
 
 NOTE: You *don't use the picker* to select a venv for uv environments. The plugin activates the venv when you open a file with metadata automatically.
 
+### Controlling environment creation
+
+By default, opening a file with PEP-723 metadata creates its environment and installs the listed dependencies. Keep this in mind when opening files you did not write.
+
+- Set `options = { uv_venv_auto_create = false }` to never create a missing script environment.
+- Set `options = { uv_venv_confirm_create = true }` to be asked before one is created.
+
+Script environments that already exist keep syncing when you save, whatever these options say.
+
+With creation disabled or declined, run `uv sync --script <file>` yourself. The plugin uses the environment on the next save that changes the file, or after `:e`. A declined prompt is remembered until the buffer is wiped.
+
 ## 🎛️ Support for lualine and nvchad statusbars
 
 ### Lualine

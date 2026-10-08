@@ -124,6 +124,8 @@ local M = {}
 ---@field debug? boolean|venv-selector.LogLevel  -- backward compatible
 ---@field fd_binary_name? string
 ---@field require_lsp_activation boolean
+---@field uv_venv_auto_create boolean
+---@field uv_venv_confirm_create boolean
 ---@field shell? table
 ---@field on_telescope_result_callback? fun(filename: string): string
 ---@field picker_filter_type "substring"|"character"
